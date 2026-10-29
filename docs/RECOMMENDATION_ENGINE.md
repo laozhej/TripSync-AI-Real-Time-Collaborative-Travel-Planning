@@ -1,0 +1,23 @@
+# Hybrid recommendations
+
+Proposed implementation, PRD §§3,6.3,11,15. Track A shows “Recommended for Your Group”; endpoints remain available independently. This is personalization, separate from the hard-valid Concierge suggestion pipeline. If a recommendation is offered as an actionable slot suggestion, it must pass Concierge filters before pin/suggest; a general destination rail is labeled exploratory.
+
+## Data and baseline model
+
+Generate interaction records through real scripted/browser sessions using synthetic users with varied category/diet/budget preferences and co-travel groups. Store seed, user IDs, timestamps and generation rules; never present these as external traveler data. Suggested training fixture scale: 30 users, 40 catalog items across optional synthetic destinations, 300+ interactions. These counts are recommendations, not PRD minimums; one full destination still satisfies dataset scope. Log views/likes explicitly; derive pins/locks/co-travel server-side to avoid fabricated engagement. Do not create held-out labels from the scoring function itself.
+
+Content features: one-hot category/diet tags, normalized authored price tier and destination; cosine similarity between venue and recent positive profile. Interaction strengths provisionally view=1, pin=2, like=3, lock=4 with one deduplicated event contribution per session. CF: item-item cosine similarity over user-item positive strengths, plus group affinity from historical co-travel. Compute neighbor table in Python; no heavyweight deep-learning training required. Group score averages active attendee normalized scores; all inputs bounded [0,1]. Hybrid `0.5*content + 0.5*CF`, stable source-ID tie break. Document feature vocabulary and artifact hash.
+
+Cold user/group: declared profile + destination/category popularity; CF component unavailable is labeled and content weight becomes 1 provisionally. Cold item: content handles known metadata; do not claim CF evidence. Exclude already locked/removed options and inaccessible dataset versions. Return reason codes, modelVersion, generatedAt, interaction watermark; no explanation should claim inferred dietary safety without hard matching.
+
+## Refresh without redeploy
+
+New interaction invalidates user/group serving cache and recomputes content profile and neighbor-weighted score immediately using current artifact; rail can change without training. Batch CLI retrains CF/content feature artifacts with new history; validate and atomically promote version from DB, application reloads within 5 s provisional, no server redeploy. `trip.recommendations.updated` prompts UI refresh. On failed artifact validation retain previous version; on missing artifact use disclosed content/popularity cold-start and report hybrid not ready. A final demonstration must show actual hybrid serving, not just fallback.
+
+## Leakage-resistant Precision@5
+
+REC-01 fixed seeded dataset, chronological per-user train/validation/test split. Require users with ≥5 held-out positive distinct eligible items, or explicitly report reduced coverage; do not remove difficult users silently. Derive profiles/neighbors/popularity/scalers only on train. Use validation for blend/threshold choices; freeze choices before final test. Group memberships/features must predate cutoff; no test positives leak through co-travel aggregation. Rank all eligible unseen catalog items, not just an easy sampled negative subset. Document relevance as held-out like/lock positive and deduplicate repeated venue interactions.
+
+Per user Precision@5 = relevant recommendations in top 5 / 5; macro average over eligible test users. Fewer than 5 available candidates still uses denominator 5, disclose coverage. Target ≥0.6; report per-user results, total test users, catalog size, interaction generation seed, cutoff, confidence/variability across seeds if practical. Compare content-only, CF-only, popularity and hybrid on same split. No score has been measured. Synthetic behavior may overstate generalization; evidence supports this dataset only.
+
+REC-02 new interaction updates rail without redeploy; REC-03 atomic artifact reload/failure rollback; REC-04 cold user/item/group; REC-05 authorization and dataset version isolation. [Testing](TESTING_STRATEGY.md) and [submission](DEMO_AND_SUBMISSION.md) define evidence.

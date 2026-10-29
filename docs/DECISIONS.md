@@ -1,0 +1,33 @@
+# Decisions and unresolved rules
+
+Status: design baseline, 2026-10-29; no implementation. Source [PRD](../Document/Project%20Document.docx) §§4,6–10,13–15. Selected track/stack decisions are finalized for this documentation; domain defaults below remain provisional pending implementation review.
+
+| ID | Decision, alternatives and consequence | Status/source |
+|---|---|---|
+| ADR-001 | Track A: React client. Track B saves UI work but adds harness/generator evidence and retains backend depth. | Selected; §4.3 (the §2 reference to 4.4 is a PRD typo) |
+| ADR-002 | Python/FastAPI native WebSockets + PostgreSQL + SQLAlchemy async/asyncpg + Pytest. Java has reactive/blocking integration overhead; MERN shares JavaScript but adds Python-free model tooling effort and requires MongoDB. One modular backend fits solo delivery. | Selected; §§8,9.3 |
+| ADR-003 | Account Admin privilege separate from per-trip Viewer/Planner/Leader. Do not trust JWT role claims alone after membership changes. | Provisional; global role examples in §7.2 conflict with §5 room assignment |
+| ADR-004 | Compare-and-reject `positionVersion`; first valid server arrival wins that version. Never auto-retry stale intent. Explicit conflict includes current item. This supersedes §6.1 LWW wording per request and §§7.2,9.4. | Selected resolution of contradiction |
+| ADR-005 | One application worker owns all in-memory room actors. Each room processes commands in arrival order; DB conditional updates check durable base version, without SELECT FOR UPDATE. Multiple rooms remain independent. | Selected; §9.4; multi-process deferred |
+| ADR-006 | 100 ms batch flush default, memory-applied updates explicitly volatile until commit event; lock/vote/moderation/chat require durable commit before final success. No claim that all acknowledgements survive crash. | Provisional; §9.4 does not specify durability |
+| ADR-007 | Viewer reads/chats/asks but cannot vote; Planner/Leader vote. Leader can restrict a Planner to vote-only via `canPin=false`; membership role remains Planner. | Provisional; §5.1's pin-versus-only-vote setting otherwise ambiguous |
+| ADR-008 | Votes: fixed eligible membership snapshot, one changeable vote/person before deadline, no quorum, abstention is no vote, tie by stable ascending candidate ID, zero votes cancels to Drafting. Removed voters' ballots invalidated; new joins cannot vote in existing round. | Provisional; §6.2 omits election details |
+| ADR-009 | Default vote 60 s; server receipt at deadline is late; eligible identity snapshot excludes Viewers. System auto-opens once for ≥2 drafting candidates in identical day/time slot with shared attendees; partial overlaps notify only. | Provisional; §6.2 |
+| ADR-010 | Leader disconnect after last socket: visible immediately, freeze finalize/override/open-vote/settings until reconnect; no automatic promotion. Existing timed votes still resolve by server authority. Explicit transfer only to active Planner and durable atomic role swap. | Provisional choice of allowed §6.1 behavior |
+| ADR-011 | Room lock rejects new joins and board/vote commands except Leader unlock/moderation; existing chat/read/ask work. Existing vote timer resolves to preserve its contract. Finalized trip is read-only including chat. | Provisional; room lock meaning absent |
+| ADR-012 | One currency EUR, 2 decimals per trip, no conversion. Public `totalBudget` decimal string, internal minor-unit integers. Categories lodging/food/activity/transit. | Provisional; §§6.2,7.3 omit precision/categories |
+| ADR-013 | Explicit attending members per item, default active members at pin; attendees frozen until versioned edit. Nonnegative integer weights, positive sum; stable user-ID remainder ordering after largest fractional remainders. | Provisional; split details unspecified |
+| ADR-014 | Hard category ceiling = requester's category ceiling or group category default; optional request ceiling can tighten only. Attendee diets union; unknown required metadata excludes candidate. Total and personal budgets flagged separately. | Provisional precedence; §6.2 vs §5.3 |
+| ADR-015 | Destination IANA timezone; UTC persisted intervals with offset-bearing input; reject ambiguous/nonexistent local times unless explicit valid offset. Hours expand by date; overnight close has day offset. Buffer extends requested start backward, default 30 min. | Provisional; §6.2 direction unspecified |
+| ADR-016 | Haversine distance; no anchor disables radius and assigns constant proximity 1 (weights unchanged); stable ID tiebreak. Rating divided by 5; price headroom divided by ceiling. | Provisional normalization; §6.2 |
+| ADR-017 | Local PostgreSQL full-text retrieval, deterministic matching and ranking; local Ollama HTTP model call for bounded grounded generation. No vector DB/agent framework required. Schema output still requires application validation. | Selected; §§4.2,8.1 |
+| ADR-018 | Canonical citation `venue:<id>@<datasetVersion>`; `sourceEvents` retained compatibility name. Walking minutes require an authored transit record, never proximity inference. | Selected correction of inconsistent §7.3.3 identifiers/example |
+| ADR-019 | Recommendation item-neighbor CF + content cosine, equal blend; batch train within app CLI, reload atomic model version and immediately rerank fresh user history. | Provisional simple hybrid; §6.3 |
+| ADR-020 | Minimum dataset size recommendation 12 venues/lodgings, 4 transit edges, 3 dated weather entries; only coverage, not these counts, required. Reduce counts/complexity before correctness/testing/docs. | Recommendation; §14.1 |
+| ADR-021 | Documentation first overrides scaffold-now wording; application code begins only on subsequent user request. | Required user instruction; §13.2 deviation |
+
+## Decisions to revisit before coding affected modules
+
+Review ADR-007–016 with stakeholder before behavior is treated as final; safe defaults permit planning but do not assert PRD specificity. Choose local model tag/digest after hardware smoke test; the 3 s P95 target is especially risky. Review whether crash loss of volatile moves is acceptable; durable-every-move logging is an alternative with measurable latency cost. Any stronger guarantee must change protocol, persistence and tests together.
+
+No booking/live integration or required-feature deferral is proposed. Plain SQL retrieval instead of embeddings is a deliberately small RAG implementation, not removal of retrieval. Asyncpg avoids obsolete Motor guidance because PostgreSQL is selected; no MongoDB driver is installed. Versions and official references are maintained in [environment setup](ENVIRONMENT_SETUP.md).
