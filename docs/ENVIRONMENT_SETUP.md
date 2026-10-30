@@ -1,66 +1,57 @@
 # Environment setup
 
-**Planning only:** commands below are provisional until scaffolding and lockfiles exist. They have not been run against an application. PRD §§8–10,12. Do not run nonexistent CLI commands and interpret failures as application defects. The only current deliverables are documentation and the source PRD.
+TripSync AI is an independent, local educational prototype. The implemented first slice uses Python 3.13, FastAPI native WebSockets, PostgreSQL, SQLAlchemy/asyncpg and a React JavaScript client. Run **one Uvicorn worker**: room authority is process-local. The remaining phase 1 acceptance gaps are recorded in [implementation evidence](PHASE_1_EVIDENCE.md); later features described in other documents remain planned.
 
-## Selected stack and official checks (2026-10-29)
+## Prerequisites
 
-| Dependency | Proposed baseline | Official source and verification limit |
-|---|---|---|
-| Python | 3.13.x | Local interpreter reports 3.13.1; project package compatibility still needs smoke test |
-| FastAPI | Stable 0.x; exact patch to lock at TASK-002 | [Release notes](https://fastapi.tiangolo.com/release-notes/) show recent breaking changes; use current compatible release and record resolved version, not an untested guessed lock |
-| React | 19.3 line | [Official versions](https://react.dev/versions) lists 19.3; client compatibility not tested |
-| PostgreSQL | 18.x current supported minor | [Version policy](https://www.postgresql.org/support/versioning/) confirms support; pin exact image digest when scaffolded |
-| SQLAlchemy | 2.0.55 maintenance baseline | [Release notice](https://www.sqlalchemy.org/blog/2026/10/16/sqlalchemy-2.0.55-released/) and [async API](https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html); newer 2.1 line exists, avoid migration churn for baseline |
-| asyncpg | 0.32.0 candidate | [Driver releases](https://github.com/MagicStack/asyncpg/releases) and [support docs](https://magicstack.github.io/asyncpg/current/) verify native asyncio/PostgreSQL support; Python/OS wheel install still pending |
-| Vite / Node | Current compatible Vite stable; Node 22.12+ baseline | [Vite guide](https://vite.dev/guide/) defines runtime requirements; lock frontend toolchain after install smoke test |
-| Pytest | Current supported stable, exact patch pending | [Official guide](https://docs.pytest.org/en/stable/); add pytest-asyncio, HTTPX and WebSocket client matching backend dependencies |
-| Ollama | Local current stable, exact runtime/tag/digest pending | [Chat API](https://docs.ollama.com/api/chat), [structured outputs](https://docs.ollama.com/capabilities/structured-outputs), [llama3.2 catalog](https://ollama.com/library/llama3.2); local schema support verified in docs, not runtime |
+Install Python 3.13, Node.js/npm, PostgreSQL and Git. Create an empty disposable PostgreSQL database and a role with permission to create its tables. The tested environment used Python 3.13.1, Node 24.13.0, npm 9.9.4 and PostgreSQL 18.1. Python dependency versions are in `backend/requirements.lock`, and npm versions are in `frontend/package-lock.json`.
 
-Pydantic v2, Uvicorn, Alembic, HTTPX, PyJWT, pwdlib Argon2, safe YAML parser and scikit-learn are planned libraries; exact compatible versions must be resolved/pinned at scaffold. Do not claim install-tested versions. React client uses JavaScript for simplicity; Python remains the sole application backend. No Motor/PyMongo needed: selected database is PostgreSQL. SQLAlchemy uses `postgresql+asyncpg://...`, shared async engine/pool, separate AsyncSession per task. [SQLAlchemy documentation](https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html) explicitly cautions against sharing an AsyncSession concurrently.
+## First-time setup (PowerShell)
 
-FastAPI [WebSocket dependencies](https://fastapi.tiangolo.com/advanced/websockets/) support handshake policy injection. Browser cookie transport plus JWT validation is application code to implement, not automatic token verification supplied by the framework. The [security tutorial](https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/) demonstrates JWT/password components, not the complete refresh/revocation protocol in this plan.
-
-## Prerequisites and planned startup
-
-Install Python, Node/npm, PostgreSQL (or Docker Compose), Git and Ollama. Allocate model disk/RAM after checking selected weights; no universal hardware minimum or 3 s guarantee is asserted. All JS/CSS/fonts/images served locally; no CDN dependency. Start DB before migrations/import; start Ollama before real-generation smoke test; fallback can run while model is down.
-
-After a later implementation creates these paths/scripts, PowerShell workflow from repository root is intended to be:
+From the repository root:
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r backend/requirements.lock
+.\.venv\Scripts\python.exe -m pip install -r backend\requirements.lock
 Copy-Item .env.example .env
-# Fill local secrets and credentials in .env before continuing.
+notepad .env
+```
+
+Set `DATABASE_URL` in `.env` to the disposable database using `postgresql+asyncpg://`; URL-encode reserved characters in credentials. Keep this file private and never paste it or its contents into chat. Its example contains no credentials. The example permits the local frontend origin `http://127.0.0.1:5173`; if using a different local origin, update `ALLOWED_ORIGINS` accordingly.
+
+Then run:
+
+```powershell
 $env:PYTHONPATH=(Join-Path (Get-Location) 'backend')
-.\.venv\Scripts\python.exe -m alembic -c backend/alembic.ini upgrade head
-.\.venv\Scripts\python.exe -m app.cli create-admin
-.\.venv\Scripts\python.exe -m app.cli import-dataset data/destinations/lisbon.json
-ollama pull llama3.2:3b
+.\.venv\Scripts\python.exe -m app.cli init-local-key
+.\.venv\Scripts\python.exe -m alembic -c backend\alembic.ini upgrade head
+.\.venv\Scripts\python.exe -m app.cli import-dataset data\destinations\lisbon.json
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000 --workers 1
 ```
 
-The block makes `app.cli` importable through backend on PYTHONPATH; an editable package is a future alternative. Startup must load root `.env` explicitly via application settings, including for CLI/migrations; shell assignment is not implied by creating the file. This must be verified during scaffolding. Start frontend in a second terminal: `npm --prefix frontend ci`, then `npm --prefix frontend run dev -- --host 127.0.0.1`; future Vite proxy routes `/api` and `/ws` to backend, preserving same-origin cookies. Open frontend URL printed by Vite. For private packaged mode build frontend and serve through backend.
+The key command creates a random signing key only when it is blank; it retains an existing key. Import the sample destination once into an empty database. Re-importing an existing destination intentionally fails until dataset version activation is implemented. To grant an existing registered account Admin privileges, an operator can separately run `python -m app.cli create-admin` with the same `PYTHONPATH`; account registration itself cannot grant Admin.
 
-Planned verification: `.\.venv\Scripts\python.exe -m pytest backend/tests`; `npm --prefix frontend test -- --run`; `npm --prefix frontend run build`; future `python -m app.cli demo-session` and `python -m app.cli train-recommendations`. Each script is pending; README must be updated with verified commands once implemented. No package installation is requested now.
+In a second PowerShell window:
 
-## Environment reference
+```powershell
+cd D:\projects\Airbnb\frontend # or the frontend directory in your checkout
+npm ci
+npm run dev -- --host 127.0.0.1
+```
 
-| Name | Meaning/default proposal | Secret? |
-|---|---|---|
-| APP_ENV | local/private/test | No |
-| DATABASE_URL | postgresql+asyncpg connection URL; no real credential in examples | Yes |
-| JWT_SIGNING_KEY / JWT_ISSUER / JWT_AUDIENCE | random local key and exact configured issuer/audience | Key yes |
-| ACCESS_TOKEN_MINUTES | 15, hard max 60 | No |
-| REFRESH_TOKEN_DAYS | 7 | No |
-| COOKIE_SECURE | false loopback HTTP, true private HTTPS | No |
-| ALLOWED_ORIGINS | exact frontend origins, no wildcard credentials | No |
-| CSRF_SECRET | independent random secret | Yes |
-| MODEL_BASE_URL | http://127.0.0.1:11434, operator-configured only | No |
-| MODEL_NAME / MODEL_TIMEOUT_MS | provisional llama3.2:3b / 2500 | No |
-| ROOM_FLUSH_MS / ROOM_MAX_PARTICIPANTS | 100 / 50 design defaults | No |
-| DATA_DIR / MODEL_ARTIFACT_DIR | local nonpublic directories | No |
-| LOG_LEVEL | INFO, safe structured summaries | No |
+Open the local address printed by Vite. Use two separate browser profiles or private windows to test independent accounts. Create a room in one, share its invitation code privately with the other, and add a sample place. The sample data is fictional. Browser refresh currently loses the in-memory access token; sign in again. The full dashboard/rejoin experience remains planned.
 
-## Troubleshooting
+## Verification and current limits
 
-DB refused: check process/port/URL and readiness, not token changes. Alembic mismatch: backup then apply known revisions, never auto-drop tables. Missing asyncpg wheel: verify Python/driver matrix before changing stack. Cookie/socket 401: inspect origin/path/Secure and expiry without logging token; refresh then reconnect. Multiple workers produce divergent room authority: stop and restart exactly one worker. Slow/absent model: inspect runtime/model load, return disclosed grounded fallback and report cold/warm timing separately. Missing transit/weather citation: fix authored data or omit claim; never call a live travel API to fill the gap.
+With the API running, `/api/v1/health/live`, `/api/v1/health/ready` and `/api/v1/health/gateway` report liveness, database/schema/room readiness and room-service availability. A failed room persistence batch makes readiness unavailable. These are basic probes; actor-loop freshness and complete operational monitoring are future work.
+
+From the root, run unit tests with:
+
+```powershell
+$env:PYTHONPATH=(Join-Path (Get-Location) 'backend')
+.\.venv\Scripts\python.exe -m pytest backend\tests -q
+```
+
+Database integration tests are skipped unless `TEST_DATABASE_URL` is set to a disposable, migrated database containing the sample dataset. For a clean database verification, `python backend\tests\clean_setup.py` uses `.env` to create a randomly named temporary database, applies migrations, imports the sample and runs the backend suite, then drops that database. It requires CREATEDB permission and never drops the configured database. Browser verification is the opt-in `backend\tests\browser_phase1.py` against running local API/Vite servers; the current script uses Windows Chrome. See [evidence](PHASE_1_EVIDENCE.md) for exact outcomes and warnings.
+
+Secrets belong only in environment variables or the ignored `.env`. `COOKIE_SECURE=false` is for local loopback HTTP; use HTTPS/WSS and secure cookies for private network testing. The JWT key also encrypts retained idempotent results: rotation invalidates access tokens and makes old encrypted responses unreadable. No public hosting is configured. Ollama, Concierge, recommendations, voting and later features are not implemented.

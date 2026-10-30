@@ -1,0 +1,238 @@
+{
+  "schemaVersion": 1,
+  "destination": "Lisbon, Portugal",
+  "timezone": "Europe/Lisbon",
+  "currency": "EUR",
+  "provenance": {
+    "kind": "synthetic",
+    "author": "TripSync project",
+    "authoredAt": "2026-10-30",
+    "license": "project-authored",
+    "notice": "Demonstration data, not travel advice"
+  },
+  "venues": [
+    {
+      "sourceId": "v_1",
+      "name": "Synthetic Riverside Kitchen",
+      "category": "food",
+      "pricePerPerson": "22.00",
+      "dietaryTags": [
+        "vegetarian",
+        "vegan",
+        "halal",
+        "gluten-free"
+      ],
+      "coordinates": {
+        "lat": 38.7139,
+        "lng": -9.1394
+      },
+      "rating": 4.0,
+      "hours": {
+        "weekly": [
+          {
+            "days": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
+            "open": "11:00",
+            "close": "22:00",
+            "closeDayOffset": 0
+          }
+        ],
+        "exceptions": []
+      },
+      "description": "Synthetic demonstration location, not a real venue."
+    },
+    {
+      "sourceId": "v_2",
+      "name": "Synthetic Hilltop Museum",
+      "category": "activity",
+      "pricePerPerson": "12.00",
+      "dietaryTags": [],
+      "coordinates": {
+        "lat": 38.714,
+        "lng": -9.139
+      },
+      "rating": 4.0,
+      "hours": {
+        "weekly": [
+          {
+            "days": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
+            "open": "09:00",
+            "close": "18:00",
+            "closeDayOffset": 0
+          }
+        ],
+        "exceptions": []
+      },
+      "description": "Synthetic demonstration location, not a real venue."
+    },
+    {
+      "sourceId": "v_3",
+      "name": "Synthetic Harbor Inn",
+      "category": "lodging",
+      "pricePerPerson": "80.00",
+      "dietaryTags": [],
+      "coordinates": {
+        "lat": 38.715,
+        "lng": -9.14
+      },
+      "rating": 4.0,
+      "hours": {
+        "weekly": [
+          {
+            "days": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
+            "open": "00:00",
+            "close": "00:00",
+            "closeDayOffset": 1
+          }
+        ],
+        "exceptions": []
+      },
+      "description": "Synthetic demonstration location, not a real venue."
+    },
+    {
+      "sourceId": "v_4",
+      "name": "Synthetic Market Table",
+      "category": "food",
+      "pricePerPerson": "35.00",
+      "dietaryTags": [
+        "vegetarian"
+      ],
+      "coordinates": {
+        "lat": 38.716,
+        "lng": -9.141
+      },
+      "rating": 4.0,
+      "hours": {
+        "weekly": [
+          {
+            "days": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
+            "open": "12:00",
+            "close": "14:00",
+            "closeDayOffset": 0
+          }
+        ],
+        "exceptions": []
+      },
+      "description": "Synthetic demonstration location, not a real venue."
+    },
+    {
+      "sourceId": "v_5",
+      "name": "Synthetic Late Cafe",
+      "category": "food",
+      "pricePerPerson": "18.00",
+      "dietaryTags": [
+        "vegan",
+        "vegetarian"
+      ],
+      "coordinates": {
+        "lat": 38.7145,
+        "lng": -9.138
+      },
+      "rating": 4.0,
+      "hours": {
+        "weekly": [
+          {
+            "days": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
+            "open": "22:00",
+            "close": "02:00",
+            "closeDayOffset": 1
+          }
+        ],
+        "exceptions": []
+      },
+      "description": "Synthetic demonstration location, not a real venue."
+    },
+    {
+      "sourceId": "v_6",
+      "name": "Synthetic Outer Park",
+      "category": "activity",
+      "pricePerPerson": "5.00",
+      "dietaryTags": [],
+      "coordinates": {
+        "lat": 38.74,
+        "lng": -9.1394
+      },
+      "rating": 4.0,
+      "hours": {
+        "weekly": [
+          {
+            "days": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
+            "open": "08:00",
+            "close": "18:00",
+            "closeDayOffset": 0
+          }
+        ],
+        "exceptions": []
+      },
+      "description": "Synthetic demonstration location, not a real venue."
+    }
+  ],
+  "transit": [
+    {
+      "sourceId": "t_1",
+      "fromVenueId": "v_1",
+      "toVenueId": "v_2",
+      "mode": "walk",
+      "durationMinutes": 12,
+      "validFrom": "2026-11-10T00:00:00Z",
+      "validTo": "2026-11-15T00:00:00Z",
+      "synthetic": true
+    }
+  ],
+  "weather": [
+    {
+      "sourceId": "w_1",
+      "date": "2026-11-10",
+      "summary": "Synthetic light rain",
+      "temperatureC": 16,
+      "synthetic": true
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # Architecture
 
-Proposed Track A design; PRD §§7.1,9.3–9.4,10. No services or code exist yet. [Decisions](DECISIONS.md) distinguishes selected boundaries from provisional policies.
+Track A design and partial implementation; PRD §§7.1,9.3–9.4,10. The implemented first-slice boundaries and limitations are noted below. [Decisions](DECISIONS.md) distinguishes selected boundaries from provisional policies.
 
 ## Components
 
@@ -86,3 +86,11 @@ On startup hydrate snapshots/rows and persisted active votes before readiness; r
 Managed lifespan tasks own flush scheduling, vote deadlines, presence expiry and conflict evaluation. Avoid untracked request background tasks for critical recovery work. Overlap/budget checks run after each accepted change; bounded per-room queue plus version checks discard obsolete results. Small pure checks run inline; costly model I/O uses an async HTTP client; CPU-bound training/index rebuild uses an executor and atomic artifact swap. Never share an AsyncSession across concurrent tasks.
 
 One private host serves bundled React assets, API and gateway; PostgreSQL and Ollama bind loopback/private network. Use TLS/WSS when testing across machines. Gateway health measures actor loop freshness and queue status; readiness additionally checks DB/schema. Metrics: command queue depth, rejected stale versions, mutation latency, flush lag, socket lag/disconnects, model latency/fallback and constraint violations. Correlation IDs appear in safe structured logs. Capacity is configurable up to the 50-planner design target; actual performance remains unmeasured (§§10.2,14.1).
+
+## Implementation status — 2026-10-30
+
+The first slice uses a single pooled async engine, room actors, native WebSockets and basic liveness, schema readiness and gateway probes. Later architecture on this page remains planned. See [evidence](PHASE_1_EVIDENCE.md).
+
+The first-slice room actor is wired to membership authorization, batched persistence and WebSocket snapshots; later lifecycle and recovery drills remain pending. See [evidence](PHASE_1_EVIDENCE.md).
+
+The first pin/snapshot actor now maintains in-memory authoritative items and batches pending pins to PostgreSQL, with volatile applied acknowledgements, committed watermark, freeze on batch failure and a new epoch on reload. Membership joining and Leader invite changes persist pending pins and the significant change in the same transaction under the room actor lock; full recovery drills and later-feature snapshot state remain outstanding. See [evidence](PHASE_1_EVIDENCE.md).

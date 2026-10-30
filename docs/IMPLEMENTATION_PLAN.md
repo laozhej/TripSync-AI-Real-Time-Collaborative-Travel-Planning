@@ -41,3 +41,7 @@ Risk: targets missed or required feature unfinished. Profile/reduce dataset/mode
 ## Cross-week completion rules
 
 Every task has a requirement link, acceptance check and test ID. Implement domain logic before transport duplication; HTTP/socket share services. Daily: read requirement → implement small vertical change → test positive/negative → update relevant primary doc → commit working increment and note done/blocked/next. No subagents or additional engineers assumed. P0 correctness/security and P1 required breadth both ship; P2 is optional tooling only, never a renamed required feature.
+
+## Week 1 implementation status — 2026-10-30
+
+TASK-001–007 first-slice acceptance is complete with the clean-database, integration and two-browser checks recorded in [evidence](PHASE_1_EVIDENCE.md). The current pin/snapshot slice does not implement the Week 2 lifecycle, presence/chat or Concierge, or later-phase functionality. The single join-to-snapshot timing is a local observation only, not a load-test result.

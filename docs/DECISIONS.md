@@ -31,3 +31,7 @@ Status: design baseline, 2026-10-29; no implementation. Source [PRD](../Document
 Review ADR-007–016 with stakeholder before behavior is treated as final; safe defaults permit planning but do not assert PRD specificity. Choose local model tag/digest after hardware smoke test; the 3 s P95 target is especially risky. Review whether crash loss of volatile moves is acceptable; durable-every-move logging is an alternative with measurable latency cost. Any stronger guarantee must change protocol, persistence and tests together.
 
 No booking/live integration or required-feature deferral is proposed. Plain SQL retrieval instead of embeddings is a deliberately small RAG implementation, not removal of retrieval. Asyncpg avoids obsolete Motor guidance because PostgreSQL is selected; no MongoDB driver is installed. Versions and official references are maintained in [environment setup](ENVIRONMENT_SETUP.md).
+
+## 2026-10-30 implementation note
+
+Preliminary create/join idempotency responses are encrypted at rest using a domain-separated key derived from the local JWT signing secret, so replay can return the original one-time invite without storing it as plaintext. Changing that secret makes retained responses unavailable. This is an implementation choice, not a change to the provisional 24-hour replay policy; automated expiration cleanup remains to be implemented.

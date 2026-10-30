@@ -1,6 +1,6 @@
 # Security design
 
-Planned controls, PRD §10.1; none yet verified. Private hosting limits exposure but does not remove authorization requirements. [API](API_SPECIFICATION.md) and [WebSocket](WEBSOCKET_PROTOCOL.md) share one policy module.
+Security design and partially verified controls, PRD §10.1; verification evidence and limitations appear below. Private hosting limits exposure but does not remove authorization requirements. [API](API_SPECIFICATION.md) and [WebSocket](WEBSOCKET_PROTOCOL.md) share one policy module.
 
 ## Identity and tokens
 
@@ -27,3 +27,15 @@ Questions/descriptions are untrusted prompt data. Only validated IDs/field refer
 ## Planned security verification
 
 SEC-01 forged/expired/wrong-audience JWT, refresh reuse, logout socket closure and origin/CSRF; SEC-02 complete HTTP and socket role matrix including Admin without membership; SEC-03 cross-trip ID substitution and removed users; SEC-04 stored-XSS/SQL injection, malformed/oversized input and upload attacks; SEC-05 prompt injection/citation escape; SEC-06 secret scan and safe logging. Each rejection must leave state unchanged. No passed security assessment is claimed.
+
+The code now contains Argon2id password and signed access-token primitives. These are not an authentication service: session checks, rotation/reuse handling, rate limits, transport integration and the role matrix remain unimplemented and unverified. See [evidence](PHASE_1_EVIDENCE.md).
+
+A pure shared role/capability policy has unit tests, but is not wired to HTTP or sockets. The phase 1 security acceptance remains unmet.
+
+Trip detail reads now require active membership, and login/registration reject a supplied untrusted Origin. These are partial checks and do not establish socket authorization, removal closure, or the full security matrix.
+
+First-slice tests now cover Viewer pin rejection via both transports and immediate socket closure after logout; other role combinations, token expiry timing, cross-trip object substitution and the complete matrix remain pending. See [evidence](PHASE_1_EVIDENCE.md).
+
+The 2026-10-30 role tests also cover expired credentials and an Admin without trip membership on HTTP/socket, plus invite-management denial for Planner and outsider accounts. The complete role matrix, concurrent redemption and removed-membership cases remain pending.
+
+The first-slice role and session checks are documented in [phase 1 evidence](PHASE_1_EVIDENCE.md). They do not replace the later complete security assessment. Socket token/membership validity is polled at up to five-second intervals while idle; explicit logout and detected refresh reuse close tracked sockets. Full moderation, input and prompt-injection tests remain later work.

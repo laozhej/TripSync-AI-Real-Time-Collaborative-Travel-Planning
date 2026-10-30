@@ -1,6 +1,6 @@
 # Database schema
 
-Proposed PostgreSQL schema, PRD §§7.2,9.3–9.4. No migrations applied. Names are snake_case in SQL and camelCase over HTTP/socket. IDs are UUIDs serialized as strings; illustrative prefixed IDs in examples are aliases, not the production ID validator. All timestamps `timestamptz`; money `bigint` minor units; versions/sequences `bigint CHECK >=0`. FKs are required unless marked nullable. JSONB fields have Pydantic validation and bounded sizes.
+PostgreSQL reference schema and partial implementation, PRD §§7.2,9.3–9.4. Initial migrations have been applied to the local development database. Names are snake_case in SQL and camelCase over HTTP/socket. IDs are UUIDs serialized as strings; illustrative prefixed IDs in examples are aliases, not the production ID validator. All timestamps `timestamptz`; money `bigint` minor units; versions/sequences `bigint CHECK >=0`. FKs are required unless marked nullable. JSONB fields have Pydantic validation and bounded sizes.
 
 ## Entities
 
@@ -71,3 +71,13 @@ M001 users/sessions; M002 datasets/venues/tags/transit/weather; M003 trips/membe
 ## Relational/document comparison (PRD §3 learning outcome)
 
 PostgreSQL uses explicit join tables for membership, dietary tags, attendees and ballots; FK/unique/check constraints support budget/vote correctness. MongoDB alternative would use users/trips/items/venue_metadata/chat_messages/interactions collections, embed bounded preferences/hours, keep unbounded chats/events separate, and use unique membership/ballot indexes plus transactions for cross-document vote resolution. Both use version predicates. A trip document containing all chat/items risks unbounded growth and hot-document contention. Only PostgreSQL is selected and implemented later; the alternative mapping is conceptual, not a second required application.
+
+The initial identity revision is `backend/alembic/versions/0001_identity.py`; it has only been rendered to offline SQL, not applied. Its users and auth_sessions tables implement the first part of M001; all other entities remain planned. See [evidence](PHASE_1_EVIDENCE.md).
+
+The second revision adds initial dataset and venue tables plus JSONB transit/weather records. It is not yet applied or verified against PostgreSQL, and its JSONB transit/weather representation is an initial implementation detail that still needs reconciliation with the planned schema above. See [evidence](PHASE_1_EVIDENCE.md).
+
+The third migration adds initial trip, membership, invitation, itinerary and room-event tables. It has only been rendered to offline SQL and has not been applied. Further fields and DB-backed behavior remain unimplemented.
+
+Revisions 0001–0005 were applied to the local disposable database and the initial dataset imported on 2026-10-30. The trip schema and idempotency/refresh history are preliminary; remaining planned tables and invariants are not complete. See [evidence](PHASE_1_EVIDENCE.md).
+
+The initial implementation now has revisions through `0008_venue_search`, including a stable planning-session ID, preservation of legacy auth-session references for old board events, and a generated tsvector with a GIN index. The clean verification applied these revisions and imported the synthetic dataset. The remaining reference tables and fields above are still planned. See [evidence](PHASE_1_EVIDENCE.md).

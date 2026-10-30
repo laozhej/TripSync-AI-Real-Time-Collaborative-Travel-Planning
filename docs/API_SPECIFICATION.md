@@ -1,6 +1,6 @@
 # REST specification
 
-Proposed v1, PRD §7.3. All routes below are future contracts, not deployed APIs. Base `/api/v1`; JSON UTF-8, unknown fields rejected. Authentication derives actor from JWT `sub`; a body `userId` is rejected, never trusted. Membership/capabilities are read server-side. See [security](SECURITY.md) and [socket schemas](WEBSOCKET_PROTOCOL.md).
+API v1 design, PRD §7.3. Only the first-slice routes described in the implementation notes below exist; all others remain planned. Base `/api/v1`; JSON UTF-8, unknown fields rejected. Authentication derives actor from JWT `sub`; a body `userId` is rejected, never trusted. Membership/capabilities are read server-side. See [security](SECURITY.md) and [socket schemas](WEBSOCKET_PROTOCOL.md).
 
 ## Common rules
 
@@ -103,3 +103,13 @@ Content-Type: application/json
 ```
 
 The original request `userId` is intentionally removed. Missing structured slot/attendee/category information that cannot be safely inferred returns `status:needs_clarification` plus required fields; natural language cannot relax server constraints. `sourceEvents` carries canonical metadata citations, not room events. No six-minute walking claim without cited transit data. A successful reply broadcasts `trip.ai.suggestion` once; clients correlate question ID. A changed trip version before return triggers revalidation/retry once, then `status:stale_context` without suggestions.
+
+## Partial HTTP implementation — 2026-10-30
+
+Registration, login, refresh, logout, initial catalog browse, trip creation and invite redemption have preliminary implementations and database-backed tests. Other routes and WebSockets above remain planned. Creation currently issues a Planner invite and encrypts the idempotent response because it includes the one-time invite code; the key is derived from the locally configured JWT secret. Rotating that secret makes saved responses unreadable, and retention cleanup currently occurs on reuse of the same idempotency key. Room capacity/concurrency and the full role/security matrix still require verification. See [evidence](PHASE_1_EVIDENCE.md).
+
+`GET /trips/{tripId}` now returns a preliminary member-only trip detail and active member list. It has a database-backed check for access before and after joining. Error bodies and remaining documented fields have not yet been aligned to the full API contract.
+
+Preliminary WebSocket and HTTP pin endpoints now call the same actor service. The current HTTP pin payload additionally requires `commandId` and `correlationId` and supports even splits only; snapshot and error bodies do not yet satisfy the complete planned contract. See [evidence](PHASE_1_EVIDENCE.md).
+
+Leader invite creation and revocation now have preliminary implementations and tests, including capacity and permission rejection. The initial create-trip invite can be redeemed; the UI can create and revoke a later single-use Planner or Viewer invite. Invite creation does not yet implement the documented idempotency-key behavior or invite URL. See [evidence](PHASE_1_EVIDENCE.md).

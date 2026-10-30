@@ -1,6 +1,6 @@
 # Traceability matrix
 
-Design trace only; no application requirement is implemented or verified. Source [PRD](../Document/Project%20Document.docx); each requirement is defined in [requirements](PROJECT_REQUIREMENTS.md). Modules resolve to planned paths in [architecture](ARCHITECTURE.md); test IDs in [testing strategy](TESTING_STRATEGY.md); evidence IDs in [submission](DEMO_AND_SUBMISSION.md).
+Requirements trace with partial implementation and verification; current evidence and remaining gaps are documented below. Source [PRD](../Document/Project%20Document.docx); each requirement is defined in [requirements](PROJECT_REQUIREMENTS.md). Modules resolve to planned paths in [architecture](ARCHITECTURE.md); test IDs in [testing strategy](TESTING_STRATEGY.md); evidence IDs in [submission](DEMO_AND_SUBMISSION.md).
 
 | Requirement | PRD sections | Module | Tasks | Planned tests | Submission evidence |
 |---|---|---|---|---|---|
@@ -39,3 +39,16 @@ Design trace only; no application requirement is implemented or verified. Source
 | REQ-033 | §§4.3 | Track alternative | TASK-001 | EV-DOC | EV-DOC; pending |
 
 Documentation review must also check the role matrix, canonical money/citation fields, lifecycle transitions, timer semantics, volatile/committed acknowledgements and snapshot versions across all primary files. REQ-033 is conditional on a future Track B selection; selection/equivalence review is current evidence, not a claim that its harness exists.
+
+## Implementation status — 2026-10-30
+
+A preliminary FastAPI shell and two health failure tests now exist. They do not meet TASK-002 acceptance: clean installation, migrations, authenticated DB access, and complete health checks remain unverified. See [implementation evidence](PHASE_1_EVIDENCE.md). TASK-003 is partially started and TASK-004–007 remain unimplemented; the table above remains a design trace, not evidence of delivered features.
+
+
+2026-10-30 update: PostgreSQL migrations, the dataset import and a narrow HTTP authentication/create/join path have been exercised on a disposable local database. The broader phase, especially WebSockets, frontend and complete security acceptance, remains pending; see [evidence](PHASE_1_EVIDENCE.md).
+
+REQ-005/008/027 have an initial pin/snapshot implementation with two-browser and targeted database-backed evidence, but the complete snapshot, role matrix and recovery acceptance remain pending. See [phase 1 evidence](PHASE_1_EVIDENCE.md).
+
+REQ-004/026 now have preliminary Leader invitation issuance/revocation and capacity rejection evidence; TASK-005 remains unchecked because all acceptance and dependency checks have not been demonstrated. See [phase 1 evidence](PHASE_1_EVIDENCE.md).
+
+First-slice tests and their actual results are in [phase 1 evidence](PHASE_1_EVIDENCE.md). REQ-002–005, REQ-008, REQ-026, REQ-027 and REQ-029 have implemented first-slice coverage; rows that also span later tasks or submission evidence remain partial. No final epic or target achievement is implied.

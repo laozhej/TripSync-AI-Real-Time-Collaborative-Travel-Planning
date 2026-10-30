@@ -10,7 +10,7 @@
 
 | Phase | Focus | Tasks | Priority | Status |
 |---|---|---|---|---|
-| **Phase 1 (Week 1)** | Foundation & First Thin Slice | TASK-001 – TASK-007 | P0 | Pending |
+| **Phase 1 (Week 1)** | Foundation & First Thin Slice | TASK-001 – TASK-007 | P0 | Complete for first-slice acceptance; see [evidence](PHASE_1_EVIDENCE.md) |
 | **Phase 2 (Week 2)** | Board State Machine, Presence & AI Concierge | TASK-008 – TASK-013 | P0 / P1 | Pending |
 | **Phase 3 (Week 3)** | Exact Budgets, Contested Voting & Personalization | TASK-014 – TASK-020 | P0 / P1 | Pending |
 | **Phase 4 (Week 4)** | Hardening, Performance Benchmarking & Evidence | TASK-021 – TASK-025 | P0 | Pending |
@@ -20,49 +20,49 @@
 ## Phase 1: Foundation & First Vertical Slice (Week 1)
 > **Milestone Objective:** A working vertical slice: **Authentication → Create Trip Room → Second Participant Joins → Server-Authoritative Board Synchronization**.
 
-- [ ] **TASK-001: Baseline Decisions & Source Traceability**
+- [x] **TASK-001: Baseline Decisions & Source Traceability**
   - **Priority:** P0 | **Week:** W1 | **Depends on:** None
   - **Requirements:** REQ-001, REQ-033
   - **Planned Files:** `docs/DECISIONS.md`, `docs/PROJECT_REQUIREMENTS.md`, `docs/TRACEABILITY_MATRIX.md`
   - **Acceptance:** Finalize Track A Python stack baseline; verify and cross-link all PRD requirements (§§4, 8, 11, 14); ensure documentation precedes scaffolding.
   - **Verification:** `EV-DOC`
 
-- [ ] **TASK-002: Project Scaffolding & Environment Locks**
+- [x] **TASK-002: Project Scaffolding & Environment Locks**
   - **Priority:** P0 | **Week:** W1 | **Depends on:** TASK-001
   - **Requirements:** REQ-001, REQ-028, REQ-032
   - **Planned Files:** `backend/`, `frontend/`, `backend/alembic/`, `backend/requirements.lock`, `.env.example`, `.gitignore`
   - **Acceptance:** Initialize FastAPI backend layout with Uvicorn; scaffold React/Vite frontend; configure Alembic and apply migrations M001–M004; implement `/health/live` and `/health/ready` endpoints; ensure zero hardcoded secrets.
   - **Verification:** `OPS-01`, `EV-DOC`
 
-- [ ] **TASK-003: Authentication, Session Management & RBAC Policies**
+- [x] **TASK-003: Authentication, Session Management & RBAC Policies**
   - **Priority:** P0 | **Week:** W1 | **Depends on:** TASK-002
   - **Requirements:** REQ-002, REQ-003, REQ-029
   - **Planned Files:** `backend/app/auth/`, `backend/app/api/auth.py`, `frontend/src/auth/`
   - **Acceptance:** Argon2id password hashing; 15-minute access JWT and 7-day HttpOnly refresh token rotation (`POST /api/v1/auth/refresh`); HttpOnly cookie handshake for WebSockets (`/ws`); 4-role permission enforcement (Viewer, Planner, Leader, Admin) across both HTTP and sockets.
   - **Verification:** `AUTH-01`, `SEC-01`, `SEC-02`
 
-- [ ] **TASK-004: Authored Destination & Venue Catalog Ingestion**
+- [x] **TASK-004: Authored Destination & Venue Catalog Ingestion**
   - **Priority:** P0 | **Week:** W1 | **Depends on:** TASK-002, TASK-003
   - **Requirements:** REQ-011, REQ-025
   - **Planned Files:** `data/destinations/lisbon.json`, `backend/app/datasets/`
   - **Acceptance:** Author synthetic Lisbon dataset covering all constraint types (all 4 dietary tags, price tiers, hours with overnight offsets, transit edges, dated weather); implement schema validator and PostgreSQL `tsvector`/GIN full-text search index.
   - **Verification:** `DATA-01`, `DATA-02`
 
-- [ ] **TASK-005: Trip Creation, Invites & Membership Management**
+- [x] **TASK-005: Trip Creation, Invites & Membership Management**
   - **Priority:** P0 | **Week:** W1 | **Depends on:** TASK-003, TASK-004
   - **Requirements:** REQ-004, REQ-026
   - **Planned Files:** `backend/app/api/trips.py`, `frontend/src/trips/`
   - **Acceptance:** Trip creation assigns creator as Leader; cryptographically secure invite tokens with expiration and max-uses; second authenticated user redeems invite and joins room; enforce room capacity limits (2–50).
   - **Verification:** `ROOM-01`
 
-- [ ] **TASK-006: Server-Authoritative Room Actor & Atomic Snapshot Slice**
+- [x] **TASK-006: Server-Authoritative Room Actor & Atomic Snapshot Slice**
   - **Priority:** P0 | **Week:** W1 | **Depends on:** TASK-005
   - **Requirements:** REQ-005, REQ-008, REQ-027
   - **Planned Files:** `backend/app/rooms/`, `backend/app/realtime/`, `frontend/src/board/`
   - **Acceptance:** In-memory per-room actor manages command sequencing; native WebSocket connection delivers full snapshot within 2 s; two concurrent sessions observe server-accepted pins; server is sole state authority.
   - **Verification:** `BOARD-01`, `SYNC-01`
 
-- [ ] **TASK-007: Record First Slice Tests & Setup Evidence**
+- [x] **TASK-007: Record First Slice Tests & Setup Evidence**
   - **Priority:** P0 | **Week:** W1 | **Depends on:** TASK-006
   - **Requirements:** REQ-031, REQ-032
   - **Planned Files:** `backend/tests/integration/`, `README.md`

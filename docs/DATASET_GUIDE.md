@@ -1,6 +1,6 @@
 # Authored destination datasets
 
-Proposed schema `schemaVersion:1`, PRD §§4.1,6.2–6.3,14.1. No actual seed dataset is claimed as delivered by this documentation task. Future seed is `data/destinations/lisbon.json`; examples below are synthetic design fixtures. One destination must cover every hard-filter type; more destinations are optional.
+Proposed schema `schemaVersion:1`, PRD §§4.1,6.2–6.3,14.1. The initial synthetic seed is `data/destinations/lisbon.json`; examples below describe the intended schema and later ingestion features. One destination must cover every hard-filter type; more destinations are optional.
 
 ## Format and validation
 
@@ -41,3 +41,9 @@ Transit requires valid endpoints, positive duration, mode and validity interval.
 - Valid schema and invalid upload fixtures: zero/negative/malformed prices, unknown diet, lat 90.1/lng -180.1, invalid hours, duplicate IDs, dangling references, unsafe YAML, oversized payload and prompt-injection description.
 
 Recommendation: ~12 venue/lodging options, 4 transit edges, 3 weather dates. Counts are adjustable; required coverage is not. Track B would additionally require automated location generation of coordinates/hours/prices with reproducible seed (§4.3); Track A can use a small authored dataset plus property-based boundary fixtures. DATA-01 validates valid/import/activation; DATA-02 invalid/boundary fixtures; DATA-03 version pinning/rollback/index readiness. No tests have run.
+
+## Initial implementation — 2026-10-30
+
+A small synthetic Lisbon fixture and a partial JSON validator/importer now exist. The importer accepts an initial destination version only; database execution and active-trip pinning have not been verified. The current schema rejects date-specific exceptions instead of implementing them. See [implementation evidence](PHASE_1_EVIDENCE.md); the full staging, activation, and validation requirements above remain pending.
+
+The imported initial version now includes a generated venue tsvector and GIN index. The synthetic fixture covers the first-slice categories and boundary examples; date-specific hours exceptions, staged updates and Admin upload remain future work. See [evidence](PHASE_1_EVIDENCE.md).
