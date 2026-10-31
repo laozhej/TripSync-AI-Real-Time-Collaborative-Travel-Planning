@@ -45,3 +45,7 @@ Every task has a requirement link, acceptance check and test ID. Implement domai
 ## Week 1 implementation status — 2026-10-30
 
 TASK-001–007 first-slice acceptance is complete with the clean-database, integration and two-browser checks recorded in [evidence](PHASE_1_EVIDENCE.md). The current pin/snapshot slice does not implement the Week 2 lifecycle, presence/chat or Concierge, or later-phase functionality. The single join-to-snapshot timing is a local observation only, not a load-test result.
+
+## Week 2 checkpoint status — 2026-10-31
+
+TASK-008–013 meet the Week 2 checkpoint in PRD §11.1: live pin/move/lock, CAS conflicts, presence/moderation/reconnect, chat, tested hard matching and a real grounded constrained answer with citations. See PHASE_2_EVIDENCE.md for actual commands/results and boundary details. Pure Voting lifecycle rules are available for Week 3; contested elections, exact weighted budgets, conflict orchestration, recommendations/dashboard, analytics and Admin upload remain TASK-014–020. No final target attainment is implied.

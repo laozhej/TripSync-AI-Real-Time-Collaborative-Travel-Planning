@@ -1,10 +1,10 @@
 # TripSync AI requirements
 
-Status: proposed design; no application implemented. Source: [original PRD](../Document/Project%20Document.docx), v1.0, September 2026. Section references below refer to that document. The user's documentation-first request takes precedence over PRD §13.2's immediate scaffolding guidance. TripSync AI is an independent educational prototype with no Airbnb affiliation or integration.
+Status: requirements baseline with partial application implementation; actual coverage is recorded in TRACEABILITY_MATRIX.md and PHASE_1_EVIDENCE.md. Source: [original PRD](../Document/Project%20Document.docx), v1.0, September 2026. Section references below refer to that document. The user's documentation-first request takes precedence over PRD §13.2's immediate scaffolding guidance. TripSync AI is an independent educational prototype with no Airbnb affiliation or integration.
 
 ## Interpretation
 
-**Required** means explicit PRD behavior or an explicit instruction in the documentation request. **Selected** means a design choice made for this plan. **Provisional** means a safe working rule needing review, not a claim about the PRD. All implementation and evidence remain pending. [Decisions](DECISIONS.md) owns ambiguities; [traceability](TRACEABILITY_MATRIX.md) connects requirements to work and evidence.
+**Required** means explicit PRD behavior or an explicit instruction in the documentation request. **Selected** means a design choice made for this plan. **Provisional** means a safe working rule needing review, not a claim about the PRD. Requirement completion depends on recorded acceptance evidence; the baseline does not imply that every requirement is implemented. [Decisions](DECISIONS.md) owns ambiguities; [traceability](TRACEABILITY_MATRIX.md) connects requirements to work and evidence.
 
 ## Requirement register
 

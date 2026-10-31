@@ -8,7 +8,7 @@ Requirements trace with partial implementation and verification; current evidenc
 | REQ-002 | §§10.1 | Auth | TASK-003 | AUTH-01; SEC-01; SEC-02 | EV-SEC; pending |
 | REQ-003 | §§3,10.1 | Auth/policy | TASK-003, TASK-021 | AUTH-01; SEC-01; SEC-02; SEC-01..06; E2E-01 | EV-SEC; pending |
 | REQ-004 | §§5.1,6.1 | Rooms | TASK-005 | ROOM-01 | EV-BOARD; pending |
-| REQ-005 | §§2,6.1 | Board | TASK-006, TASK-008 | BOARD-01; SYNC-01; BOARD-01; BOARD-02 | EV-BOARD; pending |
+| REQ-005 | §§2,6.1 | Board | TASK-006, TASK-008, TASK-016 | BOARD-01; SYNC-01; BOARD-02; VOTE-04 | EV-BOARD; Phase 2 item rules verified; live election integration pending TASK-016 |
 | REQ-006 | §§6.1,7.2,9.4 | Board/CAS | TASK-008 | BOARD-01; BOARD-02 | EV-BOARD; pending |
 | REQ-007 | §§6.1 | Chat | TASK-010 | CHAT-01 | EV-BOARD; pending |
 | REQ-008 | §§6.1,10.3 | Gateway/snapshot | TASK-006, TASK-009 | BOARD-01; SYNC-01; SYNC-01; ROOM-01; SEC-02 | EV-BOARD; pending |
@@ -52,3 +52,19 @@ REQ-005/008/027 have an initial pin/snapshot implementation with two-browser and
 REQ-004/026 now have preliminary Leader invitation issuance/revocation and capacity rejection evidence; TASK-005 remains unchecked because all acceptance and dependency checks have not been demonstrated. See [phase 1 evidence](PHASE_1_EVIDENCE.md).
 
 First-slice tests and their actual results are in [phase 1 evidence](PHASE_1_EVIDENCE.md). REQ-002–005, REQ-008, REQ-026, REQ-027 and REQ-029 have implemented first-slice coverage; rows that also span later tasks or submission evidence remain partial. No final epic or target achievement is implied.
+
+2026-10-31: REQ-005 and REQ-006 have an isolated board-rule implementation with unit tests. It is not wired to the live application or persistence and does not meet TASK-008 acceptance; see [evidence](PHASE_1_EVIDENCE.md).
+
+2026-10-31: REQ-005/006 now have live socket move/remove and Leader lock/unlock paths, version checks and database-backed tests; a complete grid, full lifecycle and acceptance remain pending. See [evidence](PHASE_1_EVIDENCE.md).
+
+2026-10-31: REQ-007 has durable chat, history, typing and reaction implementation with database and two-browser evidence; TASK-010 remains open pending the additional security and failure coverage listed in [evidence](PHASE_1_EVIDENCE.md).
+
+2026-10-31: REQ-012–016 now have a standalone deterministic matcher with 25 boundary/ranking tests. Authorized trip-context resolution, HTTP/client integration and full TASK-012 acceptance remain pending; see [Concierge implementation note](AI_TRAVEL_CONCIERGE.md).
+
+The [2026-10-31 PRD alignment review](PRD_ALIGNMENT_REVIEW.md) distinguishes original requirements, explicit user overrides, implementation choices and unfinished coverage. REQ-017/021 require grounded model integration and safe failure handling; they do not require Ollama. Existing task completion states remain unchanged.
+
+2026-10-31: REQ-008/010 now have distinct-user socket presence, Leader connectivity snapshots and targeted database/browser evidence. Full disconnect/moderation/recovery acceptance remains pending; see [evidence](PHASE_1_EVIDENCE.md).
+
+## Phase 2 checkpoint acceptance — 2026-10-31
+
+[Phase 2 evidence](PHASE_2_EVIDENCE.md) records accepted TASK-008–013: CAS/day grid/lifecycle rules (REQ-005/006), presence/moderation/refresh (REQ-008–010), durable chat (REQ-007), recovery/logging (REQ-027/028), authorized filtering/ranking (REQ-012–016), actual local generation/citations and safe fallback (REQ-017/021). Final submission evidence in the original table remains pending where it spans later tasks. REQ-005 explicitly also traces TASK-016 for live Voting orchestration; tested item state projections do not claim working elections. REQ-019/020/022–025 and later logistics, security/performance/demo requirements remain in final scope.

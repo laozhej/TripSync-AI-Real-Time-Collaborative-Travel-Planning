@@ -1,6 +1,6 @@
 # Testing and measurement strategy
 
-Planned evidence only, PRD §§6,10–15. No application tests or benchmarks have been executed. Tests start with each feature; Week 4 consolidates evidence. Use Pytest + asyncio fixtures, HTTPX and scripted native-WebSocket clients against real isolated PostgreSQL; React unit tests plus browser end-to-end two-session checks. SQLite cannot establish PostgreSQL CAS/transaction behavior.
+Test catalog and measurement plan, PRD §§6,10–15. Phase 1/2 tests have run; actual commands and results are in PHASE_1_EVIDENCE.md and PHASE_2_EVIDENCE.md. Later-phase tests and performance benchmarks remain pending. Tests start with each feature; Week 4 consolidates evidence. Use Pytest + asyncio fixtures, HTTPX and scripted native-WebSocket clients against real isolated PostgreSQL; React unit tests plus browser end-to-end two-session checks. SQLite cannot establish PostgreSQL CAS/transaction behavior.
 
 ## Test catalog
 

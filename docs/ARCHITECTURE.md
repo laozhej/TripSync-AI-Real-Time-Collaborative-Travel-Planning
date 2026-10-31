@@ -4,7 +4,7 @@ Track A design and partial implementation; PRD §§7.1,9.3–9.4,10. The impleme
 
 ## Components
 
-One FastAPI process with one Uvicorn worker owns API routes and native WebSocket connections. Room actors are keyed by trip ID, so no single-room assumption exists. PostgreSQL is the durable store; disk holds imported files, local assets, backups and versioned recommendation artifacts. Ollama is an external local inference runtime, called over HTTP by the application; it is not an implemented Concierge service or a second application backend. All matching, retrieval, prompt construction and validation live in Python modules.
+One FastAPI process with one Uvicorn worker owns API routes and native WebSocket connections. Room actors are keyed by trip ID, so no single-room assumption exists. PostgreSQL is the durable store; disk holds imported files, local assets, backups and versioned recommendation artifacts. A hosted API or local open-source model may supply inference, as permitted by PRD §8.1. The user selected local open-source inference; the current adapter calls Qwen2.5 1.5B through loopback Ollama HTTP. It does not create a second application backend. All matching, retrieval, prompt construction and validation live in Python modules.
 
 ```mermaid
 flowchart LR
@@ -18,7 +18,7 @@ flowchart LR
   ROOM --> VOTE[Voting and exact budget engine]
   ROOM --> CHECK[Conflict detection]
   API --> AI[Constraint matcher + retrieval + RAG validation]
-  AI --> MODEL[Local Ollama HTTP runtime]
+  AI --> MODEL[Local Qwen2.5 inference via Ollama HTTP]
   API --> REC[Content + collaborative recommendations]
   API --> INGEST[Dataset validation and indexing]
   ROOM --> FLUSH[Batch persistence and durable transitions]
@@ -85,7 +85,7 @@ On startup hydrate snapshots/rows and persisted active votes before readiness; r
 
 Managed lifespan tasks own flush scheduling, vote deadlines, presence expiry and conflict evaluation. Avoid untracked request background tasks for critical recovery work. Overlap/budget checks run after each accepted change; bounded per-room queue plus version checks discard obsolete results. Small pure checks run inline; costly model I/O uses an async HTTP client; CPU-bound training/index rebuild uses an executor and atomic artifact swap. Never share an AsyncSession across concurrent tasks.
 
-One private host serves bundled React assets, API and gateway; PostgreSQL and Ollama bind loopback/private network. Use TLS/WSS when testing across machines. Gateway health measures actor loop freshness and queue status; readiness additionally checks DB/schema. Metrics: command queue depth, rejected stale versions, mutation latency, flush lag, socket lag/disconnects, model latency/fallback and constraint violations. Correlation IDs appear in safe structured logs. Capacity is configurable up to the 50-planner design target; actual performance remains unmeasured (§§10.2,14.1).
+One private host serves bundled React assets, API and gateway; PostgreSQL binds loopback/private network. A local model, if selected, also binds privately; a hosted provider uses its authenticated API. Use TLS/WSS when testing across machines. Gateway health measures actor loop freshness and queue status; readiness additionally checks DB/schema. Metrics: command queue depth, rejected stale versions, mutation latency, flush lag, socket lag/disconnects, model latency/fallback and constraint violations. Correlation IDs appear in safe structured logs. Capacity is configurable up to the 50-planner design target; actual performance remains unmeasured (§§10.2,14.1).
 
 ## Implementation status — 2026-10-30
 
@@ -94,3 +94,11 @@ The first slice uses a single pooled async engine, room actors, native WebSocket
 The first-slice room actor is wired to membership authorization, batched persistence and WebSocket snapshots; later lifecycle and recovery drills remain pending. See [evidence](PHASE_1_EVIDENCE.md).
 
 The first pin/snapshot actor now maintains in-memory authoritative items and batches pending pins to PostgreSQL, with volatile applied acknowledgements, committed watermark, freeze on batch failure and a new epoch on reload. Membership joining and Leader invite changes persist pending pins and the significant change in the same transaction under the room actor lock; full recovery drills and later-feature snapshot state remain outstanding. See [evidence](PHASE_1_EVIDENCE.md).
+
+## Phase 2 implementation boundaries — 2026-10-31
+
+Implemented code uses `app/realtime/rooms.py` for aggregate ownership, batching/unit-of-work and snapshots; `app/rooms/moderation.py` for durable moderation; `app/board/lifecycle.py` for pure item/vote lifecycle rules; and `app/concierge/{constraints,preferences,rag,service}.py` for authorized rule resolution, retrieval and generation. API transport lives in `app/api/concierge.py` and the native gateway; both invoke the same domain services. Planned persistence/voting package paths in the table are not claimed as existing services.
+
+One pooled SQLAlchemy async engine supplies a separate connection/transaction to each concurrent operation. The current implementation uses SQLAlchemy Core AsyncConnection rather than sharing ORM AsyncSessions. Two bounded model calls per worker are permitted; when occupied, another eligible request uses a labeled grounded fallback. Model I/O runs outside the room lock. Context is captured under the room lock and revalidated before a durable answer is saved. In-flight identical questions share a ref-counted per-room lock; completed locks are removed. No user token, model free text or question is emitted to operational logs.
+
+JSON logs whitelist event, trip/session IDs, roomEpoch, roomSeq, committedSeq, correlationId and UTC timestamp. Failed/uncertain commits freeze the room. Crash recovery reloads committed relational state and changes roomEpoch. The test-only recovery factory/file gate is not part of the production entry point. See [Phase 2 evidence](PHASE_2_EVIDENCE.md) for real process-kill, PostgreSQL-outage and lost-ack tests. Full backup restore, overdue elections and performance distributions remain later checks.

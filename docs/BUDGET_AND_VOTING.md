@@ -47,3 +47,13 @@ System opening is required (§6.2): on identical-slot contested candidates, auto
 ## Planned checks
 
 BUD-01 manual even/weighted fixtures, zero/large totals and permutations; BUD-02 property sum/allocation/nonnegative checks and exact running totals; BUD-03 category versus group/personal ceiling and vote reservation. VOTE-01 eligibility and duplicate tabs; VOTE-02 boundary/changes/abstention/ties/no turnout; VOTE-03 crash and duplicate timer; VOTE-04 all clients apply identical winner/budget and permission-denied edits leave state untouched. Correctness target 100% agreement, results pending.
+
+## Phase 2 implementation note — 2026-10-31
+
+A standalone, tested board lifecycle rule module exists for move/remove/lock/unlock permissions and stale-version rejection. It is not connected to the room actor, API, database, or browser, and does not yet implement vote transitions or durable operations. The behavior above remains provisional and TASK-008 is not complete. See [test evidence](PHASE_1_EVIDENCE.md).
+
+The live room now invokes the provisional move/remove/lock/unlock rules; a successful lock or unlock commits before broadcast. Voting transitions remain unimplemented and the full lifecycle acceptance remains open. See [evidence](PHASE_1_EVIDENCE.md).
+
+## Phase 2 lifecycle acceptance — 2026-10-31
+
+The live board implements Drafting pin/move/remove and durable Leader lock/unlock; `begin_voting` and `resolve_voting` implement the internal versioned lifecycle projections, validate common slots/attendees, freeze Voting edits, and distinguish cancellation from archived losers. They are not public commands and do not create elections on their own. TASK-016 must call and persist these primitives with eligible voters, deadlines, ballots, winner/conflict/budget application. No timed vote workflow is claimed in Phase 2. The exact-budget rules and all Phase 3 requirements above remain mandatory.

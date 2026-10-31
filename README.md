@@ -2,9 +2,9 @@
 
 Independent educational prototype, broader project title “Airbnb Real-Time AI Trip Planning & Collaboration Platform.” No Airbnb affiliation, account access or integration is implied. Source: [PRD](Document/Project%20Document.docx), v1.0 September 2026, especially §§4,8–15.
 
-**Current status: phase 1 first-slice acceptance is complete.** Authentication, an authored catalog, trip creation and joining, and a basic synchronized pin board are implemented. Later-phase features and final hardening remain unfinished. A single local join-to-snapshot sample was recorded; broader performance targets are unmeasured. See [implementation evidence](docs/PHASE_1_EVIDENCE.md).
+**Current status: Phase 2 acceptance is implemented and verified.** The day/time board, CAS edits, presence/moderation, chat/reactions, crash recovery and grounded local Concierge are working. See [Phase 2 evidence](docs/PHASE_2_EVIDENCE.md) for actual tests, model versions and limits. Phase 3 voting orchestration, exact weighted budgets, conflicts, recommendations/dashboard, analytics and Admin upload remain required; final performance/submission acceptance is pending.
 
-**Selected track: Track A (full-stack). Selected stack: Python — FastAPI native WebSockets, PostgreSQL, SQLAlchemy async/asyncpg, Pytest; React JavaScript client.** Exactly one application backend; Concierge/recommendations are local Python modules. A local Ollama runtime supplies model inference through HTTP, not a second application backend. Alternatives and trade-offs are in [decisions](docs/DECISIONS.md).
+**Selected track: Track A (full-stack). Selected stack: Python — FastAPI native WebSockets, PostgreSQL, SQLAlchemy async/asyncpg, Pytest; React JavaScript client.** Exactly one application backend; Concierge/recommendations are local Python modules. The PRD permits hosted or local inference. The user selected local open-source inference: Qwen2.5 1.5B through a portable Ollama runtime; this is an implementation choice, not a PRD mandate. Concierge business logic belongs to the single Python application backend. Alternatives and trade-offs are in [decisions](docs/DECISIONS.md).
 
 ## Intended scope
 
@@ -17,7 +17,7 @@ Private/local use by one operator, one engineer, four-week baseline. No booking,
 1. Read [requirements](docs/PROJECT_REQUIREMENTS.md) and [provisional decisions](docs/DECISIONS.md).
 2. Follow the [four-week plan](docs/IMPLEMENTATION_PLAN.md) and [25-task backlog](docs/TASKS.md).
 3. First implementation slice: **authentication → create Trip Room → second participant joins → basic server-authoritative board synchronization**. Prerequisites: stack setup/locks, identity/membership/item migrations, one destination and shared socket/HTTP policy.
-4. Setup/run/test commands are [documented provisionally](docs/ENVIRONMENT_SETUP.md); only the implemented subset has been exercised. Planned tools: Python 3.13, Node/Vite/React, PostgreSQL 18 and local Ollama. Exact package locks require installation verification.
+4. Follow the [setup/run/test commands](docs/ENVIRONMENT_SETUP.md), including local-model startup and migrations through `0010_concierge`. Actual exercised versions/results are in [Phase 2 evidence](docs/PHASE_2_EVIDENCE.md); full final clean-reader/submission acceptance remains TASK-024.
 5. During implementation use Pytest/HTTP/socket/browser tests from feature creation, then collect actual evidence using the [demo/submission path](docs/DEMO_AND_SUBMISSION.md). See the recorded checks and limitations in the implementation evidence.
 
 Weeks: 1 foundation + thin slice; 2 board and Concierge; 3 voting/personalization/analytics/Admin; 4 hardening/measurements/demo. High risks are Week 3 breadth, local model P95 <3 s, synchronization timing, batched durability and synthetic recommendation evaluation. Reduce dataset/model complexity before correctness, security, tests or documentation. See the decision log for voting eligibility/ties, room locking, Leader absence, money/time defaults and crash-loss limits needing review.
@@ -40,7 +40,8 @@ Weeks: 1 foundation + thin slice; 2 board and Concierge; 3 voting/personalizatio
 | [Security](docs/SECURITY.md) | JWT/refresh, HTTP/socket RBAC, inputs/secrets/logs |
 | [Environment](docs/ENVIRONMENT_SETUP.md) | Official references, prerequisites, provisional commands |
 | [Deployment/operations](docs/DEPLOYMENT_AND_OPERATIONS.md) | Local topology, health, backup/recovery |
-| [Tasks](docs/TASKS.md) | Ordered, dependent, unchecked solo backlog |
+| [Tasks](docs/TASKS.md) | Ordered solo backlog with evidence-backed completion |
+| [Phase 2 evidence](docs/PHASE_2_EVIDENCE.md) | Implemented Week 2 checkpoint, checks and limitations |
 | [Decisions](docs/DECISIONS.md) | Chosen stack, provisional defaults, contradictions |
 | [Traceability](docs/TRACEABILITY_MATRIX.md) | Requirements ↔ sections/modules/tasks/tests/evidence |
 | [Demo/submission](docs/DEMO_AND_SUBMISSION.md) | Scenario, evidence templates, rubric/retrospective |

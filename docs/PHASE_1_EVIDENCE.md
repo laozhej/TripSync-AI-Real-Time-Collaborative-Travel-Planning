@@ -61,3 +61,40 @@ The first-slice backlog criteria for TASK-001–007 were checked against their i
 Failures encountered and corrected included an incorrect shell working directory, missing Windows timezone data, the missing Uvicorn WebSocket dependency, an incorrect logout status, a socket-close race, and a second attempt to start servers on occupied ports. A targeted source-pattern scan returned only known test fixture files; it is not a full history secret audit. The user's exposed local credentials were rotated and `.env` is Git-ignored. No secret values are recorded here.
 
 Phase 1 completion applies to the documented first slice. Later features remain required: full board lifecycle and CAS, presence/moderation, chat, complete snapshots for those features, constraint matching and real-model RAG, voting, weighted budgets, recommendations, analytics, Admin upload, recovery drills and full performance/security evidence. Browser automatic HTTP refresh is implemented but its real expiry/failure path has not been separately exercised; refresh-token rotation and reuse are covered by database integration tests. Earlier entries in this log describe the state when they were written.
+
+## Phase 2 domain work — 2026-10-31
+
+The pure `backend/app/board/lifecycle.py` module implements provisional move/remove/lock/unlock eligibility and stale-version rejection over an item supplied by its caller. It is not wired into the live room, transport, database, or client. It does not implement vote transitions, date-in-trip validation, concurrent persistence, or durable finalization; callers must provide those protections. TASK-008 and all Phase 2 acceptance remain open.
+
+With `PYTHONPATH=backend`, `.\.venv\Scripts\python.exe -m pytest backend/tests/test_board_lifecycle.py -q` reported 8 passed. `.\.venv\Scripts\python.exe -m pytest backend/tests -q` reported 30 passed and 4 skipped, with a Starlette deprecation warning and a pytest-asyncio configuration warning. The skipped database tests were not run with `TEST_DATABASE_URL`. These tests do not establish concurrent live-room behavior, database recovery, browser integration, or Phase 2 completion.
+
+## Phase 2 board integration — 2026-10-31
+
+The live room accepts version-checked moves and removals, and durable Leader lock/unlock commands. The React client applies the resulting updates and exposes basic controls. The client still lacks the full day/time grid and full phase acceptance. Voting, presence/moderation, chat and Concierge are not implemented by this work. The provisional policy remains subject to review.
+
+`.\.venv\Scripts\python.exe backend\tests\clean_setup.py` created and removed a disposable PostgreSQL database, applied migrations and imported the sample dataset; the final run reported `34 passed, 1 warning`. The integration suite exercised a move, stale version rejection, recovery of the moved item, removal and durable lock/unlock. `npm run build --prefix frontend` succeeded. The new controls have not been verified in a real browser during this run. No concurrency performance or real-model results are claimed.
+
+A two-session Chrome smoke test (`.\.venv\Scripts\python.exe backend\tests\browser_phase1.py` with the local API and Vite servers) subsequently exercised create/join, pin, move, Leader lock/unlock, synchronization, reconnect and invitation controls successfully. The observed join-to-snapshot time was 142.2 ms for that single local run; it is not a performance benchmark. The test processes were stopped afterward.
+
+## Chat implementation evidence — 2026-10-31
+
+The application now implements durable user chat, bounded history pagination, typing expiry and emoji reactions. `.\.venv\Scripts\python.exe backend\tests\clean_setup.py` applied all migrations through `0009_chat` and imported the synthetic dataset in a disposable PostgreSQL database; the last run reported `34 passed, 1 warning`. It exercised typing expiry, muted chat/typing rejection, duplicate message/reaction command IDs, reaction removal/restoration, HTTP posting and history, and message/reaction recovery after the room manager restarted. The first test run for each new path failed before its implementation, as expected.
+
+`.\.venv\Scripts\python.exe backend\tests\browser_clean_setup.py` created a different disposable database and ran two isolated Chrome sessions; create/join, board actions, a typing indicator, chat text, a reaction, reconnect and invitation controls passed. The last single local join-to-snapshot observation was 167.7 ms; this is not a benchmark. One earlier browser attempt failed because it expected the new participant's name in a stale member snapshot; the UI currently falls back to “Traveler” until presence is implemented. Servers and disposable databases were removed after the tests. Full four-role and cross-trip chat isolation, complete pagination boundary coverage, and injected database failure paths are not yet demonstrated; TASK-010 remains open.
+
+## Constraint matcher evidence — 2026-10-31
+
+`PYTHONPATH=backend; .\.venv\Scripts\python.exe -m pytest backend/tests/test_constraints.py -q` reported 25 passed. `.\.venv\Scripts\python.exe backend\tests\clean_setup.py` subsequently reported 59 passed, 1 warning, after migration/import in a disposable PostgreSQL database; that database was removed. The matcher is not yet connected to the API/client. Ollama was absent from PATH and its local tags endpoint was unreachable; no live model result is claimed. Phase 2 remains incomplete.
+
+## Presence implementation evidence — 2026-10-31
+
+The live room now emits distinct-user presence and Leader connectivity; the browser shows refreshed member summaries, online state and round-trip measurement. The final clean-database backend run reported 59 passed, 1 warning, including a second Planner tab not inflating participant counts, the disconnected Leader snapshot and ping/pong echo. An earlier multi-tab run hung on cancelled disconnect cleanup; its pytest process was stopped and its wrapper removed the disposable database. Shielded cleanup fixed that case in the subsequent passing run. A later action-label refinement uses updated for additional tabs; that refinement was not separately tested.
+
+The frontend build succeeded. The disposable two-browser test passed with presence enabled (single join-to-snapshot observation 130.5 ms); it preceded the cancellation fix and action-label refinement. These observations do not establish load targets. Moderation, transfer, full recovery and Concierge integration remain open; Phase 2 is incomplete.
+
+The final action-label refinement was subsequently verified by another clean-database run: 59 passed, 1 warning (23.97 s). The disposable database was removed.
+
+
+## Current Phase 2 evidence
+
+Earlier Phase 2 entries in this chronological log describe intermediate states. Current Week 2 acceptance, actual local-model evidence, browser/recovery runs and remaining project scope are recorded in [PHASE_2_EVIDENCE.md](PHASE_2_EVIDENCE.md).

@@ -39,3 +39,9 @@ First-slice tests now cover Viewer pin rejection via both transports and immedia
 The 2026-10-30 role tests also cover expired credentials and an Admin without trip membership on HTTP/socket, plus invite-management denial for Planner and outsider accounts. The complete role matrix, concurrent redemption and removed-membership cases remain pending.
 
 The first-slice role and session checks are documented in [phase 1 evidence](PHASE_1_EVIDENCE.md). They do not replace the later complete security assessment. Socket token/membership validity is polled at up to five-second intervals while idle; explicit logout and detected refresh reuse close tracked sockets. Full moderation, input and prompt-injection tests remain later work.
+
+## Phase 2 security checks — 2026-10-31
+
+The shared room services re-read current membership/session and role on sensitive changes. Admin does not bypass trip membership or Leader permissions. Removal closes every tracked membership tab and rejects both new and cached invite redemption. Tests cover Planner/Viewer/Admin rejection, foreign-trip message/source/attendee/anchor IDs, mute enforcement, stale settings, atomic transfer, revoked sessions, invalid text and context removal during generation. Browser token refresh is exercised with a test-only short first token and refresh failure returns to sign-in. Operational logs use a field whitelist; local inference receives only bounded eligible source context, never credentials or full chat history. Model IDs/reason fields and source versions are validated independently of schema generation, with React text rendering and no arbitrary source URLs.
+
+These are actual Phase 2 checks, not the final SEC-01..06 audit. Full later-feature upload/recommendation/voting security and global limits remain TASK-021 and related features. See [evidence](PHASE_2_EVIDENCE.md).

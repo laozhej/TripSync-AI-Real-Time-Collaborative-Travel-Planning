@@ -1,6 +1,6 @@
 # Environment setup
 
-TripSync AI is an independent, local educational prototype. The implemented first slice uses Python 3.13, FastAPI native WebSockets, PostgreSQL, SQLAlchemy/asyncpg and a React JavaScript client. Run **one Uvicorn worker**: room authority is process-local. The remaining phase 1 acceptance gaps are recorded in [implementation evidence](PHASE_1_EVIDENCE.md); later features described in other documents remain planned.
+TripSync AI is an independent, local educational prototype. The implemented first slice uses Python 3.13, FastAPI native WebSockets, PostgreSQL, SQLAlchemy/asyncpg and a React JavaScript client. Run **one Uvicorn worker**: room authority is process-local. Phase 1/2 acceptance and limits are recorded in [Phase 2 evidence](PHASE_2_EVIDENCE.md); Phase 3/4 features and final submission checks remain planned.
 
 ## Prerequisites
 
@@ -54,4 +54,47 @@ $env:PYTHONPATH=(Join-Path (Get-Location) 'backend')
 
 Database integration tests are skipped unless `TEST_DATABASE_URL` is set to a disposable, migrated database containing the sample dataset. For a clean database verification, `python backend\tests\clean_setup.py` uses `.env` to create a randomly named temporary database, applies migrations, imports the sample and runs the backend suite, then drops that database. It requires CREATEDB permission and never drops the configured database. Browser verification is the opt-in `backend\tests\browser_phase1.py` against running local API/Vite servers; the current script uses Windows Chrome. See [evidence](PHASE_1_EVIDENCE.md) for exact outcomes and warnings.
 
-Secrets belong only in environment variables or the ignored `.env`. `COOKIE_SECURE=false` is for local loopback HTTP; use HTTPS/WSS and secure cookies for private network testing. The JWT key also encrypts retained idempotent results: rotation invalidates access tokens and makes old encrypted responses unreadable. No public hosting is configured. Ollama, Concierge, recommendations, voting and later features are not implemented.
+Secrets belong only in environment variables or the ignored `.env`. `COOKIE_SECURE=false` is for local loopback HTTP; use HTTPS/WSS and secure cookies for private network testing. The JWT key also encrypts retained idempotent results: rotation invalidates access tokens and makes old encrypted responses unreadable. No public hosting is configured. The local Concierge and Phase 2 collaboration features are implemented; timed voting orchestration, recommendations and other later features remain planned.
+
+Chat uses Alembic revision `0009_chat`; apply `upgrade head` when updating an existing local database. For an isolated browser smoke run, `\.venv\Scripts\python.exe backend\tests\browser_clean_setup.py` creates and drops a disposable database and starts temporary local servers; it requires PostgreSQL CREATEDB permission, available ports 8000/5173, Node and Windows Chrome. It does not migrate the configured database. See [evidence](PHASE_1_EVIDENCE.md) for actual results and limitations.
+
+## Phase 2 local model and run path
+
+The user selected local open-source inference. This checkout uses Qwen2.5 1.5B through a portable Ollama runtime on loopback. Ollama is the selected implementation, not a requirement named by the PRD. Runtime/weights/logs are ignored under `.local/`. The runtime and model are already present on the implementation machine; `.\scripts\start-local-model.ps1` starts or preloads them without changing the system PATH.
+
+For another Windows checkout, install the official portable runtime and model first. The verified runtime artifact was [Ollama v0.40.13](https://github.com/ollama/ollama/releases/tag/v0.40.13):
+
+```powershell
+New-Item -ItemType Directory -Force .local/ollama | Out-Null
+curl.exe --location --fail --output .local/ollama-windows-amd64.zip https://github.com/ollama/ollama/releases/download/v0.40.13/ollama-windows-amd64.zip
+$expectedHash='7AFA38624FA62EE5D8293422D0AB084C1BB4603134C7F4DAFCE11A033B57CC19'
+if ((Get-FileHash .local/ollama-windows-amd64.zip -Algorithm SHA256).Hash -ne $expectedHash) { throw 'Runtime checksum mismatch' }
+Expand-Archive -LiteralPath .local/ollama-windows-amd64.zip -DestinationPath .local/ollama -Force
+.\scripts\start-local-model.ps1 -PullModel
+```
+
+The archive hash was checked before executing it. Additional runtime and model disk space is required; actual versions, model digest and hardware are in [Phase 2 evidence](PHASE_2_EVIDENCE.md). For subsequent runs:
+
+```powershell
+.\scripts\start-local-model.ps1
+$env:PYTHONPATH=(Join-Path (Get-Location) 'backend')
+.\.venv\Scripts\python.exe -m alembic -c backend\alembic.ini upgrade head
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000 --workers 1
+# In a second terminal:
+npm run dev --prefix frontend -- --host 127.0.0.1
+```
+
+Open the Vite loopback address. Create/join a trip with two browser profiles. Pin a venue, use the grid/drop or selected-time move, and exercise chat and Leader room controls. For Concierge, expand Budget and dietary preferences, explicitly save a food ceiling such as EUR25/person, declare each traveler's diets in that traveler's session, select a valid trip day/time (e.g. 12:00 UTC for the synthetic kitchen), and ask. Click the canonical citation to view its pinned source. Missing configuration prompts clarification; unavailable/invalid generation is labeled fallback and never relaxes filters. Historical answers are labeled Earlier result after the room changes. Cold model loading is separate setup; application generation still has its 2.5-second deadline.
+
+Phase 2 verification (all commands below were exercised):
+
+```powershell
+$env:RUN_LIVE_MODEL='1'
+.\.venv\Scripts\python.exe backend\tests\clean_setup.py
+npm run test:unit --prefix frontend
+npm run build --prefix frontend
+.\.venv\Scripts\python.exe backend\tests\browser_clean_setup.py
+.\.venv\Scripts\python.exe backend\tests\recovery_phase2.py
+```
+
+The clean setup and recovery/browser wrappers create and remove their own randomly named PostgreSQL databases. They require CREATEDB; the recovery drill also needs permission to terminate connections to its own database. Browser testing needs Chrome and free ports 8000/5173; recovery uses 8001. The browser test preloads the real local model and uses a test-only eight-second first JWT to verify refresh. `RUN_LIVE_MODEL=1` opts the backend suite into the actual-model acceptance test; leaving it unset skips that specific test and does not establish live-generation evidence. The standard production entry point imports no test factories or fault gates.

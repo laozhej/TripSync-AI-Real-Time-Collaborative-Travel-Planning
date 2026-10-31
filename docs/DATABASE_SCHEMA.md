@@ -81,3 +81,13 @@ The third migration adds initial trip, membership, invitation, itinerary and roo
 Revisions 0001–0005 were applied to the local disposable database and the initial dataset imported on 2026-10-30. The trip schema and idempotency/refresh history are preliminary; remaining planned tables and invariants are not complete. See [evidence](PHASE_1_EVIDENCE.md).
 
 The initial implementation now has revisions through `0008_venue_search`, including a stable planning-session ID, preservation of legacy auth-session references for old board events, and a generated tsvector with a GIN index. The clean verification applied these revisions and imported the synthetic dataset. The remaining reference tables and fields above are still planned. See [evidence](PHASE_1_EVIDENCE.md).
+
+## Chat migration — 2026-10-31
+
+Revision `0009_chat` creates `chat_messages` (trip, author, body, timestamp, sequence) and the unique message/user/emoji `reactions` table. Chat message and reaction mutations are recorded in `room_events` and committed with the trip watermark. The current chat table stores user-authored text only; other planned message types remain unimplemented. Its history index is `(trip_id, room_seq)`.
+
+## Phase 2 schema — 2026-10-31
+
+Revision `0010_concierge` adds trips.category_ceilings JSONB, memberships.constraints JSONB, and ai_questions with id, trip_id, user_id, request_key, command_hash, response and created_at. Unique `(trip_id,user_id,request_key)` enforces persisted question idempotency. Its trip/created_at index supports recent results. Preferences are validated at the service boundary; money remains integer cents. No real credentials belong in these fields. The original raw question is not saved in ai_questions; the accepted response and its source/version metadata are saved.
+
+Chat, moderation, constraint changes and AI results share the room_events ledger and planning-session ID. Significant changes flush prior volatile board edits within the same transaction. Conditional durable-base versions detect unexpected writers without explicit row locks. The configured local database was upgraded through `0010_concierge` with existing user/trip/item/dataset counts preserved; see [evidence](PHASE_2_EVIDENCE.md).

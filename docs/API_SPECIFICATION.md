@@ -113,3 +113,24 @@ Registration, login, refresh, logout, initial catalog browse, trip creation and 
 Preliminary WebSocket and HTTP pin endpoints now call the same actor service. The current HTTP pin payload additionally requires `commandId` and `correlationId` and supports even splits only; snapshot and error bodies do not yet satisfy the complete planned contract. See [evidence](PHASE_1_EVIDENCE.md).
 
 Leader invite creation and revocation now have preliminary implementations and tests, including capacity and permission rejection. The initial create-trip invite can be redeemed; the UI can create and revoke a later single-use Planner or Viewer invite. Invite creation does not yet implement the documented idempotency-key behavior or invite URL. See [evidence](PHASE_1_EVIDENCE.md).
+
+## Implemented chat subset — 2026-10-31
+
+`GET /api/v1/trips/{tripId}/chat` returns up to 50 committed messages with reactions; `before` is a positive room-sequence cursor and `nextCursor` is the next older boundary or null. `POST /api/v1/trips/{tripId}/chat` accepts `{body}` and optional UUID `Idempotency-Key`, returning the committed message. Both require current trip membership; posting reuses the room service and checks mute and trip status. The current numeric cursor and route-specific HTTP errors differ from the proposed common API conventions above.
+
+## Phase 2 implemented contracts — 2026-10-31
+
+In addition to the original routes and examples, these routes are implemented. Intended inventory entries above that are not mentioned in implementation notes remain planned.
+
+| Route | Implemented behavior |
+|---|---|
+| POST `/trips/{tripId}/moderation` | Common `commandId`, `correlationId`, `expectedStateVersion`; action `mute`, `unmute`, `remove`, `lockRoom`, `unlockRoom`, or `transfer`; participant actions require `targetUserId`. Same service as `trip.moderation.command`. |
+| POST `/trips/{tripId}/constraints` | Common IDs/version plus either group `categoryCeilingsMinor` (Leader) or `targetUserId` and `constraints` (self only). Same service as `trip.constraints.update`. |
+| POST `/trips/{tripId}/ai/ask` | The mandatory example fields above are supported; UUID `Idempotency-Key` is required. Optional `radiusKm` (default 2) and `bufferMinutes` (default 30). No body userId accepted. |
+| GET `/trips/{tripId}/ai/sources/{citation}` | Resolve `venue:<sourceId>@<version>` only from that trip's pinned dataset. Current membership/session required; unknown or mismatched version returns 404. |
+
+Member constraints are `{dietaryTags:[],categoryCeilingsMinor:{}}`. Category vocabulary is food/activity/lodging/transit; positive ceilings are integer EUR cents. Group defaults and requester ceilings are stored independently of `totalBudget`. A request `ceilingMinor` can tighten the configured effective ceiling; it cannot supply a missing configured default or widen the effective ceiling. An empty attendee list uses all active members; unknown/duplicate attendee IDs reject. Dietary requirements are the union for those attendees. A missing category/slot/configured ceiling returns `needs_clarification` with requiredFields.
+
+Ask responses preserve questionId/userId/answer/suggestedVenueId/sourceEvents and add status, datasetVersion, basedOnSeq, generatedAt, eventId, roomEpoch, roomSeq and durable. `grounded` means actual validated model output; `grounded_fallback` is labeled and uses only valid authored candidates. `no_valid_candidate`, `needs_clarification` and `stale_context` contain null suggestedVenueId and empty citations. Committed responses are idempotent and broadcast once as `trip.ai.suggestion`; requesters removed during generation cannot receive the result. A changing room is re-evaluated once, then returns stale_context.
+
+The current HTTP errors retain FastAPI `detail` (string or `{code,...}`), rather than claiming the proposed common error envelope above is complete. Stale settings return 409 with currentStateVersion; stale board moves use the separate socket edit-conflict event. Actual checks are in [Phase 2 evidence](PHASE_2_EVIDENCE.md).

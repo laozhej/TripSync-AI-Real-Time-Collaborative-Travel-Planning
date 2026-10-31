@@ -11,7 +11,7 @@
 | Phase | Focus | Tasks | Priority | Status |
 |---|---|---|---|---|
 | **Phase 1 (Week 1)** | Foundation & First Thin Slice | TASK-001 – TASK-007 | P0 | Complete for first-slice acceptance; see [evidence](PHASE_1_EVIDENCE.md) |
-| **Phase 2 (Week 2)** | Board State Machine, Presence & AI Concierge | TASK-008 – TASK-013 | P0 / P1 | Pending |
+| **Phase 2 (Week 2)** | Board State Machine, Presence & AI Concierge | TASK-008 – TASK-013 | P0 / P1 | Accepted for the Week 2 checkpoint; see [evidence](PHASE_2_EVIDENCE.md) |
 | **Phase 3 (Week 3)** | Exact Budgets, Contested Voting & Personalization | TASK-014 – TASK-020 | P0 / P1 | Pending |
 | **Phase 4 (Week 4)** | Hardening, Performance Benchmarking & Evidence | TASK-021 – TASK-025 | P0 | Pending |
 
@@ -73,36 +73,37 @@
 
 ## Phase 2: Board State Machine, Presence & AI Concierge (Week 2)
 > **Milestone Objective:** Lifecycle-correct collaborative canvas, optimistic concurrency control (CAS), presence, and grounded RAG suggestions.
+> Accepted evidence is in [PHASE_2_EVIDENCE.md](PHASE_2_EVIDENCE.md). Voting state rules are Phase 2 primitives; live timed elections and atomic winner orchestration remain Phase 3 TASK-016 per PRD §11.1.
 
-- [ ] **TASK-008: Full Board Lifecycle, CAS Concurrency & Stale Rejection**
+- [x] **TASK-008: Full Board Lifecycle, CAS Concurrency & Stale Rejection**
   - **Priority:** P0 | **Week:** W2 | **Depends on:** TASK-007
   - **Requirements:** REQ-005, REQ-006
   - **Planned Files:** `backend/app/board/`, `frontend/src/board/`
   - **Acceptance:** Implement day/time grid with pin, move, remove, and item lock; enforce `positionVersion` compare-and-reject (first server arrival increments version; stale arrival returns explicit conflict notice; no explicit DB row locks); lifecycle transitions `Drafting` → `Voting` → `Locked`.
   - **Verification:** `BOARD-01`, `BOARD-02`
 
-- [ ] **TASK-009: Presence, Connection Quality, Reconnection & Leader Moderation**
+- [x] **TASK-009: Presence, Connection Quality, Reconnection & Leader Moderation**
   - **Priority:** P0 | **Week:** W2 | **Depends on:** TASK-008
   - **Requirements:** REQ-008, REQ-009, REQ-010
   - **Planned Files:** `backend/app/rooms/`, `frontend/src/board/`
   - **Acceptance:** Real-time presence updates (`trip.presence.update`); handle client drops with seamless token refresh and snapshot reconnect; detect Leader disconnect and freeze restricted actions; support Leader mute, member remove, room lock/unlock, and atomic leadership transfer.
   - **Verification:** `SYNC-01`, `ROOM-01`, `SEC-02`
 
-- [ ] **TASK-010: Durable Chat, Typing Indicators & Emoji Reactions**
+- [x] **TASK-010: Durable Chat, Typing Indicators & Emoji Reactions**
   - **Priority:** P1 | **Week:** W2 | **Depends on:** TASK-003, TASK-006
   - **Requirements:** REQ-007
   - **Planned Files:** `backend/app/realtime/`, `frontend/src/chat/`
   - **Acceptance:** Persisted chat history in `chat_messages`; optimistic emoji reactions with idempotent upsert/remove; 3-second auto-expiring typing indicator; muted members rejected from posting chat.
   - **Verification:** `CHAT-01`
 
-- [ ] **TASK-011: Batch Persistence, Room Epochs & Crash Recovery**
+- [x] **TASK-011: Batch Persistence, Room Epochs & Crash Recovery**
   - **Priority:** P0 | **Week:** W2 | **Depends on:** TASK-008
   - **Requirements:** REQ-027, REQ-028
   - **Planned Files:** `backend/app/persistence/`, `backend/app/rooms/`
   - **Acceptance:** 100 ms batched DB flush; explicit volatile vs. committed sequence acknowledgements (`trip.command.ack` and `trip.persistence.committed`); DB failure freezes mutations; server crash restarts with durable state, issues new `roomEpoch`, and prompts full client snapshot resync.
   - **Verification:** `OPS-01`, `SYNC-01`
 
-- [ ] **TASK-012: Deterministic Hard Filter Matcher & Candidate Ranking**
+- [x] **TASK-012: Deterministic Hard Filter Matcher & Candidate Ranking**
   - **Priority:** P0 | **Week:** W2 | **Depends on:** TASK-004, TASK-008
   - **Requirements:** REQ-012, REQ-013, REQ-014, REQ-015, REQ-016
   - **Planned Files:** `backend/app/concierge/constraints.py`, `backend/tests/unit/`
@@ -114,11 +115,11 @@
     Rank valid candidates using `0.4*Proximity + 0.3*Rating + 0.3*BudgetHeadroom`. 100% valid results across ≥20 boundary test cases.
   - **Verification:** `AI-01`, `AI-07`
 
-- [ ] **TASK-013: Grounded Ollama RAG, Source Citations & Safe Fallback**
+- [x] **TASK-013: Grounded RAG, Source Citations & Safe Fallback**
   - **Priority:** P0 | **Week:** W2 | **Depends on:** TASK-003, TASK-012
   - **Requirements:** REQ-017, REQ-021
   - **Planned Files:** `backend/app/concierge/`, `frontend/src/concierge/`
-  - **Acceptance:** Asynchronous HTTP call to local Ollama (`POST /api/chat`, e.g., `llama3.2:3b`) with JSON schema enforcement; validate candidate IDs and reason codes against source allowlist; render facts deterministically with canonical citations (`venue:<id>@<version>`); deterministic grounded fallback on model timeout (>2.5 s), schema error, or zero valid candidates.
+  - **Acceptance:** Asynchronous call to a documented hosted or local model provider permitted by PRD §8.1, with schema validation; validate candidate IDs and reason codes against source allowlist; render facts deterministically with canonical citations (`venue:<id>@<version>`); deterministic grounded fallback on model timeout (>2.5 s), schema error, or zero valid candidates.
   - **Verification:** `AI-02` through `AI-06`
 
 ---
@@ -194,7 +195,7 @@
   - **Acceptance:** Execute load tests with 5–10 concurrent clients and multiple rooms; record raw empirical distributions (P50, P95, max) for:
     - Board sync drift (<100 ms)
     - Non-AI HTTP P95 (<200 ms)
-    - Real Ollama RAG P95 (<3 s)
+    - Real model RAG P95 (<3 s)
     - Server fan-out (<500 ms)
     - Join snapshot (≤2 s)
     - Conflict detection (≤1 s in ≥95% cases).
@@ -232,7 +233,7 @@
 | `BOARD-01..02` | Board lifecycle, CAS version rejection, concurrent convergence | TASK-006, TASK-008 |
 | `CHAT-01` | Durable chat, typing indicator expiration, mute enforcement | TASK-010 |
 | `SYNC-01` | Snapshot delivery, reconnect, sequence gap handling, epoch recovery | TASK-006, TASK-009, TASK-011 |
-| `AI-01..07` | 4 hard filters, scoring, Ollama RAG, source citations, fallback | TASK-012, TASK-013 |
+| `AI-01..07` | 4 hard filters, scoring, grounded model RAG, source citations, fallback | TASK-012, TASK-013 |
 | `BUD-01..03` | Integer cents math, even/weighted split remainders, reservations | TASK-014 |
 | `VOTE-01..04` | Ballot submission, tiebreaking, deadline resolution, crash recovery | TASK-016 |
 | `CONFLICT-01` | Schedule overlap and budget breach detection and resolution | TASK-015 |

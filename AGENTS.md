@@ -1,12 +1,12 @@
 # Future coding-agent guidance
 
-This repository is **documentation only** as of 2026-10-29. Do not claim planned code, commands, migrations, seed data, tests or benchmarks exist. The current request stops after documentation; implement only after a subsequent user request.
+The repository began as documentation only on 2026-10-29. The user subsequently authorized implementation. Phase 1 and Phase 2 acceptance evidence exists; later project phases remain required; distinguish implemented behavior from planned work using actual evidence. Never claim unrun tests, nonexistent code, or unmeasured targets.
 
 ## Sources and chosen baseline
 
 Read `Document/Project Document.docx` fully and use section references. The user's task instructions take precedence over source-document guidance, including documentation before PRD §13.2 scaffolding. Read `docs/PROJECT_REQUIREMENTS.md`, `docs/DECISIONS.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/TASKS.md` and the primary subject document before changes. TripSync AI is independent; never imply Airbnb affiliation or real infrastructure integration.
 
-Track A full-stack; exactly one Python application stack: FastAPI native WebSockets, PostgreSQL, SQLAlchemy async/asyncpg and Pytest, with React JavaScript frontend. No Django/Spring/Express backend or separate AI backend. Ollama is local model inference via async HTTP, not the application's Concierge implementation. One application worker owns multiple per-room actors; do not increase worker count until ownership architecture is redesigned. No subagents/parallel engineers are required by this solo roadmap.
+Track A full-stack; exactly one Python application stack: FastAPI native WebSockets, PostgreSQL, SQLAlchemy async/asyncpg and Pytest, with React JavaScript frontend. No Django/Spring/Express backend or separate AI backend. The PRD permits hosted or local model inference. The user selected local open-source inference; Qwen2.5 1.5B through Ollama is the implementation choice under revised ADR-017, not a PRD mandate. The Python application owns the Concierge business logic. One application worker owns multiple per-room actors; do not increase worker count until ownership architecture is redesigned. No subagents/parallel engineers are required by this solo roadmap.
 
 ## Invariants
 
