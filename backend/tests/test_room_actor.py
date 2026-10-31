@@ -53,3 +53,16 @@ async def test_failed_persistence_freezes_room_and_keeps_pending():
     await room.flush()
     assert room.frozen and room.committed == 0 and len(room.pending) == 1
     assert (await queue.get())['event'] == 'trip.persistence.degraded'
+
+
+def test_room_audit_contains_only_safe_operational_fields(caplog):
+    import json
+    from app.realtime.rooms import Room,logger
+    room=Room(None,uuid4());correlation=uuid4()
+    logger.addHandler(caplog.handler)
+    try: room.audit('trip.persistence.degraded',correlation)
+    finally: logger.removeHandler(caplog.handler)
+    record=json.loads(caplog.records[-1].getMessage())
+    assert set(record)=={'event','tripId','sessionId','roomEpoch','roomSeq','committedSeq','correlationId','ts'}
+    assert record['tripId']==str(room.trip_id) and record['correlationId']==str(correlation)
+    assert record['committedSeq']==0

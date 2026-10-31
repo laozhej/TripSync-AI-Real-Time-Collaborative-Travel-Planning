@@ -147,6 +147,10 @@ async def join(body: JoinTrip, request: Request, actor=Depends(authenticated), i
     user_lock = _locks.setdefault('user:' + str(actor['user_id']), asyncio.Lock())
     lock = _locks.setdefault('trip:' + str(trip_id), asyncio.Lock())
     async with user_lock, lock, room.lock, room.transaction_locked() as conn:
+        removed = (await conn.execute(text("SELECT 1 FROM memberships WHERE trip_id=:trip AND user_id=:uid AND status='removed'"),
+            {'trip':trip_id,'uid':actor['user_id']})).first()
+        if removed:
+            raise HTTPException(403, 'Invite unavailable')
         existing = await prior(conn, actor, key, 'join', body_hash)
         if existing:
             return existing
@@ -169,30 +173,34 @@ async def join(body: JoinTrip, request: Request, actor=Depends(authenticated), i
             await conn.execute(text("UPDATE trips SET status='live', state_version=state_version+1 WHERE id=:trip"), {"trip":trip_id})
             result = {"tripId":str(trip_id), "role":invite['assigned_role']}
         await remember(conn, actor, key, 'join', body_hash, result)
-        return result
+    async with room.lock:
+        await room.presence_locked(actor['user_id'], 'updated')
+    return result
 
 
 @router.get("/{trip_id}")
 async def get_trip(trip_id: UUID, request: Request, actor=Depends(authenticated)):
     async with request.app.state.engine.connect() as conn:
-        trip = (await conn.execute(text("""SELECT t.id,t.destination,t.start_date,t.end_date,t.currency,t.total_budget_minor,
-            t.status,t.room_locked,t.max_participants,t.state_version,t.room_seq,t.committed_seq,m.role,m.can_pin
+        trip = (await conn.execute(text("""SELECT t.id,t.destination,t.timezone,t.start_date,t.end_date,t.currency,t.total_budget_minor,
+            t.status,t.room_locked,t.max_participants,t.state_version,t.room_seq,t.committed_seq,t.category_ceilings,m.role,m.can_pin,m.constraints
             FROM trips t JOIN memberships m ON m.trip_id=t.id
             WHERE t.id=:trip AND m.user_id=:uid AND m.status='active'"""),
             dict(trip=trip_id, uid=actor['user_id']))).mappings().first()
         if not trip:
             raise HTTPException(404, "Trip unavailable")
-        members = (await conn.execute(text("""SELECT m.user_id,m.role,m.can_pin,u.display_name
+        members = (await conn.execute(text("""SELECT m.user_id,m.role,m.can_pin,m.muted,u.display_name
             FROM memberships m JOIN users u ON u.id=m.user_id
             WHERE m.trip_id=:trip AND m.status='active' ORDER BY m.joined_at,m.user_id"""),
             {"trip": trip_id})).mappings().all()
     return {"tripId":str(trip['id']), "destination":trip['destination'],
+            "timezone":trip['timezone'],
             "startDate":trip['start_date'].isoformat(), "endDate":trip['end_date'].isoformat(),
             "currency":trip['currency'], "totalBudgetMinor":trip['total_budget_minor'],
             "status":trip['status'], "roomLocked":trip['room_locked'], "maxParticipants":trip['max_participants'],
             "stateVersion":trip['state_version'], "roomSeq":trip['room_seq'], "committedSeq":trip['committed_seq'],
             "role":trip['role'], "canPin":trip['can_pin'],
-            "members":[{"userId":str(m['user_id']), "displayName":m['display_name'], "role":m['role'], "canPin":m['can_pin']} for m in members]}
+            "categoryCeilingsMinor":trip['category_ceilings'], "constraints":trip['constraints'],
+            "members":[{"userId":str(m['user_id']), "displayName":m['display_name'], "role":m['role'], "canPin":m['can_pin'], "muted":m['muted']} for m in members]}
 
 
 async def leader_access(conn, trip_id, user_id):

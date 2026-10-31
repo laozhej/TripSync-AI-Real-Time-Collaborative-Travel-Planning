@@ -27,6 +27,14 @@ def run(label, args, env):
     result = subprocess.run(args, cwd=ROOT, env=env, text=True, capture_output=True)
     if result.returncode:
         print(label, 'failed, exit', result.returncode)
+        if label == 'tests':
+            for line in result.stdout.splitlines():
+                if line.startswith('FAILED '): print(line.split(' - ')[0])
+            diagnostic=result.stdout+'\n'+result.stderr
+            for secret in (env.get('DATABASE_URL'),env.get('TEST_DATABASE_URL'),config.get('JWT_SIGNING_KEY')):
+                if secret: diagnostic=diagnostic.replace(secret,'[REDACTED]')
+            (ROOT/'.local').mkdir(exist_ok=True)
+            (ROOT/'.local'/'pytest-failure.log').write_text(diagnostic,encoding='utf-8')
         raise RuntimeError(label + ' failed (details suppressed to protect local configuration)')
     if label == 'tests':
         last = [line for line in result.stdout.splitlines() if 'passed' in line]

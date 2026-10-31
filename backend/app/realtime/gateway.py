@@ -1,20 +1,24 @@
 """Native WebSocket gateway for snapshots and pin commands."""
 import asyncio
+import anyio
 from datetime import datetime
 import json
 import os
 import time
 from collections import deque
-from uuid import UUID
+from uuid import UUID, uuid4
+from typing import Literal
 
 import jwt
-from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket, WebSocketDisconnect
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, ValidationError, field_validator
 from sqlalchemy import text
 
 from app.api.auth import authenticated, auth_config
 from app.auth.tokens import decode_access_token
-from app.realtime.rooms import RoomError, envelope
+from app.realtime.rooms import RoomError, envelope, reaction_groups
+from app.rooms.moderation import Moderation, moderate
+from app.concierge.preferences import ConstraintsUpdate, update_constraints
 
 router = APIRouter()
 
@@ -29,6 +33,79 @@ class Pin(BaseModel):
     endTime: datetime
     attendeeIds: list[UUID] = Field(default_factory=list, max_length=50)
     splitMode: str = Field(default='even', pattern='^even$')
+
+
+class ItemCommand(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    commandId: UUID
+    correlationId: UUID
+    itemId: UUID
+    expectedPositionVersion: int = Field(ge=1)
+
+
+class Move(ItemCommand):
+    dayIndex: int = Field(ge=0, le=365)
+    startTime: datetime
+    endTime: datetime
+
+
+class Unlock(ItemCommand):
+    reason: str = Field(min_length=1, max_length=500)
+
+    @field_validator('reason')
+    @classmethod
+    def valid_reason(cls,value):
+        if not value.strip() or '\x00' in value:
+            raise ValueError('invalid reason')
+        try:
+            value.encode('utf-8')
+        except UnicodeEncodeError:
+            raise ValueError('invalid reason') from None
+        return value
+
+
+class Chat(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    commandId: UUID
+    correlationId: UUID
+    body: str = Field(min_length=1, max_length=2000)
+
+    @field_validator('body')
+    @classmethod
+    def valid_body(cls, value):
+        if not value.strip() or '\x00' in value:
+            raise ValueError('invalid message')
+        try:
+            value.encode('utf-8')
+        except UnicodeEncodeError:
+            raise ValueError('invalid message') from None
+        return value
+
+
+class Typing(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    isTyping: StrictBool
+
+
+class Ping(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    clientSentAt: float = Field(ge=0, allow_inf_nan=False)
+    nonce: UUID
+    serverReceivedAt: None = None
+
+
+class ChatBody(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    body: str = Field(min_length=1, max_length=2000)
+
+
+class Reaction(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    commandId: UUID
+    correlationId: UUID
+    messageId: UUID
+    emoji: Literal['👍', '❤️', '😂', '🎉']
+    active: StrictBool
 
 
 async def socket_actor(socket, trip_id, token):
@@ -72,6 +149,9 @@ async def socket_room(socket: WebSocket, trip_id: UUID):
             if message is None:
                 await socket.close(code=1013)
                 return
+            if 'closeCode' in message:
+                await socket.close(code=message['closeCode'])
+                return
             await socket.send_json(message)
 
     sender_task = asyncio.create_task(sender())
@@ -99,6 +179,7 @@ async def socket_room(socket: WebSocket, trip_id: UUID):
             if not await socket_actor(socket,trip_id,token):
                 await socket.close(code=1008)
                 break
+            message = None
             try:
                 message = json.loads(raw)
                 if not isinstance(message,dict) or set(message) != {'event','payload'}:
@@ -107,13 +188,52 @@ async def socket_room(socket: WebSocket, trip_id: UUID):
                     command = Pin.model_validate(message['payload'])
                     ack = await room.pin(actor,command)
                     queue.put_nowait(envelope('trip.command.ack',trip_id,ack))
+                elif message['event'] in ('trip.board.move', 'trip.board.remove', 'trip.board.lock', 'trip.board.unlock'):
+                    operation = message['event'].rsplit('.', 1)[-1]
+                    command = ({'move':Move, 'unlock':Unlock}.get(operation, ItemCommand)).model_validate(message['payload'])
+                    ack = await room.change_item(actor, command, operation)
+                    queue.put_nowait(envelope('trip.command.ack', trip_id, ack))
+                elif message['event'] == 'trip.chat.send':
+                    command = Chat.model_validate(message['payload'])
+                    ack = await room.send_chat(actor, command)
+                    queue.put_nowait(envelope('trip.command.ack', trip_id, ack))
+                elif message['event'] == 'trip.chat.typing':
+                    command = Typing.model_validate(message['payload'])
+                    await room.typing(actor, command.isTyping)
+                elif message['event'] == 'trip.sync.ping':
+                    command = Ping.model_validate(message['payload'])
+                    received = int(time.time()*1000)
+                    queue.put_nowait(envelope('trip.sync.pong', trip_id, {'clientSentAt':command.clientSentAt,
+                        'nonce':str(command.nonce),'serverReceivedAt':received,'serverSentAt':int(time.time()*1000)}))
+                elif message['event'] == 'trip.chat.react':
+                    command = Reaction.model_validate(message['payload'])
+                    ack = await room.react_chat(actor, command)
+                    queue.put_nowait(envelope('trip.command.ack',trip_id,ack))
+                elif message['event'] == 'trip.moderation.command':
+                    command = Moderation.model_validate(message['payload'])
+                    ack = await moderate(room, actor, command)
+                    queue.put_nowait(envelope('trip.command.ack',trip_id,ack))
+                elif message['event'] == 'trip.constraints.update':
+                    command = ConstraintsUpdate.model_validate(message['payload'])
+                    ack = await update_constraints(room,actor,command)
+                    queue.put_nowait(envelope('trip.command.ack',trip_id,ack))
                 elif message['event'] == 'trip.snapshot.request' and isinstance(message['payload'],dict):
                     async with room.lock:
                         queue.put_nowait(envelope('trip.snapshot',trip_id,await room.snapshot_locked(actor)))
                 else:
                     raise ValueError()
             except RoomError as exc:
-                queue.put_nowait(envelope('trip.command.error',trip_id,{'code':exc.code}))
+                if exc.code == 'STALE_POSITION_VERSION':
+                    queue.put_nowait(envelope('trip.board.edit.conflict', trip_id, exc.details))
+                else:
+                    details = {'code':exc.code}
+                    if exc.details:
+                        details.update(exc.details)
+                    try:
+                        details['commandId'] = str(UUID(str(message['payload']['commandId'])))
+                    except (KeyError, TypeError, ValueError):
+                        pass
+                    queue.put_nowait(envelope('trip.command.error',trip_id,details))
             except (ValueError, ValidationError, TypeError):
                 queue.put_nowait(envelope('trip.command.error',trip_id,{'code':'INVALID_COMMAND'}))
             except asyncio.QueueFull:
@@ -124,7 +244,10 @@ async def socket_room(socket: WebSocket, trip_id: UUID):
     finally:
         sender_task.cancel()
         await asyncio.gather(sender_task,return_exceptions=True)
-        await room.unsubscribe(queue)
+        # TestClient and real disconnects may cancel the handler while cleanup
+        # awaits PostgreSQL. Finish presence cleanup even in that cancel scope.
+        with anyio.CancelScope(shield=True):
+            await room.unsubscribe(queue)
         active = sessions.get(actor['session_id'])
         if active is not None:
             active.discard(socket)
@@ -143,4 +266,60 @@ async def http_pin(trip_id: UUID, command: Pin, request: Request, actor=Depends(
         return await request.app.state.rooms.get(trip_id).pin(actor,command)
     except RoomError as exc:
         status = 404 if exc.code == 'NOT_FOUND' else 403 if exc.code == 'FORBIDDEN' else 503 if exc.code in ('PERSISTENCE_DEGRADED','ROOM_BACKPRESSURE') else 409 if exc.code == 'COMMAND_ID_REUSE' else 422
+        raise HTTPException(status, exc.code) from None
+
+
+@router.get('/api/v1/trips/{trip_id}/chat')
+async def chat_history(trip_id: UUID, request: Request, before: int | None = Query(default=None, ge=1),
+                       actor=Depends(authenticated)):
+    async with request.app.state.engine.connect() as conn:
+        member = (await conn.execute(text("SELECT 1 FROM memberships WHERE trip_id=:trip AND user_id=:uid AND status='active'"),
+                                     {'trip':trip_id,'uid':actor['user_id']})).first()
+        if not member:
+            raise HTTPException(404, 'Trip unavailable')
+        rows = (await conn.execute(text('''SELECT id,user_id,body,created_at,room_seq FROM chat_messages
+            WHERE trip_id=:trip AND room_seq<COALESCE(CAST(:before AS bigint),9223372036854775807)
+            ORDER BY room_seq DESC LIMIT 51'''),
+            {'trip':trip_id,'before':before})).mappings().all()
+        reactions = await reaction_groups(conn, [row['id'] for row in rows[:50]])
+    has_more = len(rows) > 50
+    rows = rows[:50]
+    return {'items':[{'messageId':str(m['id']),'userId':str(m['user_id']),'body':m['body'],
+                      'tsSeconds':int(m['created_at'].timestamp()),'roomSeq':m['room_seq'],
+                      'reactions':reactions.get(str(m['id']),[])} for m in reversed(rows)],
+            'nextCursor':str(rows[-1]['room_seq']) if has_more else None}
+
+
+@router.post('/api/v1/trips/{trip_id}/moderation')
+async def http_moderate(trip_id: UUID, command: Moderation, request: Request, actor=Depends(authenticated)):
+    async with request.app.state.engine.connect() as conn:
+        exists = (await conn.execute(text("SELECT 1 FROM memberships WHERE trip_id=:trip AND user_id=:uid AND status='active'"),
+                    {'trip':trip_id,'uid':actor['user_id']})).first()
+    if not exists:
+        raise HTTPException(404, 'Trip unavailable')
+    try:
+        return await moderate(request.app.state.rooms.get(trip_id),actor,command)
+    except RoomError as exc:
+        status = 404 if exc.code == 'NOT_FOUND' else 403 if exc.code == 'FORBIDDEN' else 503 if exc.code == 'PERSISTENCE_DEGRADED' else 409
+        raise HTTPException(status, {'code':exc.code,**(exc.details or {})}) from None
+
+
+@router.post('/api/v1/trips/{trip_id}/chat', status_code=201)
+async def http_chat(trip_id: UUID, body: ChatBody, request: Request,
+                    idempotency_key: UUID | None = Header(default=None, alias='Idempotency-Key'),
+                    actor=Depends(authenticated)):
+    async with request.app.state.engine.connect() as conn:
+        member = (await conn.execute(text("SELECT 1 FROM memberships WHERE trip_id=:trip AND user_id=:uid AND status='active'"),
+                                     {'trip':trip_id,'uid':actor['user_id']})).first()
+    if not member:
+        raise HTTPException(404, 'Trip unavailable')
+    key = idempotency_key or uuid4()
+    try:
+        command = Chat(commandId=key, correlationId=key, body=body.body)
+        result = await request.app.state.rooms.get(trip_id).send_chat(actor, command)
+        return result['message']
+    except ValidationError:
+        raise HTTPException(422, 'Invalid message') from None
+    except RoomError as exc:
+        status = 403 if exc.code == 'FORBIDDEN' else 409 if exc.code == 'COMMAND_ID_REUSE' else 503
         raise HTTPException(status, exc.code) from None

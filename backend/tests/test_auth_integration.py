@@ -16,6 +16,14 @@ from app.main import app
 from app.api.auth import _attempts
 from app.realtime.rooms import RoomManager
 
+def receive_event(socket):
+    # Aggregate assertions ignore separately tested ephemeral presence notifications.
+    while True:
+        message = socket.receive_json()
+        if message['event'] != 'trip.presence.update':
+            return message
+
+
 DB = os.getenv("TEST_DATABASE_URL")
 pytestmark = pytest.mark.skipif(not DB, reason="set TEST_DATABASE_URL to a disposable migrated database")
 
@@ -118,6 +126,8 @@ def test_two_users_create_and_join_with_idempotency(client, monkeypatch):
         try:
             async with engine.begin() as conn:
                 if trip_id:
+                    await conn.execute(text('DELETE FROM reactions WHERE message_id IN (SELECT id FROM chat_messages WHERE trip_id=:id)'), {'id': UUID(trip_id)})
+                    await conn.execute(text('DELETE FROM chat_messages WHERE trip_id=:id'), {'id': UUID(trip_id)})
                     await conn.execute(text('DELETE FROM item_attendees WHERE item_id IN (SELECT id FROM itinerary_items WHERE trip_id=:id)'), {'id': UUID(trip_id)})
                     await conn.execute(text('DELETE FROM room_events WHERE trip_id=:id'), {'id': UUID(trip_id)})
                     await conn.execute(text('DELETE FROM itinerary_items WHERE trip_id=:id'), {'id': UUID(trip_id)})
@@ -144,6 +154,14 @@ def test_two_users_create_and_join_with_idempotency(client, monkeypatch):
         try:
             async with engine.begin() as conn:
                 await conn.execute(text('UPDATE users SET is_admin=true WHERE id=:id'), {'id':UUID(user_id)})
+        finally:
+            await engine.dispose()
+    async def set_muted(user_id, muted):
+        engine = create_async_engine(DB)
+        try:
+            async with engine.begin() as conn:
+                await conn.execute(text('UPDATE memberships SET muted=:muted WHERE trip_id=:trip AND user_id=:uid'),
+                                   {'muted':muted, 'trip':UUID(trip_id), 'uid':UUID(user_id)})
         finally:
             await engine.dispose()
     async def set_status(status):
@@ -245,11 +263,28 @@ def test_two_users_create_and_join_with_idempotency(client, monkeypatch):
         venue = catalog.json()['venues'][0]['venueId']
         ws_url = '/ws/v1/trips/' + trip_id
         with client.websocket_connect(ws_url, headers={'authorization':'Bearer '+tokens[0], 'origin':'http://testserver'}) as leader:
-            leader_snapshot = leader.receive_json()
+            leader_snapshot = receive_event(leader)
             assert leader_snapshot['event'] == 'trip.snapshot'
+            nonce = str(uuid4())
+            leader.send_json({'event':'trip.sync.ping','payload':{'clientSentAt':123,'nonce':nonce}})
+            pong = receive_event(leader)
+            assert pong['event'] == 'trip.sync.pong' and pong['payload']['nonce'] == nonce
+            assert pong['payload']['clientSentAt'] == 123
             with client.websocket_connect(ws_url, headers={'authorization':'Bearer '+tokens[1], 'origin':'http://testserver'}) as planner:
-                planner_snapshot = planner.receive_json()
+                planner_snapshot = receive_event(planner)
                 assert planner_snapshot['event'] == 'trip.snapshot'
+                assert planner_snapshot['payload']['leaderConnected'] is True
+                assert len(planner_snapshot['payload']['connectedUsers']) == 2
+                # A second tab for one Planner must not inflate participant counts.
+                while True:
+                    presence = leader.receive_json()
+                    if presence['event'] == 'trip.presence.update' and presence['payload']['participantCount'] == 2:
+                        break
+                with client.websocket_connect(ws_url, headers={'authorization':'Bearer '+tokens[1], 'origin':'http://testserver'}) as second_tab:
+                    second_snapshot = receive_event(second_tab)
+                    assert len(second_snapshot['payload']['connectedUsers']) == 2
+                    assert leader.receive_json()['payload']['participantCount'] == 2
+                assert leader.receive_json()['payload']['participantCount'] == 2
                 assert planner_snapshot['payload']['sessionId'] == leader_snapshot['payload']['sessionId']
                 command = {'commandId':str(uuid4()), 'correlationId':str(uuid4()), 'venueId':venue, 'dayIndex':0,
                            'startTime':'2026-11-10T12:00:00+00:00', 'endTime':'2026-11-10T13:00:00+00:00',
@@ -259,34 +294,47 @@ def test_two_users_create_and_join_with_idempotency(client, monkeypatch):
                     headers={'authorization':'Bearer '+tokens[1]}, json=command | {'venueId':str(foreign_venue)})
                 assert invalid_venue.status_code == 422
                 planner.send_json({'event':'trip.board.pin','payload':command | {'venueId':str(foreign_venue)}})
-                assert planner.receive_json()['payload']['code'] == 'INVALID_VENUE'
+                assert receive_event(planner)['payload']['code'] == 'INVALID_VENUE'
                 admin_denied = client.post('/api/v1/trips/' + trip_id + '/items',
                     headers={'authorization':'Bearer '+tokens[2]}, json=command)
                 assert admin_denied.status_code == 403
                 with client.websocket_connect(ws_url, headers={'authorization':'Bearer '+tokens[2], 'origin':'http://testserver'}) as viewer:
-                    assert viewer.receive_json()['event'] == 'trip.snapshot'
+                    assert receive_event(viewer)['event'] == 'trip.snapshot'
                     viewer.send_json({'event':'trip.board.pin','payload':command})
-                    assert viewer.receive_json()['payload']['code'] == 'FORBIDDEN'
+                    assert receive_event(viewer)['payload']['code'] == 'FORBIDDEN'
                 planner.send_json({'event':'trip.board.pin','payload':command})
-                left, right = leader.receive_json(), planner.receive_json()
+                left, right = receive_event(leader), receive_event(planner)
                 assert left['event'] == right['event'] == 'trip.board.update'
                 assert left['payload']['item'] == right['payload']['item']
                 assert left['payload']['durable'] is False
-                ack = planner.receive_json()
+                ack = receive_event(planner)
                 assert ack['event'] == 'trip.command.ack' and ack['payload']['status'] == 'applied'
-                committed = leader.receive_json()
+                committed = receive_event(leader)
                 assert committed['event'] == 'trip.persistence.committed' and committed['payload']['committedSeq'] == 1
-                assert planner.receive_json()['event'] == 'trip.persistence.committed'
+                assert receive_event(planner)['event'] == 'trip.persistence.committed'
                 planner.send_json({'event':'trip.board.pin','payload':command})
-                duplicate = planner.receive_json()
+                duplicate = receive_event(planner)
                 assert duplicate['event'] == 'trip.command.ack' and duplicate['payload']['status'] == 'duplicate'
                 assert duplicate['payload']['durable'] is True
                 planner.send_json({'event':'trip.board.pin','payload':command | {'dayIndex':1}})
-                assert planner.receive_json()['payload']['code'] == 'COMMAND_ID_REUSE'
+                assert receive_event(planner)['payload']['code'] == 'COMMAND_ID_REUSE'
+                move = {'commandId':str(uuid4()), 'correlationId':str(uuid4()), 'itemId':left['payload']['itemId'],
+                        'expectedPositionVersion':1, 'dayIndex':1, 'startTime':'2026-11-11T12:00:00+00:00',
+                        'endTime':'2026-11-11T13:00:00+00:00'}
+                planner.send_json({'event':'trip.board.move','payload':move})
+                assert receive_event(planner)['payload']['item']['positionVersion'] == 2
+                assert receive_event(leader)['payload']['item']['dayIndex'] == 1
+                assert receive_event(planner)['event'] == 'trip.command.ack'
+                leader.send_json({'event':'trip.board.move','payload':move | {'commandId':str(uuid4())}})
+                conflict = receive_event(leader)
+                assert conflict['event'] == 'trip.board.edit.conflict'
+                assert conflict['payload']['currentPositionVersion'] == 2
+                assert receive_event(leader)['event'] == 'trip.persistence.committed'
+                assert receive_event(planner)['event'] == 'trip.persistence.committed'
                 asyncio.run(set_role('viewer'))
                 asyncio.run(set_admin(ids[1]))
                 planner.send_json({'event':'trip.board.pin','payload':command | {'commandId':str(uuid4())}})
-                rejected = planner.receive_json()
+                rejected = receive_event(planner)
                 assert rejected['event'] == 'trip.command.error' and rejected['payload']['code'] == 'FORBIDDEN'
                 http_rejected = client.post('/api/v1/trips/' + trip_id + '/items',
                     headers={'authorization':'Bearer '+tokens[1]}, json=command | {'commandId':str(uuid4())})
@@ -298,51 +346,117 @@ def test_two_users_create_and_join_with_idempotency(client, monkeypatch):
             app.state.rooms.task = asyncio.create_task(app.state.rooms.run())
         client.portal.call(restart_rooms)
         with client.websocket_connect(ws_url, headers={'authorization':'Bearer '+tokens[1], 'origin':'http://testserver'}) as removed:
-            removed.receive_json()
+            receive_event(removed)
             asyncio.run(set_status('removed'))
             removed.send_json({'event':'trip.snapshot.request','payload':{}})
             with pytest.raises(WebSocketDisconnect):
-                removed.receive_json()
+                receive_event(removed)
             assert client.get('/api/v1/trips/'+trip_id, headers={'authorization':'Bearer '+tokens[1]}).status_code == 404
         asyncio.run(set_status('active'))
         with client.websocket_connect(ws_url, headers={'authorization':'Bearer '+tokens[1], 'origin':'http://testserver'}) as reopened:
-            snapshot = reopened.receive_json()
-            assert snapshot['event'] == 'trip.snapshot' and snapshot['payload']['committedSeq'] == 1
+            snapshot = receive_event(reopened)
+            assert snapshot['event'] == 'trip.snapshot' and snapshot['payload']['committedSeq'] == 2
             assert snapshot['payload']['items'][0]['itemId'] == left['payload']['itemId']
+            assert snapshot['payload']['items'][0]['positionVersion'] == 2
+            assert snapshot['payload']['leaderConnected'] is False
             assert snapshot['payload']['roomEpoch'] != left['payload']['roomEpoch']
             assert snapshot['payload']['sessionId'] == leader_snapshot['payload']['sessionId']
             cost = snapshot['payload']['items'][0]['pricePerPersonMinor']
             assert snapshot['payload']['budgets']['proposedMinor'] == 2 * cost
             assert sum(x['proposedMinor'] for x in snapshot['payload']['budgets']['perPerson']) == 2 * cost
             assert len(snapshot['payload']['members']) == 3
+            removal = {'commandId':str(uuid4()), 'correlationId':str(uuid4()),
+                       'itemId':left['payload']['itemId'], 'expectedPositionVersion':2}
+            reopened.send_json({'event':'trip.board.remove', 'payload':removal})
+            removed_update = receive_event(reopened)
+            assert removed_update['payload']['operation'] == 'remove'
+            assert removed_update['payload']['budgetSummary']['proposedMinor'] == 0
+            assert receive_event(reopened)['event'] == 'trip.command.ack'
+            assert receive_event(reopened)['event'] == 'trip.persistence.committed'
             planner_pin = client.post('/api/v1/trips/' + trip_id + '/items',
                 headers={'authorization':'Bearer '+tokens[1]}, json=command | {'commandId':str(uuid4())})
             assert planner_pin.status_code == 201
-            assert reopened.receive_json()['event'] == 'trip.board.update'
-            assert reopened.receive_json()['event'] == 'trip.persistence.committed'
+            assert receive_event(reopened)['event'] == 'trip.board.update'
+            assert receive_event(reopened)['event'] == 'trip.persistence.committed'
             csrf = client.cookies.get('tripsync_csrf')
             logged_out = client.post('/api/v1/auth/logout', headers={'authorization':'Bearer '+tokens[1], 'origin':'http://testserver', 'x-csrf-token':csrf})
             assert logged_out.status_code == 204
             with pytest.raises(WebSocketDisconnect):
-                reopened.receive_json()
+                receive_event(reopened)
         with client.websocket_connect(ws_url, headers={'authorization':'Bearer '+tokens[0], 'origin':'http://testserver'}) as leader:
-            assert leader.receive_json()['event'] == 'trip.snapshot'
+            assert receive_event(leader)['event'] == 'trip.snapshot'
             leader_pin = client.post('/api/v1/trips/' + trip_id + '/items',
                 headers={'authorization':'Bearer '+tokens[0]}, json=command | {'commandId':str(uuid4())})
             assert leader_pin.status_code == 201 and leader_pin.json()['durable'] is False
-            assert leader.receive_json()['event'] == 'trip.board.update'
-            assert leader.receive_json()['event'] == 'trip.persistence.committed'
+            leader_item = receive_event(leader)['payload']['item']
+            assert receive_event(leader)['event'] == 'trip.persistence.committed'
+            lock = {'commandId':str(uuid4()), 'correlationId':str(uuid4()),
+                    'itemId':leader_item['itemId'], 'expectedPositionVersion':1}
+            leader.send_json({'event':'trip.board.lock', 'payload':lock})
+            update = receive_event(leader)
+            assert update['payload']['durable'] and update['payload']['item']['lifecycleStage'] == 'locked'
+            assert receive_event(leader)['payload']['status'] == 'committed'
+            leader.send_json({'event':'trip.board.unlock', 'payload':lock | {'commandId':str(uuid4()),
+                              'expectedPositionVersion':2, 'reason':'Change plan'}})
+            assert receive_event(leader)['payload']['item']['lifecycleStage'] == 'drafting'
+            assert receive_event(leader)['payload']['durable'] is True
             leader.send_json({'event':'trip.board.pin','payload':command | {'commandId':str(uuid4())}})
-            assert leader.receive_json()['event'] == 'trip.board.update'
-            assert leader.receive_json()['event'] == 'trip.command.ack'
-            assert leader.receive_json()['event'] == 'trip.persistence.committed'
+            assert receive_event(leader)['event'] == 'trip.board.update'
+            assert receive_event(leader)['event'] == 'trip.command.ack'
+            assert receive_event(leader)['event'] == 'trip.persistence.committed'
+            chat = {'commandId':str(uuid4()), 'correlationId':str(uuid4()), 'body':'Hello <travelers>!'}
+            leader.send_json({'event':'trip.chat.typing', 'payload':{'isTyping':True}})
+            assert receive_event(leader)['payload']['isTyping'] is True
+            assert receive_event(leader)['payload']['isTyping'] is False
+            leader.send_json({'event':'trip.chat.send', 'payload':chat | {'body':'\x00'}})
+            assert receive_event(leader)['payload']['code'] == 'INVALID_COMMAND'
+            asyncio.run(set_muted(ids[0], True))
+            leader.send_json({'event':'trip.chat.typing', 'payload':{'isTyping':True}})
+            assert receive_event(leader)['payload']['code'] == 'FORBIDDEN'
+            leader.send_json({'event':'trip.chat.send', 'payload':chat})
+            assert receive_event(leader)['payload']['code'] == 'FORBIDDEN'
+            asyncio.run(set_muted(ids[0], False))
+            leader.send_json({'event':'trip.chat.send', 'payload':chat})
+            message = receive_event(leader)
+            assert message['event'] == 'trip.chat.message'
+            assert message['payload']['body'] == 'Hello <travelers>!'
+            assert receive_event(leader)['payload']['durable'] is True
+            reaction = {'commandId':str(uuid4()),'correlationId':str(uuid4()),
+                        'messageId':message['payload']['messageId'],'emoji':'👍','active':True}
+            leader.send_json({'event':'trip.chat.react','payload':reaction})
+            assert receive_event(leader)['payload']['reactions'] == [{'emoji':'👍','userIds':[ids[0]]}]
+            assert receive_event(leader)['payload']['durable'] is True
+            leader.send_json({'event':'trip.chat.react','payload':reaction})
+            assert receive_event(leader)['payload']['status'] == 'duplicate'
+            leader.send_json({'event':'trip.chat.react','payload':reaction | {'commandId':str(uuid4()),'active':False}})
+            assert receive_event(leader)['payload']['reactions'] == []
+            assert receive_event(leader)['payload']['durable'] is True
+            leader.send_json({'event':'trip.chat.react','payload':reaction | {'commandId':str(uuid4())}})
+            assert receive_event(leader)['payload']['reactions'] == [{'emoji':'👍','userIds':[ids[0]]}]
+            assert receive_event(leader)['payload']['durable'] is True
+            leader.send_json({'event':'trip.chat.send', 'payload':chat})
+            assert receive_event(leader)['payload']['status'] == 'duplicate'
+            history = client.get('/api/v1/trips/'+trip_id+'/chat', headers={'authorization':'Bearer '+tokens[0]})
+            assert history.status_code == 200 and len(history.json()['items']) == 1
+            seq = history.json()['items'][0]['roomSeq']
+            assert client.get('/api/v1/trips/'+trip_id+'/chat', params={'before':seq},
+                              headers={'authorization':'Bearer '+tokens[0]}).json()['items'] == []
+        headers = {'authorization':'Bearer '+tokens[0], 'Idempotency-Key':str(uuid4())}
+        posted = client.post('/api/v1/trips/'+trip_id+'/chat',headers=headers,json={'body':'HTTP message'})
+        assert posted.status_code == 201 and posted.json()['body'] == 'HTTP message'
+        assert client.post('/api/v1/trips/'+trip_id+'/chat',headers=headers,json={'body':'HTTP message'}).json()['messageId'] == posted.json()['messageId']
+        assert client.post('/api/v1/trips/'+trip_id+'/chat',headers=headers,json={'body':'Changed'}).status_code == 409
+        client.portal.call(restart_rooms)
         claims = jwt.decode(tokens[0], 'integration-test-key-'+'x'*40, algorithms=['HS256'], audience='test-client', issuer='test')
         claims['exp'] = datetime.now(timezone.utc) + timedelta(seconds=1)
         short_token = jwt.encode(claims, 'integration-test-key-'+'x'*40, algorithm='HS256')
         with client.websocket_connect(ws_url, headers={'authorization':'Bearer '+short_token, 'origin':'http://testserver'}) as expiring:
-            assert expiring.receive_json()['event'] == 'trip.snapshot'
+            snapshot = receive_event(expiring)
+            assert snapshot['event'] == 'trip.snapshot'
+            assert snapshot['payload']['chat']['items'][0]['body'] == 'Hello <travelers>!'
+            assert snapshot['payload']['chat']['items'][0]['reactions'] == [{'emoji':'👍','userIds':[ids[0]]}]
             with pytest.raises(WebSocketDisconnect):
-                expiring.receive_json()
+                receive_event(expiring)
     finally:
         asyncio.run(cleanup_trip())
 
