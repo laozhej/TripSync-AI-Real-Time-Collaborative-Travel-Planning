@@ -25,9 +25,10 @@ def render(choice,version,status):
     venue=choice['venue']
     cents=int(venue.pricePerPerson*100)
     price=f'{cents//100}.{cents%100:02d}'
+    currency=choice.get('currency','EUR')
     tags=', '.join(sorted(venue.dietaryTags)) or 'none declared'
     prefix='Model unavailable or invalid; grounded fallback. ' if status=='grounded_fallback' else ''
-    return {'status':status,'answer':f'{prefix}{venue.name}: EUR{price} per person. Authored dietary tags: {tags}. The full buffered slot fits the authored hours.',
+    return {'status':status,'answer':f'{prefix}{venue.name}: {currency}{price} per person. Authored dietary tags: {tags}. The full buffered slot fits the authored hours.',
             'suggestedVenueId':choice['venueId'],'sourceEvents':[f'venue:{venue.sourceId}@{version}']}
 
 

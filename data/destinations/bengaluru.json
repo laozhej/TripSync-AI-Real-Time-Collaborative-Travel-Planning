@@ -1,0 +1,238 @@
+{
+  "schemaVersion": 1,
+  "destination": "Bengaluru, India",
+  "timezone": "Asia/Kolkata",
+  "currency": "INR",
+  "provenance": {
+    "kind": "synthetic",
+    "author": "TripSync project",
+    "authoredAt": "2026-10-31",
+    "license": "project-authored",
+    "notice": "Fictional Indian demonstration data; not real venues, fares, forecasts or travel advice"
+  },
+  "venues": [
+    {
+      "sourceId": "v_1",
+      "name": "Synthetic Bengaluru Kitchen",
+      "category": "food",
+      "pricePerPerson": "350.00",
+      "dietaryTags": [
+        "vegetarian",
+        "vegan",
+        "halal",
+        "gluten-free"
+      ],
+      "coordinates": {
+        "lat": 12.9716,
+        "lng": 77.5946
+      },
+      "rating": 4.0,
+      "hours": {
+        "weekly": [
+          {
+            "days": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
+            "open": "11:00",
+            "close": "22:00",
+            "closeDayOffset": 0
+          }
+        ],
+        "exceptions": []
+      },
+      "description": "Fictional Bengaluru demonstration venue. All prices, dietary tags, ratings and hours are authored test data, not verified travel facts."
+    },
+    {
+      "sourceId": "v_2",
+      "name": "Synthetic City Museum",
+      "category": "activity",
+      "pricePerPerson": "200.00",
+      "dietaryTags": [],
+      "coordinates": {
+        "lat": 12.972100000000001,
+        "lng": 77.595
+      },
+      "rating": 4.0,
+      "hours": {
+        "weekly": [
+          {
+            "days": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
+            "open": "09:00",
+            "close": "18:00",
+            "closeDayOffset": 0
+          }
+        ],
+        "exceptions": []
+      },
+      "description": "Fictional Bengaluru demonstration venue. All prices, dietary tags, ratings and hours are authored test data, not verified travel facts."
+    },
+    {
+      "sourceId": "v_3",
+      "name": "Synthetic Garden Stay",
+      "category": "lodging",
+      "pricePerPerson": "2500.00",
+      "dietaryTags": [],
+      "coordinates": {
+        "lat": 12.9726,
+        "lng": 77.5954
+      },
+      "rating": 4.0,
+      "hours": {
+        "weekly": [
+          {
+            "days": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
+            "open": "00:00",
+            "close": "00:00",
+            "closeDayOffset": 1
+          }
+        ],
+        "exceptions": []
+      },
+      "description": "Fictional Bengaluru demonstration venue. All prices, dietary tags, ratings and hours are authored test data, not verified travel facts."
+    },
+    {
+      "sourceId": "v_4",
+      "name": "Synthetic Market Thali",
+      "category": "food",
+      "pricePerPerson": "650.00",
+      "dietaryTags": [
+        "vegetarian"
+      ],
+      "coordinates": {
+        "lat": 12.9731,
+        "lng": 77.5958
+      },
+      "rating": 4.0,
+      "hours": {
+        "weekly": [
+          {
+            "days": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
+            "open": "12:00",
+            "close": "14:00",
+            "closeDayOffset": 0
+          }
+        ],
+        "exceptions": []
+      },
+      "description": "Fictional Bengaluru demonstration venue. All prices, dietary tags, ratings and hours are authored test data, not verified travel facts."
+    },
+    {
+      "sourceId": "v_5",
+      "name": "Synthetic Late Cafe",
+      "category": "food",
+      "pricePerPerson": "250.00",
+      "dietaryTags": [
+        "vegan",
+        "vegetarian"
+      ],
+      "coordinates": {
+        "lat": 12.973600000000001,
+        "lng": 77.5962
+      },
+      "rating": 4.0,
+      "hours": {
+        "weekly": [
+          {
+            "days": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
+            "open": "22:00",
+            "close": "02:00",
+            "closeDayOffset": 1
+          }
+        ],
+        "exceptions": []
+      },
+      "description": "Fictional Bengaluru demonstration venue. All prices, dietary tags, ratings and hours are authored test data, not verified travel facts."
+    },
+    {
+      "sourceId": "v_6",
+      "name": "Synthetic Outer Park",
+      "category": "activity",
+      "pricePerPerson": "100.00",
+      "dietaryTags": [],
+      "coordinates": {
+        "lat": 13.0116,
+        "lng": 77.5966
+      },
+      "rating": 4.0,
+      "hours": {
+        "weekly": [
+          {
+            "days": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
+            "open": "08:00",
+            "close": "18:00",
+            "closeDayOffset": 0
+          }
+        ],
+        "exceptions": []
+      },
+      "description": "Fictional Bengaluru demonstration venue. All prices, dietary tags, ratings and hours are authored test data, not verified travel facts."
+    }
+  ],
+  "transit": [
+    {
+      "sourceId": "t_1",
+      "fromVenueId": "v_1",
+      "toVenueId": "v_2",
+      "mode": "walk",
+      "durationMinutes": 12,
+      "validFrom": "2026-11-10T00:00:00+05:30",
+      "validTo": "2026-11-15T00:00:00+05:30",
+      "synthetic": true
+    }
+  ],
+  "weather": [
+    {
+      "sourceId": "w_1",
+      "date": "2026-11-10",
+      "summary": "Synthetic cloudy test scenario, not a forecast",
+      "temperatureC": 26,
+      "synthetic": true
+    }
+  ]
+}

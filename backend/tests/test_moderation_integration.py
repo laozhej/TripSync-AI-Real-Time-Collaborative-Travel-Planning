@@ -16,7 +16,8 @@ pytestmark = pytest.mark.skipif(not DB, reason='set TEST_DATABASE_URL to a dispo
 
 
 @pytest.fixture
-def group(client):
+def group(client,request):
+    settings=getattr(request,'param',{})
     ids, tokens, trips = [], [], []
     async def sql(query, params):
         engine = create_async_engine(DB)
@@ -40,8 +41,8 @@ def group(client):
         asyncio.run(sql('UPDATE users SET is_admin=true WHERE id=ANY(:ids)',{'ids':[UUID(ids[2]),UUID(ids[3])]}))
         def create(i):
             response = client.post('/api/v1/trips',headers=headers(i) | {'Idempotency-Key':str(uuid4())},json={
-                'destination':'Lisbon, Portugal','startDate':'2026-11-10','endDate':'2026-11-14',
-                'totalBudget':'1000.00','currency':'EUR','maxParticipants':5})
+                'destination':settings.get('destination','Lisbon, Portugal'),'startDate':'2026-11-10','endDate':'2026-11-14',
+                'totalBudget':settings.get('totalBudget','1000.00'),'currency':settings.get('currency','EUR'),'maxParticipants':5})
             assert response.status_code == 201
             trips.append(response.json()['tripId'])
             return response.json()

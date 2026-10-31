@@ -47,3 +47,7 @@ Recommendation: ~12 venue/lodging options, 4 transit edges, 3 weather dates. Cou
 A small synthetic Lisbon fixture and a partial JSON validator/importer now exist. The importer accepts an initial destination version only; database execution and active-trip pinning have not been verified. The current schema rejects date-specific exceptions instead of implementing them. See [implementation evidence](PHASE_1_EVIDENCE.md); the full staging, activation, and validation requirements above remain pending.
 
 The imported initial version now includes a generated venue tsvector and GIN index. The synthetic fixture covers the first-slice categories and boundary examples; date-specific hours exceptions, staged updates and Admin upload remain future work. See [evidence](PHASE_1_EVIDENCE.md).
+
+## Current Indian sample
+
+`data/destinations/bengaluru.json` is the default UI destination: Bengaluru, India; Asia/Kolkata; INR. Six fictional places include dietary coverage, an over-ceiling meal, restricted/overnight hours, lodging and an out-of-radius candidate, plus explicitly synthetic transit/weather records. Every price/rating/hour/location is project-authored demonstration metadata, not verified real travel information. Import it as a new destination with the existing CLI; do not overwrite Lisbon versions or convert active trips. Dataset currency accepts INR and legacy EUR.

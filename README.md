@@ -6,6 +6,8 @@ Independent educational prototype, broader project title “Airbnb Real-Time AI 
 
 **Selected track: Track A (full-stack). Selected stack: Python — FastAPI native WebSockets, PostgreSQL, SQLAlchemy async/asyncpg, Pytest; React JavaScript client.** Exactly one application backend; Concierge/recommendations are local Python modules. The PRD permits hosted or local inference. The user selected local open-source inference: Qwen2.5 1.5B through a portable Ollama runtime; this is an implementation choice, not a PRD mandate. Concierge business logic belongs to the single Python application backend. Alternatives and trade-offs are in [decisions](docs/DECISIONS.md).
 
+New trips follow the Indian baseline: **Bengaluru, INR (₹) and IST**. Prices and destination metadata are fictional project-authored samples. Existing trips retain their original currency. See [India localization evidence](docs/INDIA_LOCALIZATION_EVIDENCE.md).
+
 ## Intended scope
 
 The final build includes a shared day-by-day activity/lodging board, invites and trip roles, Drafting/Voting/Locked lifecycle, version-checked edits, chat/typing/reactions, presence/reconnect, Leader moderation, exact budgets and contested votes. The Concierge filters authored metadata before ranking and RAG generation, cites sources, flags schedule/budget conflicts and handles no-match/model outages safely. Dashboard/history/preferences, hybrid content+collaborative recommendations, session analytics and Admin dataset upload complete the three epics (§6).

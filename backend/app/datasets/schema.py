@@ -120,7 +120,7 @@ class Dataset(Strict):
     schemaVersion: Literal[1]
     destination: str = Field(min_length=1, max_length=200)
     timezone: str
-    currency: Literal["EUR"]
+    currency: Literal["INR", "EUR"]
     provenance: Provenance
     venues: list[Venue] = Field(min_length=1, max_length=2000)
     transit: list[Transit] = Field(max_length=2000)

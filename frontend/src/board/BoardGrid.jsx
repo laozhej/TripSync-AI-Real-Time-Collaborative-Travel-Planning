@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {utcDateRange} from './time.js';
+import {planningRange as utcDateRange,displayTime,timeLabel} from './time.js';
 
 export default function BoardGrid({board,room,connection,onSelectedMove,onDropMove,onRemove,onLock,onUnlock}){
   const [offset,O]=useState(0);
@@ -22,13 +22,13 @@ export default function BoardGrid({board,room,connection,onSelectedMove,onDropMo
   }
   return <div className="dayGrid">
     <div className="gridNav"><button className="link" disabled={start===0} onClick={()=>O(Math.max(0,start-7))}>Previous days</button><span>Days {start+1}–{start+days.length} of {count}</span><button className="link" disabled={start+days.length>=count} onClick={()=>O(start+7)}>Next days</button></div>
-    <p id="board-instructions">Times are UTC. Drag a drafting card to a day/time cell, or choose the day and time below and use its move button.</p>
+    <p id="board-instructions">Times are {timeLabel(room)}. Drag a drafting card to a day/time cell, or choose the day and time below and use its move button.</p>
     <div className="gridScroll" tabIndex={0} aria-label="Scrollable itinerary grid">
-      <table aria-describedby="board-instructions"><caption>Shared day-by-day itinerary</caption><thead><tr><th scope="col">UTC</th>{days.map(day=><th key={day.index} scope="col">{day.date}</th>)}</tr></thead>
-        <tbody>{Array.from({length:24},(_,hour)=><tr key={hour}><th scope="row">{String(hour).padStart(2,'0')}:00</th>{days.map(day=><td key={day.index} aria-label={`${day.date} ${hour}:00 UTC`} onDragOver={event=>{if(canEdit)event.preventDefault()}} onDrop={event=>drop(event,day,hour)}>
-          {board.items.filter(item=>new Date(item.startTime).toISOString().slice(0,10)===day.date&&new Date(item.startTime).getUTCHours()===hour).sort((a,b)=>a.startTime.localeCompare(b.startTime)||a.itemId.localeCompare(b.itemId)).map(item=><article className="place gridCard" key={item.itemId} draggable={canEdit&&item.lifecycleStage==='drafting'}
+      <table aria-describedby="board-instructions"><caption>Shared day-by-day itinerary</caption><thead><tr><th scope="col">{timeLabel(room)}</th>{days.map(day=><th key={day.index} scope="col">{day.date}</th>)}</tr></thead>
+        <tbody>{Array.from({length:24},(_,hour)=><tr key={hour}><th scope="row">{String(hour).padStart(2,'0')}:00</th>{days.map(day=><td key={day.index} aria-label={`${day.date} ${hour}:00 ${timeLabel(room)}`} onDragOver={event=>{if(canEdit)event.preventDefault()}} onDrop={event=>drop(event,day,hour)}>
+          {board.items.filter(item=>displayTime(item.startTime,room).slice(0,10)===day.date&&Number(displayTime(item.startTime,room).slice(11,13))===hour).sort((a,b)=>a.startTime.localeCompare(b.startTime)||a.itemId.localeCompare(b.itemId)).map(item=><article className="place gridCard" key={item.itemId} draggable={canEdit&&item.lifecycleStage==='drafting'}
             onDragStart={event=>{event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('application/tripsync-item',JSON.stringify({itemId:item.itemId,positionVersion:item.positionVersion}))}}>
-            <div><small>{item.startTime}</small><h3>{item.name}</h3><span>{item.lifecycleStage}</span></div><div>
+            <div><small>{displayTime(item.startTime,room)} {timeLabel(room)}</small><h3>{item.name}</h3><span>{item.lifecycleStage}</span></div><div>
               {item.lifecycleStage==='drafting'&&<><button className="link" disabled={!canEdit} onClick={()=>onSelectedMove(item)}>Move to selected time</button><button className="link" disabled={!canEdit} onClick={()=>onRemove(item)}>Remove</button></>}
               {room.role==='leader'&&item.lifecycleStage==='drafting'&&<button className="link" disabled={!canLead} onClick={()=>onLock(item)}>Lock</button>}
               {room.role==='leader'&&item.lifecycleStage==='locked'&&<button className="link" disabled={!canLead} onClick={()=>onUnlock(item)}>Unlock</button>}

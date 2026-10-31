@@ -55,6 +55,7 @@ async def main():
         env['TEST_DATABASE_URL'] = env['DATABASE_URL']
         run('migration', [sys.executable, '-m', 'alembic', '-c', 'backend/alembic.ini', 'upgrade', 'head'], env)
         run('dataset import', [sys.executable, '-m', 'app.cli', 'import-dataset', 'data/destinations/lisbon.json'], env)
+        run('Indian dataset import', [sys.executable, '-m', 'app.cli', 'import-dataset', 'data/destinations/bengaluru.json'], env)
         run('tests', [sys.executable, '-m', 'pytest', 'backend/tests', '-q'], env)
     finally:
         if created:

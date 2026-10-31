@@ -25,7 +25,7 @@ Then run:
 $env:PYTHONPATH=(Join-Path (Get-Location) 'backend')
 .\.venv\Scripts\python.exe -m app.cli init-local-key
 .\.venv\Scripts\python.exe -m alembic -c backend\alembic.ini upgrade head
-.\.venv\Scripts\python.exe -m app.cli import-dataset data\destinations\lisbon.json
+.\.venv\Scripts\python.exe -m app.cli import-dataset data\destinations\bengaluru.json
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000 --workers 1
 ```
 
@@ -84,7 +84,7 @@ $env:PYTHONPATH=(Join-Path (Get-Location) 'backend')
 npm run dev --prefix frontend -- --host 127.0.0.1
 ```
 
-Open the Vite loopback address. Create/join a trip with two browser profiles. Pin a venue, use the grid/drop or selected-time move, and exercise chat and Leader room controls. For Concierge, expand Budget and dietary preferences, explicitly save a food ceiling such as EUR25/person, declare each traveler's diets in that traveler's session, select a valid trip day/time (e.g. 12:00 UTC for the synthetic kitchen), and ask. Click the canonical citation to view its pinned source. Missing configuration prompts clarification; unavailable/invalid generation is labeled fallback and never relaxes filters. Historical answers are labeled Earlier result after the room changes. Cold model loading is separate setup; application generation still has its 2.5-second deadline.
+Open the Vite loopback address. Create/join a trip with two browser profiles. Pin a venue, use the grid/drop or selected-time move, and exercise chat and Leader room controls. For Concierge, expand Budget and dietary preferences, explicitly save a food ceiling such as INR500/person, declare each traveler's diets in that traveler's session, select a valid trip day/time (e.g. 12:00 IST for the synthetic kitchen), and ask. Click the canonical citation to view its pinned source. Missing configuration prompts clarification; unavailable/invalid generation is labeled fallback and never relaxes filters. Historical answers are labeled Earlier result after the room changes. Cold model loading is separate setup; application generation still has its 2.5-second deadline.
 
 Phase 2 verification (all commands below were exercised):
 

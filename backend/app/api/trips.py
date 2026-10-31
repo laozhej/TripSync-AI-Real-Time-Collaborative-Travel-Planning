@@ -29,7 +29,7 @@ class CreateTrip(Strict):
     startDate: date
     endDate: date
     totalBudget: str
-    currency: str = Field(pattern="^EUR$")
+    currency: str = Field(pattern="^(INR|EUR)$")
     maxParticipants: int = Field(ge=2, le=50)
 
     @field_validator("totalBudget")

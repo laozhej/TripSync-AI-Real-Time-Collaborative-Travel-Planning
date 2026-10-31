@@ -39,3 +39,7 @@ Track B is not selected. A later switch must revise TASK-002/006/018/020/024 to 
 ## Phase 2 checkpoint — 2026-10-31
 
 TASK-008–013 are accepted against the Week 2 checkpoint in PRD §11.1 and the implementation-plan gates, with actual tests recorded in PHASE_2_EVIDENCE.md. TASK-008 covers the day/time board, CAS and legal/illegal item lifecycle rules; its Voting projections are internal primitives. Live election orchestration, deadlines/ballots and winner/conflict/budget application remain TASK-016 after TASK-014/015, matching PRD Week 3. No Phase 3 task or final performance/security/submission requirement is checked off here.
+
+## India localization follow-up
+
+User-authorized after Phase 2: default destination Bengaluru/India, INR/paise and IST interface. This is a locale/data correction across the completed features; later Phase 3/4 checkboxes remain unchanged. Actual follow-up validation is recorded in INDIA_LOCALIZATION_EVIDENCE.md.

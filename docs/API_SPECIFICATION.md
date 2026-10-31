@@ -134,3 +134,7 @@ Member constraints are `{dietaryTags:[],categoryCeilingsMinor:{}}`. Category voc
 Ask responses preserve questionId/userId/answer/suggestedVenueId/sourceEvents and add status, datasetVersion, basedOnSeq, generatedAt, eventId, roomEpoch, roomSeq and durable. `grounded` means actual validated model output; `grounded_fallback` is labeled and uses only valid authored candidates. `no_valid_candidate`, `needs_clarification` and `stale_context` contain null suggestedVenueId and empty citations. Committed responses are idempotent and broadcast once as `trip.ai.suggestion`; requesters removed during generation cannot receive the result. A changing room is re-evaluated once, then returns stale_context.
 
 The current HTTP errors retain FastAPI `detail` (string or `{code,...}`), rather than claiming the proposed common error envelope above is complete. Stale settings return 409 with currentStateVersion; stale board moves use the separate socket edit-conflict event. Actual checks are in [Phase 2 evidence](PHASE_2_EVIDENCE.md).
+
+### India baseline update
+
+Create-room currency accepts INR or legacy EUR, and must match the selected active dataset. The new default example is destination `Bengaluru, India`, currency `INR`, totalBudget `25000.00`; GET trip returns timezone `Asia/Kolkata`. A noon IST slot is `2026-11-10T12:00:00+05:30` (the same instant as `2026-11-10T06:30:00Z`). Budget minor units in Indian rooms are paise. Earlier mandatory PRD examples and legacy EUR fixtures remain documented as historical examples.

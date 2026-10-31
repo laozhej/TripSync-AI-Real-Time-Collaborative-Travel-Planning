@@ -68,3 +68,7 @@ The [2026-10-31 PRD alignment review](PRD_ALIGNMENT_REVIEW.md) distinguishes ori
 ## Phase 2 checkpoint acceptance — 2026-10-31
 
 [Phase 2 evidence](PHASE_2_EVIDENCE.md) records accepted TASK-008–013: CAS/day grid/lifecycle rules (REQ-005/006), presence/moderation/refresh (REQ-008–010), durable chat (REQ-007), recovery/logging (REQ-027/028), authorized filtering/ranking (REQ-012–016), actual local generation/citations and safe fallback (REQ-017/021). Final submission evidence in the original table remains pending where it spans later tasks. REQ-005 explicitly also traces TASK-016 for live Voting orchestration; tested item state projections do not claim working elections. REQ-019/020/022–025 and later logistics, security/performance/demo requirements remain in final scope.
+
+## Indian localization follow-up
+
+Explicit user requirement: INR/paise, Asia/Kolkata IST board and an authored Indian destination. Implementation: Bengaluru fixture, dataset/API currency validation, room-derived budget/event currency, Concierge currency rendering, frontend locale/time helpers. Verification: `test_india_integration.py`, India case in frontend `time.test.js`, and the Bengaluru two-browser real-model flow. Original Phase 2 evidence stays historical; current results are recorded in INDIA_LOCALIZATION_EVIDENCE.md.

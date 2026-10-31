@@ -64,3 +64,7 @@ The pipeline is now connected to the actor, pinned PostgreSQL metadata, API, loc
 The local adapter supplies up to five eligible sources, requires exactly one candidate plus allowlisted reason fields, bounds response bytes to 64 KiB and generation to 2.5 seconds, and revalidates the IDs independently of the model schema. It renders source facts rather than displaying free-form model prose. Citations resolve through the member-authorized source endpoint at the trip's immutable version. Generation does not hold the room lock; a changed context is retried once, then returns no suggestions as stale_context. A removed requester cannot receive an in-flight result. Model overload/outage/invalid output uses only an existing hard-valid candidate and labels the fallback.
 
 Actual Qwen2.5 1.5B inference, API/citation and browser acceptance are in [Phase 2 evidence](PHASE_2_EVIDENCE.md). Transit/weather are stored authored metadata; the current renderer does not infer walking times or invent weather. Date-exception ingestion remains unsupported and cannot silently become an always-open venue. Conflict detection and timed vote orchestration remain Phase 3.
+
+### India update
+
+Indian requests use a per-person INR ceiling in integer paise and IST slots; the UI sends offset-correct UTC instants. Candidate facts and resolved citations retain the trip's INR currency. The fictional Bengaluru kitchen costs INR350.00 in authored metadata; a ₹500.00/person ceiling at 12:00–13:00 IST is a valid demo request. Fallback, hard filters and canonical citations remain unchanged.

@@ -1,5 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {planningSlot,planningRange,displayTime,timeLabel} from '../src/board/time.js';
+
+test('Indian slots convert IST midnight to previous UTC day without changing trip day',()=>{
+  const room={startDate:'2026-11-10',endDate:'2026-11-14',timezone:'Asia/Kolkata'};
+  const result=planningSlot('2026-11-10','00:00',room);
+  assert.equal(result.startTime,'2026-11-09T18:30:00.000Z');
+  assert.equal(result.dayIndex,0);
+  assert.equal(displayTime(result.startTime,room),'2026-11-10 00:00');
+  assert.equal(timeLabel(room),'IST');
+  assert.equal(planningRange(room).count,5);
+  assert.throws(()=>planningSlot('2026-11-09','23:59',room));
+  assert.equal(planningSlot('2026-11-14','23:00',room).endTime,'2026-11-14T18:30:00.000Z');
+});
 import {destinationDate,utcDateRange,slot} from '../src/board/time.js';
 const trip=(timezone,startDate='2026-07-10',endDate=startDate)=>({timezone,startDate,endDate});
 

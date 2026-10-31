@@ -92,10 +92,10 @@ try:
         # Both the in-memory HTTP token and HttpOnly socket token expire together.
         planner.wait_for_function("window.__testSockets.length >= 2 && window.__testSockets.at(-1).readyState === 1",timeout=20000)
         expect(planner.get_by_role('heading',name=name,exact=True)).to_have_count(2)
-        planner.get_by_label('Start time (UTC)').fill('13:00')
+        planner.get_by_label('Start time (IST)').fill('13:00')
         planner.get_by_role('button',name='Move to selected time').click()
         for page in pages:
-            expect(page.locator('.board .place').filter(has=page.get_by_role('button',name='Move to selected time')).first).to_contain_text('13:00:00')
+            expect(page.locator('.board .place').filter(has=page.get_by_role('button',name='Move to selected time')).first).to_contain_text('13:00 IST')
         leader.get_by_role('button',name='Lock',exact=True).click()
         expect(leader.get_by_role('button',name='Unlock',exact=True)).to_be_visible()
         expect(planner.get_by_role('button',name='Move to selected time')).to_have_count(0)
@@ -117,12 +117,12 @@ try:
         expect(planner.get_by_role('button',name='React 👍')).to_have_attribute('aria-pressed','true')
         # Actual native drag/drop uses the captured version and persists only the drop.
         card=planner.locator('.gridCard').first
-        card.drag_to(planner.get_by_role('cell',name='2026-11-11 14:00 UTC',exact=True),source_position={'x':20,'y':20},target_position={'x':50,'y':20})
+        card.drag_to(planner.get_by_role('cell',name='2026-11-11 14:00 IST',exact=True),source_position={'x':20,'y':20},target_position={'x':50,'y':20})
         for page in pages:
-            expect(page.locator('.gridCard').first).to_contain_text('2026-11-11T14:00:00')
+            expect(page.locator('.gridCard').first).to_contain_text('2026-11-11 14:00 IST')
             page.get_by_text('All displayed changes saved').wait_for()
         leader.get_by_text('Budget and dietary preferences',exact=True).click()
-        leader.get_by_label('Group category ceiling (EUR/person)').fill('25.00')
+        leader.get_by_label('Group category ceiling (INR/person)').fill('500.00')
         leader.get_by_role('button',name='Save group ceiling',exact=True).click()
         expect(leader.get_by_role('button',name='Save group ceiling',exact=True)).to_be_enabled()
         leader.get_by_role('button',name='Ask Concierge',exact=True).click()

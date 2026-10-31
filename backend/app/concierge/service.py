@@ -64,7 +64,7 @@ async def question_lock(room,key):
 
 
 async def member_trip(conn,room,actor):
-    row=(await conn.execute(text('''SELECT t.dataset_id,t.timezone,t.start_date,t.end_date,t.status,t.planning_session_id,
+    row=(await conn.execute(text('''SELECT t.dataset_id,t.currency,t.timezone,t.start_date,t.end_date,t.status,t.planning_session_id,
         t.category_ceilings,m.constraints,d.version FROM trips t JOIN memberships m ON m.trip_id=t.id
         JOIN auth_sessions s ON s.user_id=m.user_id JOIN datasets d ON d.id=t.dataset_id
         WHERE t.id=:trip AND m.user_id=:uid AND m.status='active' AND s.id=:session
@@ -136,7 +136,7 @@ async def capture(room,actor,request,key,fingerprint):
                     AND search_vector @@ plainto_tsquery('english',:question)'''),
                     {'dataset':trip['dataset_id'],'ids':valid_ids,'question':request.question})).scalars().all()
                 if hits: ranked=[candidate for candidate in ranked if candidate['sourceId'] in hits]
-            result['choices']=[{'venue':venues[c['sourceId']][0],'venueId':venues[c['sourceId']][1],'score':c['score']} for c in ranked[:5]]
+            result['choices']=[{'venue':venues[c['sourceId']][0],'venueId':venues[c['sourceId']][1],'score':c['score'],'currency':trip['currency']} for c in ranked[:5]]
             return result
 
 

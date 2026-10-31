@@ -59,6 +59,7 @@ class Room:
         self.lock = asyncio.Lock()
         self.epoch = str(uuid4())
         self.session_id = None
+        self.currency = "INR"
         self.seq = self.committed = 0
         self.items = {}
         self.commands = {}
@@ -76,11 +77,12 @@ class Room:
             if self.loaded:
                 return
             async with self.manager.engine.begin() as conn:
-                trip = (await conn.execute(text("SELECT committed_seq,planning_session_id FROM trips WHERE id=:id"), {"id":self.trip_id})).mappings().first()
+                trip = (await conn.execute(text("SELECT committed_seq,planning_session_id,currency FROM trips WHERE id=:id"), {"id":self.trip_id})).mappings().first()
                 if trip is None:
                     raise RoomError("NOT_FOUND")
                 self.seq = self.committed = trip['committed_seq']
                 self.session_id = str(trip['planning_session_id'])
+                self.currency = trip['currency']
                 # A fresh epoch makes any previously observed volatile future invalid.
                 await conn.execute(text("UPDATE trips SET room_epoch=:epoch,room_seq=committed_seq WHERE id=:id"),
                                    {"epoch":UUID(self.epoch), "id":self.trip_id})
@@ -417,7 +419,7 @@ class Room:
             self.items[str(item_id)] = item
             payload = item | {"operation":"pin","item":item,"commandId":key,"correlationId":str(command.correlationId),
                 "eventId":str(event_id),"roomEpoch":self.epoch,"roomSeq":self.seq,"durable":False,
-                "budgetSummary":self.budget_summary('EUR')}
+                "budgetSummary":self.budget_summary(self.currency)}
             self.pending.append(dict(item=item, item_id=item_id, venue=venue['id'], dataset=trip['dataset_id'],
                 actor=actor['user_id'], session=trip['planning_session_id'], attendees=attendees, price=venue['price_per_person_minor'],
                 command=command.commandId, event=event_id, payload=payload | {"commandHash":fingerprint}))
@@ -513,7 +515,7 @@ class Room:
                              payload=json.dumps(payload | {'commandHash':fingerprint, 'reason':getattr(command,'reason',None)})))
                 self.seq = self.committed = next_seq
                 self.items[str(command.itemId)] = item
-                payload['budgetSummary'] = self.budget_summary('EUR')
+                payload['budgetSummary'] = self.budget_summary(self.currency)
                 self.publish(envelope('trip.board.update', self.trip_id, payload))
                 self.audit('trip.board.transition.committed',command.correlationId)
                 return {'commandId': key, 'status':'committed', 'roomSeq':next_seq,
@@ -527,7 +529,7 @@ class Room:
             payload = {'operation': operation, 'itemId': str(command.itemId), 'item': item,
                 'commandId': key, 'correlationId': str(command.correlationId), 'eventId': str(event_id),
                 'roomEpoch': self.epoch, 'roomSeq': self.seq, 'durable': False,
-                'budgetSummary': self.budget_summary('EUR')}
+                'budgetSummary': self.budget_summary(self.currency)}
             self.pending.append({'operation': operation, 'item': item, 'item_id': command.itemId,
                 'base_version': current['positionVersion'], 'actor': actor['user_id'],
                 'session': trip['planning_session_id'], 'command': command.commandId, 'event': event_id,

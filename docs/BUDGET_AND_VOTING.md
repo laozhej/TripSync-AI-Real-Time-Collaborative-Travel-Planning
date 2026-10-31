@@ -4,7 +4,7 @@ PRD §§1.3,3,5.3,6.1–6.2,7.2. No budget calculations below are measured appli
 
 ## Money and ceilings
 
-EUR only for baseline, integer cents (`bigint`), no currency conversion or floating-point arithmetic. Parse major-unit decimal strings once at API boundary; >2 fractional digits rejected, not silently rounded. Positive venue price per person; item cost is snapshot price × attendee count. Lodging also uses per-person slot price in this prototype; nightly multi-room pricing is outside the dataset convention and must not be inferred. Transit prices follow authored per-person metadata. No payment occurs.
+INR for the Indian baseline, integer paise (`bigint`); legacy EUR rooms retain integer cents, no currency conversion or floating-point arithmetic. Parse major-unit decimal strings once at API boundary; >2 fractional digits rejected, not silently rounded. Positive venue price per person; item cost is snapshot price × attendee count. Lodging also uses per-person slot price in this prototype; nightly multi-room pricing is outside the dataset convention and must not be inferred. Transit prices follow authored per-person metadata. No payment occurs.
 
 Per-category ceilings food/lodging/activity/transit constrain Concierge price-per-person. Total trip budget and each participant's total ceiling constrain cumulative allocations and generate budgetBreach alerts. Different ceilings are never conflated. Hard filtering never treats total budget as category budget without explicit configured category defaults. Attending members are explicit and versioned; membership changes do not silently reallocate existing costs.
 
@@ -57,3 +57,7 @@ The live room now invokes the provisional move/remove/lock/unlock rules; a succe
 ## Phase 2 lifecycle acceptance — 2026-10-31
 
 The live board implements Drafting pin/move/remove and durable Leader lock/unlock; `begin_voting` and `resolve_voting` implement the internal versioned lifecycle projections, validate common slots/attendees, freeze Voting edits, and distinguish cancellation from archived losers. They are not public commands and do not create elections on their own. TASK-016 must call and persist these primitives with eligible voters, deadlines, ballots, winner/conflict/budget application. No timed vote workflow is claimed in Phase 2. The exact-budget rules and all Phase 3 requirements above remain mandatory.
+
+### Indian currency override (2026-10-31)
+
+New Indian trips use INR. Integer minor units mean paise: INR350.00 = 35000 paise; a ₹25,000.00 group budget = 2500000 paise. Ceilings and totals keep exact integer math and remainder allocation; formatting uses en-IN grouping. Legacy EUR rooms retain euro cents. No implicit currency conversion or mixing is permitted. This supersedes the earlier provisional EUR-only choice.

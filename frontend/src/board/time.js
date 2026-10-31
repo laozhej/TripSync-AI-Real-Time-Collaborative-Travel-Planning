@@ -1,4 +1,17 @@
 const DAY=86400000;
+export function timeLabel(room){return room?.timezone==='Asia/Kolkata'?'IST':'UTC'}
+export function displayTime(instant,room){
+  const shifted=new Date(new Date(instant).getTime()+(timeLabel(room)==='IST'?19800000:0));
+  return shifted.toISOString().slice(0,16).replace('T',' ');
+}
+export function planningRange(room){return timeLabel(room)==='IST'?{startDate:room.startDate,endDate:room.endDate,count:Math.round((Date.parse(room.endDate)-Date.parse(room.startDate))/DAY)+1}:utcDateRange(room)}
+export function planningSlot(date,time,room,duration=3600000){
+  if(timeLabel(room)!=='IST')return slot(date,time,room,duration);
+  const wall=new Date(date+'T'+time+':00Z');
+  if(!Number.isFinite(wall.getTime())||wall.toISOString().slice(0,16)!==date+'T'+time)throw Error('Choose a valid date and IST time.');
+  const utc=new Date(wall.getTime()-19800000).toISOString();
+  return slot(utc.slice(0,10),utc.slice(11,16),room,duration);
+}
 const formatters=new Map();
 export function destinationDate(instant,timezone='UTC'){
   if(!formatters.has(timezone))formatters.set(timezone,new Intl.DateTimeFormat('en-US',{timeZone:timezone,year:'numeric',month:'2-digit',day:'2-digit'}));

@@ -10,6 +10,8 @@ Track A full-stack; exactly one Python application stack: FastAPI native WebSock
 
 ## Invariants
 
+- Indian project baseline: new UI trips use Bengaluru, India, INR (integer paise), Asia/Kolkata/IST and en-IN presentation. Preserve legacy trip currencies and immutable datasets; never convert or relabel existing monetary values. Indian sample travel metadata is fictional. See ADR-018 and INDIA_LOCALIZATION_EVIDENCE.md.
+
 - Room state is server-authoritative in memory, with explicitly volatile applied acknowledgements and later committed watermark; significant transitions durable before final success. Follow `docs/ARCHITECTURE.md` recovery/epoch rules.
 - Use `positionVersion` compare-and-reject with explicit stale conflict and user reconciliation; never explicit database row locks or silent stale retry/LWW.
 - HTTP/socket share authorization/business functions. Derive acting user from validated token/session; account Admin does not bypass trip membership/Leader checks.
