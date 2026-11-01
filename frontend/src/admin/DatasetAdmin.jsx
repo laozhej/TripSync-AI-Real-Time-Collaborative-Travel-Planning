@@ -1,12 +1,197 @@
-import React,{useState,useEffect} from 'react';
-import {Badge,ConfirmDialog,SectionTitle} from '../ui/Primitives.jsx';
-export default function DatasetAdmin({api,tripId}){
- const [items,setItems]=useState(null),[error,setError]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[activation,setActivation]=useState(null),[modelStatus,setModelStatus]=useState('Model status is shown in the room recommendation rail.');
- const refresh=()=>api('/api/v1/admin/datasets').then(d=>setItems(d.items));
- useEffect(()=>{let active=true;api('/api/v1/admin/datasets').then(d=>{if(active)setItems(d.items)}).catch(e=>{if(active)setError(e.message)});return()=>{active=false}},[]);
- useEffect(()=>{setModelStatus('Model status is shown in the room recommendation rail.')},[tripId]);
- async function upload(e){e.preventDefault();setError('');setMessage('');setBusy(true);try{const file=e.currentTarget.elements.bundle.files[0];if(!file||file.size>2097152)throw Error('Choose a JSON dataset up to 2 MiB.');const body=await file.text();const result=await api('/api/v1/admin/datasets',{method:'POST',body});setMessage(`Dataset ${result.status}; review its version before activation.`);await refresh()}catch(e){setError(e.message)}finally{setBusy(false)}}
- async function activate(){setBusy(true);setError('');setMessage('');try{await api(`/api/v1/admin/datasets/${activation.datasetId}/activate`,{method:'POST'});setMessage(`Version ${activation.version} activated for new trips.`);setActivation(null);await refresh()}catch(e){setError(e.message);setActivation(null)}finally{setBusy(false)}}
- async function train(){setBusy(true);setError('');setModelStatus('Refreshing recommendation model…');try{const result=await api(`/api/v1/trips/${tripId}/recommendations/train`,{method:'POST'});setModelStatus(`Recommendation model ${result.modelVersion} activated from ${result.interactions} interactions.`)}catch(e){setError(e.message);setModelStatus('Refresh failed. The server retains the previous active model.')}finally{setBusy(false)}}
- return <section className="panel adminPanel" id="dataset-admin"><SectionTitle title="Admin dataset management" description="Validate, stage and activate immutable destination versions."><Badge>Admin</Badge></SectionTitle><p>Upload a fictional destination JSON bundle. Activation affects new trips; existing trips keep their pinned version.</p>{error&&<p role="alert">{error}</p>}{message&&<p role="status" className="notice">{message}</p>}{tripId&&<div><h3>Recommendation model</h3><p role="status">{modelStatus}</p><button className="secondary" disabled={busy} onClick={train}>Refresh recommendation model</button></div>}<form onSubmit={upload}><label>Destination JSON<input name="bundle" type="file" accept=".json,application/json" required disabled={busy}/></label><p className="helpText">Up to 2 MiB. Validation checks positive prices, supported dietary tags, coordinates and operating hours. Invalid bundles never activate.</p><button disabled={busy}>{busy?'Working…':'Validate and stage'}</button></form>{items===null&&!error&&<p role="status">Loading dataset versions…</p>}{items?.length===0&&<p>No datasets yet. Stage a validated bundle to begin.</p>}{items?.map(d=><article className="datasetRow" key={d.datasetId}><div><p>{d.destination} · v{d.version} · {d.status}</p><small>Checksum: {d.checksum}</small></div><div className="actions"><Badge tone={d.status==='active'?'success':d.status==='staging'?'warning':'neutral'}>{d.status}</Badge>{d.status==='staging'&&<button className="secondary" disabled={busy} onClick={()=>setActivation(d)}>Activate version {d.version}</button>}</div></article>)}{activation&&<ConfirmDialog title="Activate dataset version?" confirmLabel="Confirm activation" busy={busy} onConfirm={activate} onClose={()=>setActivation(null)}><p>Activate <strong>{activation.destination}, version {activation.version}</strong> for new trips? The current active version for this destination will retire. Existing trips keep their pinned version.</p></ConfirmDialog>}</section>
+import React, { useState, useEffect } from "react";
+import { Badge, ConfirmDialog, SectionTitle } from "../ui/Primitives.jsx";
+export default function DatasetAdmin({ api, tripId }) {
+  const [items, setItems] = useState(null),
+    [error, setError] = useState(""),
+    [message, setMessage] = useState(""),
+    [busy, setBusy] = useState(false),
+    [activation, setActivation] = useState(null),
+    [modelStatus, setModelStatus] = useState(
+      "Model status is shown in the room recommendation rail.",
+    );
+  const refresh = () =>
+    api("/api/v1/admin/datasets").then((d) => setItems(d.items));
+  useEffect(() => {
+    let active = true;
+    api("/api/v1/admin/datasets")
+      .then((d) => {
+        if (active) setItems(d.items);
+      })
+      .catch((e) => {
+        if (active) setError(e.message);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+  useEffect(() => {
+    setModelStatus("Model status is shown in the room recommendation rail.");
+  }, [tripId]);
+  async function upload(e) {
+    e.preventDefault();
+    setError("");
+    setMessage("");
+    setBusy(true);
+    try {
+      const file = e.currentTarget.elements.bundle.files[0];
+      if (!file || file.size > 2097152)
+        throw Error("Choose a JSON dataset up to 2 MiB.");
+      const body = await file.text();
+      const result = await api("/api/v1/admin/datasets", {
+        method: "POST",
+        body,
+      });
+      setMessage(
+        `Dataset ${result.status}; review its version before activation.`,
+      );
+      await refresh();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function activate() {
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      await api(`/api/v1/admin/datasets/${activation.datasetId}/activate`, {
+        method: "POST",
+      });
+      setMessage(`Version ${activation.version} activated for new trips.`);
+      setActivation(null);
+      await refresh();
+    } catch (e) {
+      setError(e.message);
+      setActivation(null);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function train() {
+    setBusy(true);
+    setError("");
+    setModelStatus("Refreshing recommendation model…");
+    try {
+      const result = await api(
+        `/api/v1/trips/${tripId}/recommendations/train`,
+        { method: "POST" },
+      );
+      setModelStatus(
+        `Recommendation model ${result.modelVersion} activated from ${result.interactions} interactions.`,
+      );
+    } catch (e) {
+      setError(e.message);
+      setModelStatus(
+        "Refresh failed. The server retains the previous active model.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <section className="panel adminPanel" id="dataset-admin">
+      <SectionTitle
+        title="Admin dataset management"
+        description="Validate, stage and activate immutable destination versions."
+      >
+        <Badge>Admin</Badge>
+      </SectionTitle>
+      <p>
+        Upload a fictional destination JSON bundle. Activation affects new
+        trips; existing trips keep their pinned version.
+      </p>
+      {error && <p role="alert">{error}</p>}
+      {message && (
+        <p role="status" className="notice">
+          {message}
+        </p>
+      )}
+      {tripId && (
+        <div>
+          <h3>Recommendation model</h3>
+          <p role="status">{modelStatus}</p>
+          <button className="secondary" disabled={busy} onClick={train}>
+            Refresh recommendation model
+          </button>
+        </div>
+      )}
+      <form onSubmit={upload}>
+        <label>
+          Destination JSON
+          <input
+            name="bundle"
+            type="file"
+            accept=".json,application/json"
+            required
+            disabled={busy}
+          />
+        </label>
+        <p className="helpText">
+          Up to 2 MiB. Validation checks positive prices, supported dietary
+          tags, coordinates and operating hours. Invalid bundles never activate.
+        </p>
+        <button disabled={busy}>
+          {busy ? "Working…" : "Validate and stage"}
+        </button>
+      </form>
+      {items === null && !error && (
+        <p role="status">Loading dataset versions…</p>
+      )}
+      {items?.length === 0 && (
+        <p>No datasets yet. Stage a validated bundle to begin.</p>
+      )}
+      {items?.map((d) => (
+        <article className="datasetRow" key={d.datasetId}>
+          <div>
+            <p>
+              {d.destination} · v{d.version} · {d.status}
+            </p>
+            <small>Checksum: {d.checksum}</small>
+          </div>
+          <div className="actions">
+            <Badge
+              tone={
+                d.status === "active"
+                  ? "success"
+                  : d.status === "staging"
+                    ? "warning"
+                    : "neutral"
+              }
+            >
+              {d.status}
+            </Badge>
+            {d.status === "staging" && (
+              <button
+                className="secondary"
+                disabled={busy}
+                onClick={() => setActivation(d)}
+              >
+                Activate version {d.version}
+              </button>
+            )}
+          </div>
+        </article>
+      ))}
+      {activation && (
+        <ConfirmDialog
+          title="Activate dataset version?"
+          confirmLabel="Confirm activation"
+          busy={busy}
+          onConfirm={activate}
+          onClose={() => setActivation(null)}
+        >
+          <p>
+            Activate{" "}
+            <strong>
+              {activation.destination}, version {activation.version}
+            </strong>{" "}
+            for new trips? The current active version for this destination will
+            retire. Existing trips keep their pinned version.
+          </p>
+        </ConfirmDialog>
+      )}
+    </section>
+  );
 }

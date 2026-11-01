@@ -1,9 +1,123 @@
-import React,{useEffect,useState} from 'react';
-import {Badge,SectionTitle} from '../ui/Primitives.jsx';
-import {money,tripDate} from '../ui/format.js';
-export default function Dashboard({api,onOpen}){
- const [data,setData]=useState(null),[error,setError]=useState(''),[opening,setOpening]=useState(null);
- useEffect(()=>{let active=true;api('/api/v1/me/dashboard').then(d=>{if(active)setData(d)}).catch(e=>{if(active)setError(e.message)});return()=>{active=false}},[]);
- async function enter(id){setOpening(id);try{await onOpen(id)}finally{setOpening(null)}}
- return <section className="panel dashboardPanel"><SectionTitle title="Your trips & preferences" description="Pick up a shared plan or revisit a finished trip."/>{error&&<p role="alert">{error}</p>}{!data&&!error&&<p role="status">Loading your trips…</p>}{data&&<div className="dashboardLayout"><div>{data.trips.length===0&&<div className="emptyState"><h3>Your first shared plan starts here.</h3><p>Create a room below, or join your group's invitation. Your trip history will appear here.</p></div>}{data.trips.map(t=><article className="tripCard" key={t.tripId}><div><Badge tone={t.canRejoin?'success':'locked'}>{t.canRejoin?'Active room':'Trip history'}</Badge><h3>{t.destination}</h3><p>{tripDate(t.startDate)} – {tripDate(t.endDate)}</p><Badge>{t.role}</Badge> <Badge>{t.status}</Badge></div><button className="secondary" disabled={opening!==null} onClick={()=>enter(t.tripId)}>{opening===t.tripId?'Opening room…':t.canRejoin?'Rejoin room':'View history'}</button></article>)}</div><aside className="profile" aria-label="Personal travel preferences"><h3>Your travel preferences</h3><p>Based on your actual trip interactions and declared requirements.</p><h3>Favored categories</h3>{data.derivedPreferences.length?<div className="preferenceTags">{data.derivedPreferences.map(p=><Badge key={p.category}>{p.category} · {p.interactions} interactions</Badge>)}</div>:<p>Like places to build your travel preferences.</p>}<h3>Dietary preferences</h3><div className="preferenceTags">{data.dietaryTags.length?data.dietaryTags.map(tag=><Badge key={tag}>{tag}</Badge>):<p>None declared. Set requirements in your room's Concierge preferences.</p>}</div><h3>Observed price ranges</h3>{data.budgetRanges.length?data.budgetRanges.map(r=><p key={r.currency}><strong>{money(r.minimumMinor,r.currency)} – {money(r.maximumMinor,r.currency)}</strong><br/>Per person from your {r.currency} history</p>):<p>Price ranges appear after you interact with places.</p>}</aside></div>}</section>
+import React, { useEffect, useState } from "react";
+import { Badge, SectionTitle } from "../ui/Primitives.jsx";
+import { money, tripDate } from "../ui/format.js";
+export default function Dashboard({ api, onOpen }) {
+  const [data, setData] = useState(null),
+    [error, setError] = useState(""),
+    [opening, setOpening] = useState(null);
+  useEffect(() => {
+    let active = true;
+    api("/api/v1/me/dashboard")
+      .then((d) => {
+        if (active) setData(d);
+      })
+      .catch((e) => {
+        if (active) setError(e.message);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+  async function enter(id) {
+    setOpening(id);
+    try {
+      await onOpen(id);
+    } finally {
+      setOpening(null);
+    }
+  }
+  return (
+    <section className="panel dashboardPanel">
+      <SectionTitle
+        title="Your trips & preferences"
+        description="Pick up a shared plan or revisit a finished trip."
+      />
+      {error && <p role="alert">{error}</p>}
+      {!data && !error && <p role="status">Loading your trips…</p>}
+      {data && (
+        <div className="dashboardLayout">
+          <div>
+            {data.trips.length === 0 && (
+              <div className="emptyState">
+                <h3>Your first shared plan starts here.</h3>
+                <p>
+                  Create a room below, or join your group's invitation. Your
+                  trip history will appear here.
+                </p>
+              </div>
+            )}
+            {data.trips.map((t) => (
+              <article className="tripCard" key={t.tripId}>
+                <div>
+                  <Badge tone={t.canRejoin ? "success" : "locked"}>
+                    {t.canRejoin ? "Active room" : "Trip history"}
+                  </Badge>
+                  <h3>{t.destination}</h3>
+                  <p>
+                    {tripDate(t.startDate)} – {tripDate(t.endDate)}
+                  </p>
+                  <Badge>{t.role}</Badge> <Badge>{t.status}</Badge>
+                </div>
+                <button
+                  className="secondary"
+                  disabled={opening !== null}
+                  onClick={() => enter(t.tripId)}
+                >
+                  {opening === t.tripId
+                    ? "Opening room…"
+                    : t.canRejoin
+                      ? "Rejoin room"
+                      : "View history"}
+                </button>
+              </article>
+            ))}
+          </div>
+          <aside className="profile" aria-label="Personal travel preferences">
+            <h3>Your travel preferences</h3>
+            <p>
+              Based on your actual trip interactions and declared requirements.
+            </p>
+            <h3>Favored categories</h3>
+            {data.derivedPreferences.length ? (
+              <div className="preferenceTags">
+                {data.derivedPreferences.map((p) => (
+                  <Badge key={p.category}>
+                    {p.category} · {p.interactions} interactions
+                  </Badge>
+                ))}
+              </div>
+            ) : (
+              <p>Like places to build your travel preferences.</p>
+            )}
+            <h3>Dietary preferences</h3>
+            <div className="preferenceTags">
+              {data.dietaryTags.length ? (
+                data.dietaryTags.map((tag) => <Badge key={tag}>{tag}</Badge>)
+              ) : (
+                <p>
+                  None declared. Set requirements in your room's Concierge
+                  preferences.
+                </p>
+              )}
+            </div>
+            <h3>Observed price ranges</h3>
+            {data.budgetRanges.length ? (
+              data.budgetRanges.map((r) => (
+                <p key={r.currency}>
+                  <strong>
+                    {money(r.minimumMinor, r.currency)} –{" "}
+                    {money(r.maximumMinor, r.currency)}
+                  </strong>
+                  <br />
+                  Per person from your {r.currency} history
+                </p>
+              ))
+            ) : (
+              <p>Price ranges appear after you interact with places.</p>
+            )}
+          </aside>
+        </div>
+      )}
+    </section>
+  );
 }

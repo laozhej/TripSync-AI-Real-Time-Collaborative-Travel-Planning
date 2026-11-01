@@ -1,97 +1,1287 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {createRoot} from 'react-dom/client';
-import './style.css';
-import ModerationControls from './board/ModerationControls.jsx';
-import ConciergePanel from './board/ConciergePanel.jsx';
-import Dashboard from './dashboard/Dashboard.jsx';
-import PlanningPanel from './votes/PlanningPanel.jsx';
-import DatasetAdmin from './admin/DatasetAdmin.jsx';
-import BoardGrid from './board/BoardGrid.jsx';
-import {Badge, SectionTitle, ThemeToggle} from './ui/Primitives.jsx';
-import {tripDate} from './ui/format.js';
-import {planningSlot as slot,planningRange as utcDateRange,timeLabel} from './board/time.js';
-const commandErrors={FORBIDDEN:'You do not have permission for this action.',STALE_STATE_VERSION:'The room settings changed. Review the current settings before trying again.',LEADER_DISCONNECTED:'The trip Leader is disconnected. Restricted actions are paused.',INVALID_TARGET:'Choose an active, connected Planner for leadership transfer.',TARGET_UNAVAILABLE:'That traveler is no longer an active member.',INVALID_TIME:'Choose an ordered time slot within the trip dates.',INVALID_ATTENDEES:'Choose only active travelers in this trip.',INVALID_ANCHOR:'That anchor is no longer on the board. Choose another planned item.',PERSISTENCE_DEGRADED:'Changes could not be saved. Reconnect after the server recovers.',COMMAND_ID_REUSE:'This action was already used with different details. Start a new action.'};
-function commandError(code){return commandErrors[code]||'The action could not be completed. Review the room and try again.'}
-function App(){
- const [token,T]=useState(''),[user,U]=useState(null),[error,E]=useState(''),[room,R]=useState(null),[venues,V]=useState([]),[invite,I]=useState(''),[mode,M]=useState('login');
- const [inviteId,II]=useState(''),[inviteRole,IR]=useState('planner'),[typing,ST]=useState({}),[pendingReactions,PR]=useState({});const lastTyping=useRef(0);
- const [board,B]=useState({items:[],roomSeq:0,committedSeq:0,roomEpoch:''}),[connection,C]=useState('disconnected'),[quality,Q]=useState('Awaiting connection measurement'),[moderationPending,MP]=useState(null),[persistenceFailed,PF]=useState(false);
- const [day,D]=useState(''),[time,S]=useState('12:00'); const socket=useRef(null);
- const tokenRef=useRef(''),refreshing=useRef(null);
- const boardRef=useRef({items:[],roomSeq:0,committedSeq:0,roomEpoch:''}),boardTrip=useRef('');
- useEffect(()=>{
-  if(!room?.tripId||!token)return; ST({});PR({});MP(null);PF(false);
-  if(boardTrip.current!==room.tripId){boardTrip.current=room.tripId;boardRef.current={items:[],roomSeq:0,committedSeq:0,roomEpoch:''};B(boardRef.current)}D(room.startDate);C('connecting');
-  let active=true, timer=null, attempt=0, ws,lastPong=Date.now();const heartbeat=setInterval(()=>{if(ws?.readyState!==WebSocket.OPEN)return;if(Date.now()-lastPong>30000){ws.close(4000);return}ws.send(JSON.stringify({event:'trip.sync.ping',payload:{clientSentAt:Date.now(),nonce:crypto.randomUUID()}}))},10000);
-  function connect(){
-   if(!active)return; C('connecting');
-   ws=new WebSocket(`${location.protocol==='https:'?'wss':'ws'}://${location.host}/ws/v1/trips/${room.tripId}`);socket.current=ws;
-   ws.onopen=()=>{attempt=0;lastPong=Date.now();Q('Awaiting connection measurement');C('connected')};ws.onerror=()=>C('disconnected');
-   ws.onclose=async(event)=>{if(!active)return;C('disconnected');if(event.code===1008){try{await api('/api/v1/trips/'+room.tripId)}catch(e){E(e.message);R(null);I('');II('');return}}if(active){const delay=Math.min(8000,500*2**attempt++);timer=setTimeout(connect,delay)}};
-   ws.onmessage=(event)=>{let msg;try{msg=JSON.parse(event.data)}catch{return}const p=msg.payload;
-   if(msg.event==='trip.snapshot'){PR({});const old=boardRef.current;if(old.roomEpoch&&old.roomEpoch!==p.roomEpoch&&old.roomSeq>old.committedSeq)E('The room restarted and some unsaved changes may have been lost. Check the itinerary before adding them again.');p.recommendationsVersion=old.recommendationsVersion||0;boardRef.current=p;B(p);const me=p.members?.find(m=>m.userId===user.userId);if(me)R(old=>({...old,role:me.role,canPin:me.canPin}))}
-   else if(msg.event==='trip.board.update'){const old=boardRef.current;if(old.roomEpoch!==p.roomEpoch||p.roomSeq!==old.roomSeq+1){ws.send(JSON.stringify({event:'trip.snapshot.request',payload:{}}));return}const next={...old,roomSeq:p.roomSeq,committedSeq:p.durable?p.roomSeq:old.committedSeq,items:p.operation==='remove'?old.items.filter(item=>item.itemId!==p.itemId):[...old.items.filter(item=>item.itemId!==p.itemId),p.item],budgets:p.budgetSummary};boardRef.current=next;B(next)}
-   else if(msg.event==='trip.recommendations.updated'){const next={...boardRef.current,recommendationsVersion:(boardRef.current.recommendationsVersion||0)+1};boardRef.current=next;B(next)}
-   else if(msg.event.startsWith('trip.vote.')||msg.event==='session.ended'||msg.event==='trip.conflicts.updated'||msg.event==='trip.board.conflict'){ws.send(JSON.stringify({event:'trip.snapshot.request',payload:{}}))}
-   else if(msg.event==='trip.ai.suggestion'||msg.event==='trip.constraints.update'){const old=boardRef.current;if(old.roomEpoch!==p.roomEpoch||p.roomSeq!==old.roomSeq+1){ws.send(JSON.stringify({event:'trip.snapshot.request',payload:{}}));return}const next={...old,roomSeq:p.roomSeq,committedSeq:p.roomSeq,...(msg.event==='trip.ai.suggestion'?{lastSuggestion:p}:{stateVersion:p.stateVersion})};boardRef.current=next;B(next);if(msg.event==='trip.constraints.update')ws.send(JSON.stringify({event:'trip.snapshot.request',payload:{}}))}
-   else if(msg.event==='trip.moderation.update'){const old=boardRef.current;if(old.roomEpoch!==p.roomEpoch||p.roomSeq!==old.roomSeq+1){ws.send(JSON.stringify({event:'trip.snapshot.request',payload:{}}));return}const next={...old,roomSeq:p.roomSeq,committedSeq:p.roomSeq,stateVersion:p.stateVersion,members:p.members,connectedUsers:p.connectedUsers,leaderConnected:p.leaderConnected,trip:{...old.trip,roomLocked:p.roomLocked}};boardRef.current=next;B(next);const me=p.members.find(m=>m.userId===user.userId);if(me)R(old=>({...old,role:me.role,canPin:me.canPin}));MP(current=>current===p.commandId?null:current)}
-   else if(msg.event==='trip.command.ack')MP(current=>current===p.commandId?null:current);
-   else if(msg.event==='trip.sync.pong'){lastPong=Date.now();Q(`Round-trip time: ${Math.max(0,Math.round(lastPong-p.clientSentAt))} ms`)}
-   else if(msg.event==='trip.presence.update'){const next={...boardRef.current,stateVersion:p.stateVersion,members:p.members,connectedUsers:p.connectedUsers,leaderConnected:p.leaderConnected};boardRef.current=next;B(next)}
-   else if(msg.event==='trip.chat.typing.update'){ST(old=>{const next={...old};if(p.isTyping)next[p.userId]=true;else delete next[p.userId];return next})}
-   else if(msg.event==='trip.chat.reaction.update'){const old=boardRef.current;if(old.roomEpoch!==p.roomEpoch||p.roomSeq!==old.roomSeq+1){ws.send(JSON.stringify({event:'trip.snapshot.request',payload:{}}));return}const next={...old,roomSeq:p.roomSeq,committedSeq:p.roomSeq,chat:{...old.chat,items:old.chat.items.map(item=>item.messageId===p.messageId?{...item,reactions:p.reactions}:item)}};boardRef.current=next;B(next);PR(pending=>{const copy={...pending};delete copy[p.commandId];return copy})}
-   else if(msg.event==='trip.chat.message'){const old=boardRef.current;if(old.roomEpoch!==p.roomEpoch||p.roomSeq!==old.roomSeq+1){ws.send(JSON.stringify({event:'trip.snapshot.request',payload:{}}));return}const next={...old,roomSeq:p.roomSeq,committedSeq:p.roomSeq,chat:{...old.chat,items:[...(old.chat?.items||[]),p]}};boardRef.current=next;B(next)}
-   else if(msg.event==='trip.persistence.committed'){ws.send(JSON.stringify({event:'trip.snapshot.request',payload:{}}));const next={...boardRef.current,committedSeq:p.committedSeq};boardRef.current=next;B(next)}
-   else if(msg.event==='trip.persistence.degraded'){PF(true);E('Board changes could not be saved. Reconnect after the server recovers.')}
-   else if(msg.event==='trip.board.edit.conflict'){const old=boardRef.current;const next={...old,items:old.items.map(item=>item.itemId===p.itemId?p.currentItem:item)};boardRef.current=next;B(next);E('Someone changed this item. Review the current time before trying again.')}
-   else if(msg.event==='trip.command.error'){MP(current=>current===p.commandId?null:current);if(p.code==='STALE_STATE_VERSION')ws.send(JSON.stringify({event:'trip.snapshot.request',payload:{}}));PR(pending=>{const copy={...pending};delete copy[p.commandId];return copy});E(commandError(p.code))}
-   };
+import React, { useEffect, useRef, useState } from "react";
+import { createRoot } from "react-dom/client";
+import "./style.css";
+import ModerationControls from "./board/ModerationControls.jsx";
+import ConciergePanel from "./board/ConciergePanel.jsx";
+import Dashboard from "./dashboard/Dashboard.jsx";
+import PlanningPanel from "./votes/PlanningPanel.jsx";
+import DatasetAdmin from "./admin/DatasetAdmin.jsx";
+import BoardGrid from "./board/BoardGrid.jsx";
+import { Badge, SectionTitle, ThemeToggle } from "./ui/Primitives.jsx";
+import { tripDate } from "./ui/format.js";
+import {
+  planningSlot as slot,
+  planningRange as utcDateRange,
+  timeLabel,
+} from "./board/time.js";
+const commandErrors = {
+  FORBIDDEN: "You do not have permission for this action.",
+  STALE_STATE_VERSION:
+    "The room settings changed. Review the current settings before trying again.",
+  LEADER_DISCONNECTED:
+    "The trip Leader is disconnected. Restricted actions are paused.",
+  INVALID_TARGET:
+    "Choose an active, connected Planner for leadership transfer.",
+  TARGET_UNAVAILABLE: "That traveler is no longer an active member.",
+  INVALID_TIME: "Choose an ordered time slot within the trip dates.",
+  INVALID_ATTENDEES: "Choose only active travelers in this trip.",
+  INVALID_ANCHOR:
+    "That anchor is no longer on the board. Choose another planned item.",
+  PERSISTENCE_DEGRADED:
+    "Changes could not be saved. Reconnect after the server recovers.",
+  COMMAND_ID_REUSE:
+    "This action was already used with different details. Start a new action.",
+};
+function commandError(code) {
+  return (
+    commandErrors[code] ||
+    "The action could not be completed. Review the room and try again."
+  );
+}
+function App() {
+  const [token, T] = useState(""),
+    [user, U] = useState(null),
+    [error, E] = useState(""),
+    [room, R] = useState(null),
+    [venues, V] = useState([]),
+    [invite, I] = useState(""),
+    [mode, M] = useState("login");
+  const [inviteId, II] = useState(""),
+    [inviteRole, IR] = useState("planner"),
+    [typing, ST] = useState({}),
+    [pendingReactions, PR] = useState({});
+  const lastTyping = useRef(0);
+  const [board, B] = useState({
+      items: [],
+      roomSeq: 0,
+      committedSeq: 0,
+      roomEpoch: "",
+    }),
+    [connection, C] = useState("disconnected"),
+    [quality, Q] = useState("Awaiting connection measurement"),
+    [moderationPending, MP] = useState(null),
+    [persistenceFailed, PF] = useState(false);
+  const [day, D] = useState(""),
+    [time, S] = useState("12:00");
+  const socket = useRef(null);
+  const tokenRef = useRef(""),
+    refreshing = useRef(null);
+  const boardRef = useRef({
+      items: [],
+      roomSeq: 0,
+      committedSeq: 0,
+      roomEpoch: "",
+    }),
+    boardTrip = useRef("");
+  useEffect(() => {
+    if (!room?.tripId || !token) return;
+    ST({});
+    PR({});
+    MP(null);
+    PF(false);
+    if (boardTrip.current !== room.tripId) {
+      boardTrip.current = room.tripId;
+      boardRef.current = {
+        items: [],
+        roomSeq: 0,
+        committedSeq: 0,
+        roomEpoch: "",
+      };
+      B(boardRef.current);
+    }
+    D(room.startDate);
+    C("connecting");
+    let active = true,
+      timer = null,
+      attempt = 0,
+      ws,
+      lastPong = Date.now();
+    const heartbeat = setInterval(() => {
+      if (ws?.readyState !== WebSocket.OPEN) return;
+      if (Date.now() - lastPong > 30000) {
+        ws.close(4000);
+        return;
+      }
+      ws.send(
+        JSON.stringify({
+          event: "trip.sync.ping",
+          payload: { clientSentAt: Date.now(), nonce: crypto.randomUUID() },
+        }),
+      );
+    }, 10000);
+    function connect() {
+      if (!active) return;
+      C("connecting");
+      ws = new WebSocket(
+        `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws/v1/trips/${room.tripId}`,
+      );
+      socket.current = ws;
+      ws.onopen = () => {
+        attempt = 0;
+        lastPong = Date.now();
+        Q("Awaiting connection measurement");
+        C("connected");
+      };
+      ws.onerror = () => C("disconnected");
+      ws.onclose = async (event) => {
+        if (!active) return;
+        C("disconnected");
+        if (event.code === 1008) {
+          try {
+            await api("/api/v1/trips/" + room.tripId);
+          } catch (e) {
+            E(e.message);
+            R(null);
+            I("");
+            II("");
+            return;
+          }
+        }
+        if (active) {
+          const delay = Math.min(8000, 500 * 2 ** attempt++);
+          timer = setTimeout(connect, delay);
+        }
+      };
+      ws.onmessage = (event) => {
+        let msg;
+        try {
+          msg = JSON.parse(event.data);
+        } catch {
+          return;
+        }
+        const p = msg.payload;
+        if (msg.event === "trip.snapshot") {
+          PR({});
+          const old = boardRef.current;
+          if (
+            old.roomEpoch &&
+            old.roomEpoch !== p.roomEpoch &&
+            old.roomSeq > old.committedSeq
+          )
+            E(
+              "The room restarted and some unsaved changes may have been lost. Check the itinerary before adding them again.",
+            );
+          p.recommendationsVersion = old.recommendationsVersion || 0;
+          boardRef.current = p;
+          B(p);
+          const me = p.members?.find((m) => m.userId === user.userId);
+          if (me) R((old) => ({ ...old, role: me.role, canPin: me.canPin }));
+        } else if (msg.event === "trip.board.update") {
+          const old = boardRef.current;
+          if (old.roomEpoch !== p.roomEpoch || p.roomSeq !== old.roomSeq + 1) {
+            ws.send(
+              JSON.stringify({ event: "trip.snapshot.request", payload: {} }),
+            );
+            return;
+          }
+          const next = {
+            ...old,
+            roomSeq: p.roomSeq,
+            committedSeq: p.durable ? p.roomSeq : old.committedSeq,
+            items:
+              p.operation === "remove"
+                ? old.items.filter((item) => item.itemId !== p.itemId)
+                : [
+                    ...old.items.filter((item) => item.itemId !== p.itemId),
+                    p.item,
+                  ],
+            budgets: p.budgetSummary,
+          };
+          boardRef.current = next;
+          B(next);
+        } else if (msg.event === "trip.recommendations.updated") {
+          const next = {
+            ...boardRef.current,
+            recommendationsVersion:
+              (boardRef.current.recommendationsVersion || 0) + 1,
+          };
+          boardRef.current = next;
+          B(next);
+        } else if (
+          msg.event.startsWith("trip.vote.") ||
+          msg.event === "session.ended" ||
+          msg.event === "trip.conflicts.updated" ||
+          msg.event === "trip.board.conflict"
+        ) {
+          ws.send(
+            JSON.stringify({ event: "trip.snapshot.request", payload: {} }),
+          );
+        } else if (
+          msg.event === "trip.ai.suggestion" ||
+          msg.event === "trip.constraints.update"
+        ) {
+          const old = boardRef.current;
+          if (old.roomEpoch !== p.roomEpoch || p.roomSeq !== old.roomSeq + 1) {
+            ws.send(
+              JSON.stringify({ event: "trip.snapshot.request", payload: {} }),
+            );
+            return;
+          }
+          const next = {
+            ...old,
+            roomSeq: p.roomSeq,
+            committedSeq: p.roomSeq,
+            ...(msg.event === "trip.ai.suggestion"
+              ? { lastSuggestion: p }
+              : { stateVersion: p.stateVersion }),
+          };
+          boardRef.current = next;
+          B(next);
+          if (msg.event === "trip.constraints.update")
+            ws.send(
+              JSON.stringify({ event: "trip.snapshot.request", payload: {} }),
+            );
+        } else if (msg.event === "trip.moderation.update") {
+          const old = boardRef.current;
+          if (old.roomEpoch !== p.roomEpoch || p.roomSeq !== old.roomSeq + 1) {
+            ws.send(
+              JSON.stringify({ event: "trip.snapshot.request", payload: {} }),
+            );
+            return;
+          }
+          const next = {
+            ...old,
+            roomSeq: p.roomSeq,
+            committedSeq: p.roomSeq,
+            stateVersion: p.stateVersion,
+            members: p.members,
+            connectedUsers: p.connectedUsers,
+            leaderConnected: p.leaderConnected,
+            trip: { ...old.trip, roomLocked: p.roomLocked },
+          };
+          boardRef.current = next;
+          B(next);
+          const me = p.members.find((m) => m.userId === user.userId);
+          if (me) R((old) => ({ ...old, role: me.role, canPin: me.canPin }));
+          MP((current) => (current === p.commandId ? null : current));
+        } else if (msg.event === "trip.command.ack")
+          MP((current) => (current === p.commandId ? null : current));
+        else if (msg.event === "trip.sync.pong") {
+          lastPong = Date.now();
+          Q(
+            `Round-trip time: ${Math.max(0, Math.round(lastPong - p.clientSentAt))} ms`,
+          );
+        } else if (msg.event === "trip.presence.update") {
+          const next = {
+            ...boardRef.current,
+            stateVersion: p.stateVersion,
+            members: p.members,
+            connectedUsers: p.connectedUsers,
+            leaderConnected: p.leaderConnected,
+          };
+          boardRef.current = next;
+          B(next);
+        } else if (msg.event === "trip.chat.typing.update") {
+          ST((old) => {
+            const next = { ...old };
+            if (p.isTyping) next[p.userId] = true;
+            else delete next[p.userId];
+            return next;
+          });
+        } else if (msg.event === "trip.chat.reaction.update") {
+          const old = boardRef.current;
+          if (old.roomEpoch !== p.roomEpoch || p.roomSeq !== old.roomSeq + 1) {
+            ws.send(
+              JSON.stringify({ event: "trip.snapshot.request", payload: {} }),
+            );
+            return;
+          }
+          const next = {
+            ...old,
+            roomSeq: p.roomSeq,
+            committedSeq: p.roomSeq,
+            chat: {
+              ...old.chat,
+              items: old.chat.items.map((item) =>
+                item.messageId === p.messageId
+                  ? { ...item, reactions: p.reactions }
+                  : item,
+              ),
+            },
+          };
+          boardRef.current = next;
+          B(next);
+          PR((pending) => {
+            const copy = { ...pending };
+            delete copy[p.commandId];
+            return copy;
+          });
+        } else if (msg.event === "trip.chat.message") {
+          const old = boardRef.current;
+          if (old.roomEpoch !== p.roomEpoch || p.roomSeq !== old.roomSeq + 1) {
+            ws.send(
+              JSON.stringify({ event: "trip.snapshot.request", payload: {} }),
+            );
+            return;
+          }
+          const next = {
+            ...old,
+            roomSeq: p.roomSeq,
+            committedSeq: p.roomSeq,
+            chat: { ...old.chat, items: [...(old.chat?.items || []), p] },
+          };
+          boardRef.current = next;
+          B(next);
+        } else if (msg.event === "trip.persistence.committed") {
+          ws.send(
+            JSON.stringify({ event: "trip.snapshot.request", payload: {} }),
+          );
+          const next = { ...boardRef.current, committedSeq: p.committedSeq };
+          boardRef.current = next;
+          B(next);
+        } else if (msg.event === "trip.persistence.degraded") {
+          PF(true);
+          E(
+            "Board changes could not be saved. Reconnect after the server recovers.",
+          );
+        } else if (msg.event === "trip.board.edit.conflict") {
+          const old = boardRef.current;
+          const next = {
+            ...old,
+            items: old.items.map((item) =>
+              item.itemId === p.itemId ? p.currentItem : item,
+            ),
+          };
+          boardRef.current = next;
+          B(next);
+          E(
+            "Someone changed this item. Review the current time before trying again.",
+          );
+        } else if (msg.event === "trip.command.error") {
+          MP((current) => (current === p.commandId ? null : current));
+          if (p.code === "STALE_STATE_VERSION")
+            ws.send(
+              JSON.stringify({ event: "trip.snapshot.request", payload: {} }),
+            );
+          PR((pending) => {
+            const copy = { ...pending };
+            delete copy[p.commandId];
+            return copy;
+          });
+          E(commandError(p.code));
+        }
+      };
+    }
+    connect();
+    return () => {
+      active = false;
+      clearTimeout(timer);
+      clearInterval(heartbeat);
+      socket.current = null;
+      ws?.close();
+    };
+  }, [room?.tripId, token]);
+  function moderate(action, targetUserId) {
+    if (socket.current?.readyState !== WebSocket.OPEN) return;
+    const commandId = crypto.randomUUID();
+    MP(commandId);
+    socket.current.send(
+      JSON.stringify({
+        event: "trip.moderation.command",
+        payload: {
+          commandId,
+          correlationId: crypto.randomUUID(),
+          action,
+          expectedStateVersion: boardRef.current.stateVersion,
+          ...(targetUserId ? { targetUserId } : {}),
+        },
+      }),
+    );
   }
-  connect();
-  return()=>{active=false;clearTimeout(timer);clearInterval(heartbeat);socket.current=null;ws?.close()};
- },[room?.tripId,token]);
- function moderate(action,targetUserId){if(socket.current?.readyState!==WebSocket.OPEN)return;const commandId=crypto.randomUUID();MP(commandId);socket.current.send(JSON.stringify({event:'trip.moderation.command',payload:{commandId,correlationId:crypto.randomUUID(),action,expectedStateVersion:boardRef.current.stateVersion,...(targetUserId?{targetUserId}:{})}}))}
- function pin(venue){
-  if(socket.current?.readyState!==WebSocket.OPEN){E('The room is disconnected.');return}
-  try{const times=slot(day,time,room);socket.current.send(JSON.stringify({event:'trip.board.pin',payload:{commandId:crypto.randomUUID(),correlationId:crypto.randomUUID(),venueId:venue.venueId,...times,attendeeIds:[],splitMode:'even'}}))}catch(error){E(error.message)}
- }
- async function olderChat(){await run(async()=>{const tripId=room.tripId,cursor=boardRef.current.chat?.nextCursor;if(!cursor)return;const page=await api(`/api/v1/trips/${tripId}/chat?before=${encodeURIComponent(cursor)}`);if(boardTrip.current!==tripId)return;const old=boardRef.current,existing=new Set(old.chat.items.map(item=>item.messageId));const next={...old,chat:{items:[...page.items.filter(item=>!existing.has(item.messageId)),...old.chat.items],nextCursor:page.nextCursor}};boardRef.current=next;B(next)})}
- function react(message,emoji){if(socket.current?.readyState!==WebSocket.OPEN)return;const key=crypto.randomUUID(),active=!(message.reactions||[]).find(r=>r.emoji===emoji)?.userIds.includes(user.userId);PR(old=>({...old,[key]:{messageId:message.messageId,emoji,active}}));socket.current.send(JSON.stringify({event:'trip.chat.react',payload:{commandId:key,correlationId:crypto.randomUUID(),messageId:message.messageId,emoji,active}}))}
- function typingSignal(active){if(socket.current?.readyState!==WebSocket.OPEN)return;const now=Date.now();if(active&&now-lastTyping.current<1000)return;lastTyping.current=now;socket.current.send(JSON.stringify({event:'trip.chat.typing',payload:{isTyping:active}}))}
- function sendChat(event){event.preventDefault();const form=event.currentTarget;const body=new FormData(form).get('message').trim();if(!body||socket.current?.readyState!==WebSocket.OPEN)return;typingSignal(false);socket.current.send(JSON.stringify({event:'trip.chat.send',payload:{commandId:crypto.randomUUID(),correlationId:crypto.randomUUID(),body}}));form.reset()}
- function dropMove(item,utcDate,hour){
-  if(socket.current?.readyState!==WebSocket.OPEN)return;
-  try{const times=slot(utcDate,String(hour).padStart(2,'0')+':00',room,Date.parse(item.endTime)-Date.parse(item.startTime));socket.current.send(JSON.stringify({event:'trip.board.move',payload:{commandId:crypto.randomUUID(),correlationId:crypto.randomUUID(),itemId:item.itemId,expectedPositionVersion:item.positionVersion,...times}}))}catch(error){E(error.message)}
- }
- function changeItem(item,operation){
-  if(socket.current?.readyState!==WebSocket.OPEN){E('The room is disconnected.');return}
-  const payload={commandId:crypto.randomUUID(),correlationId:crypto.randomUUID(),itemId:item.itemId,expectedPositionVersion:item.positionVersion};
-  if(operation==='unlock'){const reason=window.prompt('Why are you unlocking this item?');if(!reason?.trim())return;payload.reason=reason.trim()}
-  try{if(operation==='move')Object.assign(payload,slot(day,time,room,Date.parse(item.endTime)-Date.parse(item.startTime)));socket.current.send(JSON.stringify({event:'trip.board.'+operation,payload}))}catch(error){E(error.message)}
- }
- async function api(url,options={},access=tokenRef.current){
-  const send=(key)=>{const csrf=document.cookie.split('; ').find(x=>x.startsWith('tripsync_csrf='))?.split('=')[1]||'';return fetch(url,{credentials:'same-origin',...options,headers:{...(options.body?{'Content-Type':'application/json'}:{}),...(key?{Authorization:'Bearer '+key}:{}),...options.headers,...(url==='/api/v1/auth/logout'?{'X-CSRF-Token':decodeURIComponent(csrf)}:{})}})};
-  let r=await send(access);
-  if(r.status===401&&access){
-   if(!refreshing.current){refreshing.current=(async()=>{const csrf=document.cookie.split('; ').find(x=>x.startsWith('tripsync_csrf='))?.split('=')[1]||'';const rr=await fetch('/api/v1/auth/refresh',{method:'POST',credentials:'same-origin',headers:{'X-CSRF-Token':decodeURIComponent(csrf)}});if(!rr.ok){tokenRef.current='';T('');U(null);M('login');R(null);I('');II('');throw Error('Your session has expired. Please sign in again.')};const result=await rr.json();tokenRef.current=result.accessToken;T(result.accessToken);return result.accessToken})().finally(()=>{refreshing.current=null})}
-   r=await send(await refreshing.current);
+  function pin(venue) {
+    if (socket.current?.readyState !== WebSocket.OPEN) {
+      E("The room is disconnected.");
+      return;
+    }
+    try {
+      const times = slot(day, time, room);
+      socket.current.send(
+        JSON.stringify({
+          event: "trip.board.pin",
+          payload: {
+            commandId: crypto.randomUUID(),
+            correlationId: crypto.randomUUID(),
+            venueId: venue.venueId,
+            ...times,
+            attendeeIds: [],
+            splitMode: "even",
+          },
+        }),
+      );
+    } catch (error) {
+      E(error.message);
+    }
   }
-  if(!r.ok){const d=await r.json().catch(()=>({}));throw Error(typeof d.detail==='string'?d.detail:(d.detail?.code?commandError(d.detail.code):'Check your details and try again.'))}return r.status===204?null:r.json()
- }
- async function run(fn){E('');try{await fn()}catch(e){E(e.message||'Please try again.')}}
- async function enter(e){e.preventDefault();const f=new FormData(e.currentTarget), email=f.get('email'),password=f.get('password');await run(async()=>{if(mode==='register')await api('/api/v1/auth/register',{method:'POST',body:JSON.stringify({email,password,displayName:f.get('name')})},'');const d=await api('/api/v1/auth/login',{method:'POST',body:JSON.stringify({email,password})},'');tokenRef.current=d.accessToken;T(d.accessToken);U(d.user)})}
- async function open(id){const d=await api('/api/v1/trips/'+id);const list=await api('/api/v1/destinations/'+encodeURIComponent(d.destination)+'/venues?tripId='+encodeURIComponent(d.tripId));R(d);V(list.venues)}
- async function create(e){e.preventDefault();const f=new FormData(e.currentTarget);await run(async()=>{const d=await api('/api/v1/trips',{method:'POST',headers:{'Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({destination:'Bengaluru, India',startDate:f.get('start'),endDate:f.get('end'),totalBudget:f.get('budget'),currency:'INR',maxParticipants:8})});I(d.inviteCode);II('');II('');await open(d.tripId)})}
- async function join(e){e.preventDefault();const code=new FormData(e.currentTarget).get('code');await run(async()=>{const d=await api('/api/v1/trips/join',{method:'POST',headers:{'Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({inviteCode:code.trim()})});I('');II('');await open(d.tripId)})}
- async function logout(){E('');try{await api('/api/v1/auth/logout',{method:'POST'})}catch(error){E(error.message)}finally{tokenRef.current='';T('');U(null);M('login');R(null);I('');II('')}}
- async function createInvite(){await run(async()=>{const expiresAt=new Date(Date.now()+7*86400000).toISOString();const d=await api(`/api/v1/trips/${room.tripId}/invites`,{method:'POST',body:JSON.stringify({role:inviteRole,maxUses:1,expiresAt})});I(d.inviteCode);II(d.inviteId)})}
- async function revokeInvite(){await run(async()=>{await api(`/api/v1/trips/${room.tripId}/invites/${inviteId}`,{method:'DELETE'});I('');II('')})}
- const me=board.members?.find(member=>member.userId===user?.userId);
- const utcRange=room?utcDateRange(room):null;
- return <main><a className="skipLink" href="#workspace-content">Skip to workspace</a><header><strong className="brand"><span>T</span> TripSync <small>AI</small></strong><div className="headerActions"><ThemeToggle/>{user&&<><span>{user.displayName}</span><button className="link" onClick={logout}>Sign out</button></>}</div></header>{error&&<p role="alert" className="error">{error}</p>}
- {!user?<div className="welcome" id="workspace-content" tabIndex={-1}><section><h1>Good trips start<br/>with the group.</h1><p>Create a shared room, invite your people, and give your ideas a place to land.</p><div className="route">Bengaluru <span/> your next trip</div></section><section className="panel"><div className="tabs"><button className={mode==='login'?'active':''} onClick={()=>M('login')}>Sign in</button><button className={mode==='register'?'active':''} onClick={()=>M('register')}>Create account</button></div><h2>{mode==='login'?'Welcome back':'Join the journey'}</h2><p>Sign in to make plans with your group.</p><form onSubmit={enter}>{mode==='register'&&<label>Display name<input name="name" required maxLength="80" autoComplete="name"/></label>}<label>Email<input name="email" type="email" required autoComplete="email"/></label><label>Password<input name="password" type="password" required minLength="12" maxLength="128" autoComplete={mode==='login'?'current-password':'new-password'}/></label><button className="primary">{mode==='login'?'Sign in':'Create account'}</button></form></section></div>:!room?<div className="workspace" id="workspace-content" tabIndex={-1}><h1>Plan it together.</h1><p>Start a room for Bengaluru or join one with an invitation code.</p><Dashboard api={api} onOpen={id=>run(()=>open(id))}/><div className="forms"><section className="panel"><h2>Start a trip</h2><p>Choose the dates and a group budget.</p><form onSubmit={create}><label>Destination<input value="Bengaluru, India" readOnly/></label><div className="row"><label>Start date<input name="start" type="date" defaultValue="2026-11-10" required/></label><label>End date<input name="end" type="date" defaultValue="2026-11-14" required/></label></div><label>Group budget in INR (₹)<input name="budget" defaultValue="25000.00" required/></label><button className="primary">Create room</button></form></section><section className="panel"><h2>Join a trip</h2><p>Paste the code your trip leader shared with you.</p><form onSubmit={join}><label>Invitation code<input name="code" required/></label><button className="secondary">Join room</button></form></section></div></div>:<div className="workspace" id="workspace-content" tabIndex={-1}><button className="link" onClick={()=>{R(null);I('');II('')}}>← Back</button><div className="roomHeading"><div><h1>{room.destination}</h1><p>{tripDate(room.startDate)} – {tripDate(room.endDate)} · {timeLabel(room)}</p></div><div className="roomMeta"><Badge>{room.role}</Badge><Badge tone={board.trip?.status==='finalized'?'locked':'success'}>{board.trip?.status||'Loading room'}</Badge><Badge>{(board.members||room.members).length} travelers</Badge></div></div><nav className="roomNav" aria-label="Trip workspace"><a href="#itinerary">Itinerary</a><a href="#budget">Budget</a><a href="#votes">Voting</a><a href="#conflicts">Conflicts</a><a href="#concierge">Concierge</a><a href="#recommendations">Ideas</a><a href="#room-chat">Chat</a><a href="#travelers">Travelers</a>{room.role==='leader'&&<a href="#room-controls">Room controls</a>}{user.isAdmin&&<a href="#dataset-admin">Admin</a>}</nav><div className="statusBar" role="status"><span><i className={'statusDot '+(connection==='connected'?'online':'')}/>{connection==='connected'?'Live connection':connection==='connecting'?'Connecting to room…':'Disconnected · reconnecting automatically'}</span><span>{persistenceFailed?'Saving unavailable · changes are not confirmed':connection!=='connected'?'Save status unavailable':!board.roomEpoch?'Waiting for authoritative snapshot':board.roomSeq>board.committedSeq?'Saving changes…':'All displayed changes saved'}</span><span>{quality}</span></div>{invite&&<div className="invite"><strong>Invite your group</strong><p>Share this code with someone you trust.</p><code>{invite}</code></div>}<div className="board" data-snapshot-ready={Boolean(board.roomEpoch)}><section id="itinerary"><SectionTitle title="Shared itinerary" description="A shared plan, one day at a time."><Badge>{board.items.length} activities</Badge></SectionTitle>{board.trip?.status==='finalized'&&<p role="status">Finalized itinerary · read only</p>}{board.trip?.roomLocked&&<p role="status">The trip Leader has locked board changes.</p>}{board.items.length===0&&<p className="emptyState">Your itinerary is ready for ideas. Choose a day and time, then add a sample place below.</p>}<BoardGrid key={room.tripId} board={board} room={room} connection={connection} onSelectedMove={item=>changeItem(item,'move')} onDropMove={dropMove} onRemove={item=>changeItem(item,'remove')} onLock={item=>changeItem(item,'lock')} onUnlock={item=>changeItem(item,'unlock')}/><h2 id="catalog">Ideas for your trip</h2><p>Sample places are fictional. New pins last one hour; times are {timeLabel(room)}.</p><div className="selectionBar"><p>Selected slot for new activities, Concierge requests and “Move to selected time”.</p><div className="row"><label>Day<input type="date" value={day} min={utcRange.startDate} max={utcRange.endDate} onChange={e=>D(e.target.value)}/></label><label>Start time ({timeLabel(room)})<input type="time" value={time} onChange={e=>S(e.target.value)}/></label></div></div>{venues.map(v=><article className="place" key={v.venueId}><div><Badge>{v.category}</Badge><h3>{v.name}</h3><span>{new Intl.NumberFormat('en-IN',{style:'currency',currency:room.currency}).format(v.pricePerPerson)} / person</span></div><button className="secondary" disabled={connection!=='connected'||board.trip?.status==='finalized'||board.trip?.roomLocked||room.role==='viewer'||(room.role==='planner'&&!room.canPin)} onClick={()=>pin(v)}>Add to itinerary</button></article>)}</section><aside><PlanningPanel key={room.tripId} venues={venues} room={room} connection={connection} api={api} tripId={room.tripId} board={board} userId={user.userId} role={room.role} onRefresh={()=>socket.current?.send(JSON.stringify({event:'trip.snapshot.request',payload:{}}))}/><ConciergePanel key={room.tripId} api={api} tripId={room.tripId} userId={user.userId} isLeader={room.role==='leader'} board={board} room={room} day={day} time={time} onResync={()=>socket.current?.readyState===WebSocket.OPEN&&socket.current.send(JSON.stringify({event:'trip.snapshot.request',payload:{}}))}/><section className="panel chatPanel" id="room-chat"><h2>Room chat</h2>{board.chat?.nextCursor&&<button className="link" onClick={olderChat}>Load older messages</button>}<div className="chatHistory" aria-live="polite">{!(board.chat?.items||[]).length&&<p>Share an idea with your group. Messages are saved with the room.</p>}{Object.keys(typing).filter(id=>id!==user.userId).map(id=><p key={id}>{(board.members||room.members).find(m=>m.userId===id)?.displayName||'Traveler'} is typing…</p>)}{(board.chat?.items||[]).map(message=><div className="chatMessage" key={message.messageId}><p><strong>{(board.members||room.members).find(m=>m.userId===message.userId)?.displayName||'Traveler'}</strong>: {message.body}</p>{['👍','❤️','😂','🎉'].map(emoji=>{const reaction=(message.reactions||[]).find(r=>r.emoji===emoji),pending=Object.values(pendingReactions).find(r=>r.messageId===message.messageId&&r.emoji===emoji),selected=pending?pending.active:!!reaction?.userIds.includes(user.userId);const count=(reaction?.userIds.length||0)+(pending?(pending.active?1:-1):0);return <button type="button" className="link" key={emoji} aria-label={`React ${emoji}`} aria-pressed={selected} disabled={!!pending||connection!=='connected'||board.trip?.status==='finalized'||!!me?.muted} onClick={()=>react(message,emoji)}>{emoji} {Math.max(0,count)}</button>})}</div>)}</div><form onSubmit={sendChat}><label>Message<input name="message" disabled={!!me?.muted||board.trip?.status==='finalized'} maxLength="2000" onChange={()=>typingSignal(true)} onBlur={()=>typingSignal(false)} required/></label><button className="secondary" disabled={connection!=='connected'||board.trip?.status==='finalized'||!!me?.muted}>Send message</button></form></section><section className="panel travelersPanel" id="travelers"><h2>Travelers</h2><p className="notice">{board.leaderConnected?"Leader connected":"Leader disconnected · lock and finalize actions are paused."}</p>{(board.members||room.members).map(m=><div className="member" key={m.userId}><span className="avatar" aria-hidden="true">{m.displayName.slice(0,2).toUpperCase()}</span><div><strong>{m.displayName}{m.userId===user.userId?' (you)':''}</strong><small>{m.role}{m.muted?' · muted':''}</small></div><Badge tone={board.connectedUsers?.includes(m.userId)?'success':'neutral'}>{board.connectedUsers?.includes(m.userId)?"online":"offline"}</Badge></div>)}</section></aside></div></div>}
- {user&&room?.role==='leader'&&board.trip?.status!=='finalized'&&<ModerationControls members={board.members||room.members} userId={user.userId} connectedUsers={board.connectedUsers||[]} roomLocked={!!board.trip?.roomLocked} enabled={connection==='connected'&&board.leaderConnected&&!moderationPending} onCommand={moderate}/>}
- {user&&room?.role==='leader'&&board.trip?.status!=='finalized'&&<section className="panel inviteControls" id="invite-controls"><h2>Invite controls</h2><p>Create a single-use code valid for seven days.</p><label>Participant role<select value={inviteRole} onChange={e=>IR(e.target.value)}><option value="planner">Planner</option><option value="viewer">Viewer</option></select></label><button className="secondary" onClick={createInvite}>Create invitation</button>{inviteId&&<button className="link" onClick={revokeInvite}>Revoke displayed invitation</button>}</section>}
- {user?.isAdmin&&<DatasetAdmin key={user.userId} api={api} tripId={room?.tripId}/>}
- <footer>TripSync AI is an independent educational prototype. Sample places are fictional.</footer></main>
-}createRoot(document.getElementById('root')).render(<App/>);
+  async function olderChat() {
+    await run(async () => {
+      const tripId = room.tripId,
+        cursor = boardRef.current.chat?.nextCursor;
+      if (!cursor) return;
+      const page = await api(
+        `/api/v1/trips/${tripId}/chat?before=${encodeURIComponent(cursor)}`,
+      );
+      if (boardTrip.current !== tripId) return;
+      const old = boardRef.current,
+        existing = new Set(old.chat.items.map((item) => item.messageId));
+      const next = {
+        ...old,
+        chat: {
+          items: [
+            ...page.items.filter((item) => !existing.has(item.messageId)),
+            ...old.chat.items,
+          ],
+          nextCursor: page.nextCursor,
+        },
+      };
+      boardRef.current = next;
+      B(next);
+    });
+  }
+  function react(message, emoji) {
+    if (socket.current?.readyState !== WebSocket.OPEN) return;
+    const key = crypto.randomUUID(),
+      active = !(message.reactions || [])
+        .find((r) => r.emoji === emoji)
+        ?.userIds.includes(user.userId);
+    PR((old) => ({
+      ...old,
+      [key]: { messageId: message.messageId, emoji, active },
+    }));
+    socket.current.send(
+      JSON.stringify({
+        event: "trip.chat.react",
+        payload: {
+          commandId: key,
+          correlationId: crypto.randomUUID(),
+          messageId: message.messageId,
+          emoji,
+          active,
+        },
+      }),
+    );
+  }
+  function typingSignal(active) {
+    if (socket.current?.readyState !== WebSocket.OPEN) return;
+    const now = Date.now();
+    if (active && now - lastTyping.current < 1000) return;
+    lastTyping.current = now;
+    socket.current.send(
+      JSON.stringify({
+        event: "trip.chat.typing",
+        payload: { isTyping: active },
+      }),
+    );
+  }
+  function sendChat(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const body = new FormData(form).get("message").trim();
+    if (!body || socket.current?.readyState !== WebSocket.OPEN) return;
+    typingSignal(false);
+    socket.current.send(
+      JSON.stringify({
+        event: "trip.chat.send",
+        payload: {
+          commandId: crypto.randomUUID(),
+          correlationId: crypto.randomUUID(),
+          body,
+        },
+      }),
+    );
+    form.reset();
+  }
+  function dropMove(item, utcDate, hour) {
+    if (socket.current?.readyState !== WebSocket.OPEN) return;
+    try {
+      const times = slot(
+        utcDate,
+        String(hour).padStart(2, "0") + ":00",
+        room,
+        Date.parse(item.endTime) - Date.parse(item.startTime),
+      );
+      socket.current.send(
+        JSON.stringify({
+          event: "trip.board.move",
+          payload: {
+            commandId: crypto.randomUUID(),
+            correlationId: crypto.randomUUID(),
+            itemId: item.itemId,
+            expectedPositionVersion: item.positionVersion,
+            ...times,
+          },
+        }),
+      );
+    } catch (error) {
+      E(error.message);
+    }
+  }
+  function changeItem(item, operation) {
+    if (socket.current?.readyState !== WebSocket.OPEN) {
+      E("The room is disconnected.");
+      return;
+    }
+    const payload = {
+      commandId: crypto.randomUUID(),
+      correlationId: crypto.randomUUID(),
+      itemId: item.itemId,
+      expectedPositionVersion: item.positionVersion,
+    };
+    if (operation === "unlock") {
+      const reason = window.prompt("Why are you unlocking this item?");
+      if (!reason?.trim()) return;
+      payload.reason = reason.trim();
+    }
+    try {
+      if (operation === "move")
+        Object.assign(
+          payload,
+          slot(
+            day,
+            time,
+            room,
+            Date.parse(item.endTime) - Date.parse(item.startTime),
+          ),
+        );
+      socket.current.send(
+        JSON.stringify({ event: "trip.board." + operation, payload }),
+      );
+    } catch (error) {
+      E(error.message);
+    }
+  }
+  async function api(url, options = {}, access = tokenRef.current) {
+    const send = (key) => {
+      const csrf =
+        document.cookie
+          .split("; ")
+          .find((x) => x.startsWith("tripsync_csrf="))
+          ?.split("=")[1] || "";
+      return fetch(url, {
+        credentials: "same-origin",
+        ...options,
+        headers: {
+          ...(options.body ? { "Content-Type": "application/json" } : {}),
+          ...(key ? { Authorization: "Bearer " + key } : {}),
+          ...options.headers,
+          ...(url === "/api/v1/auth/logout"
+            ? { "X-CSRF-Token": decodeURIComponent(csrf) }
+            : {}),
+        },
+      });
+    };
+    let r = await send(access);
+    if (r.status === 401 && access) {
+      if (!refreshing.current) {
+        refreshing.current = (async () => {
+          const csrf =
+            document.cookie
+              .split("; ")
+              .find((x) => x.startsWith("tripsync_csrf="))
+              ?.split("=")[1] || "";
+          const rr = await fetch("/api/v1/auth/refresh", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "X-CSRF-Token": decodeURIComponent(csrf) },
+          });
+          if (!rr.ok) {
+            tokenRef.current = "";
+            T("");
+            U(null);
+            M("login");
+            R(null);
+            I("");
+            II("");
+            throw Error("Your session has expired. Please sign in again.");
+          }
+          const result = await rr.json();
+          tokenRef.current = result.accessToken;
+          T(result.accessToken);
+          return result.accessToken;
+        })().finally(() => {
+          refreshing.current = null;
+        });
+      }
+      r = await send(await refreshing.current);
+    }
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
+      throw Error(
+        typeof d.detail === "string"
+          ? d.detail
+          : d.detail?.code
+            ? commandError(d.detail.code)
+            : "Check your details and try again.",
+      );
+    }
+    return r.status === 204 ? null : r.json();
+  }
+  async function run(fn) {
+    E("");
+    try {
+      await fn();
+    } catch (e) {
+      E(e.message || "Please try again.");
+    }
+  }
+  async function enter(e) {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget),
+      email = f.get("email"),
+      password = f.get("password");
+    await run(async () => {
+      if (mode === "register")
+        await api(
+          "/api/v1/auth/register",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              email,
+              password,
+              displayName: f.get("name"),
+            }),
+          },
+          "",
+        );
+      const d = await api(
+        "/api/v1/auth/login",
+        { method: "POST", body: JSON.stringify({ email, password }) },
+        "",
+      );
+      tokenRef.current = d.accessToken;
+      T(d.accessToken);
+      U(d.user);
+    });
+  }
+  async function open(id) {
+    const d = await api("/api/v1/trips/" + id);
+    const list = await api(
+      "/api/v1/destinations/" +
+        encodeURIComponent(d.destination) +
+        "/venues?tripId=" +
+        encodeURIComponent(d.tripId),
+    );
+    R(d);
+    V(list.venues);
+  }
+  async function create(e) {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    await run(async () => {
+      const d = await api("/api/v1/trips", {
+        method: "POST",
+        headers: { "Idempotency-Key": crypto.randomUUID() },
+        body: JSON.stringify({
+          destination: "Bengaluru, India",
+          startDate: f.get("start"),
+          endDate: f.get("end"),
+          totalBudget: f.get("budget"),
+          currency: "INR",
+          maxParticipants: 8,
+        }),
+      });
+      I(d.inviteCode);
+      II("");
+      II("");
+      await open(d.tripId);
+    });
+  }
+  async function join(e) {
+    e.preventDefault();
+    const code = new FormData(e.currentTarget).get("code");
+    await run(async () => {
+      const d = await api("/api/v1/trips/join", {
+        method: "POST",
+        headers: { "Idempotency-Key": crypto.randomUUID() },
+        body: JSON.stringify({ inviteCode: code.trim() }),
+      });
+      I("");
+      II("");
+      await open(d.tripId);
+    });
+  }
+  async function logout() {
+    E("");
+    try {
+      await api("/api/v1/auth/logout", { method: "POST" });
+    } catch (error) {
+      E(error.message);
+    } finally {
+      tokenRef.current = "";
+      T("");
+      U(null);
+      M("login");
+      R(null);
+      I("");
+      II("");
+    }
+  }
+  async function createInvite() {
+    await run(async () => {
+      const expiresAt = new Date(Date.now() + 7 * 86400000).toISOString();
+      const d = await api(`/api/v1/trips/${room.tripId}/invites`, {
+        method: "POST",
+        body: JSON.stringify({ role: inviteRole, maxUses: 1, expiresAt }),
+      });
+      I(d.inviteCode);
+      II(d.inviteId);
+    });
+  }
+  async function revokeInvite() {
+    await run(async () => {
+      await api(`/api/v1/trips/${room.tripId}/invites/${inviteId}`, {
+        method: "DELETE",
+      });
+      I("");
+      II("");
+    });
+  }
+  const me = board.members?.find((member) => member.userId === user?.userId);
+  const utcRange = room ? utcDateRange(room) : null;
+  return (
+    <main>
+      <a className="skipLink" href="#workspace-content">
+        Skip to workspace
+      </a>
+      <header>
+        <strong className="brand">
+          <span>T</span> TripSync <small>AI</small>
+        </strong>
+        <div className="headerActions">
+          <ThemeToggle />
+          {user && (
+            <>
+              <span>{user.displayName}</span>
+              <button className="link" onClick={logout}>
+                Sign out
+              </button>
+            </>
+          )}
+        </div>
+      </header>
+      {error && (
+        <p role="alert" className="error">
+          {error}
+        </p>
+      )}
+      {!user ? (
+        <div className="welcome" id="workspace-content" tabIndex={-1}>
+          <section>
+            <h1>
+              Good trips start
+              <br />
+              with the group.
+            </h1>
+            <p>
+              Create a shared room, invite your people, and give your ideas a
+              place to land.
+            </p>
+            <div className="route">
+              Bengaluru <span /> your next trip
+            </div>
+          </section>
+          <section className="panel">
+            <div className="tabs">
+              <button
+                className={mode === "login" ? "active" : ""}
+                onClick={() => M("login")}
+              >
+                Sign in
+              </button>
+              <button
+                className={mode === "register" ? "active" : ""}
+                onClick={() => M("register")}
+              >
+                Create account
+              </button>
+            </div>
+            <h2>{mode === "login" ? "Welcome back" : "Join the journey"}</h2>
+            <p>Sign in to make plans with your group.</p>
+            <form onSubmit={enter}>
+              {mode === "register" && (
+                <label>
+                  Display name
+                  <input
+                    name="name"
+                    required
+                    maxLength="80"
+                    autoComplete="name"
+                  />
+                </label>
+              )}
+              <label>
+                Email
+                <input
+                  name="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                />
+              </label>
+              <label>
+                Password
+                <input
+                  name="password"
+                  type="password"
+                  required
+                  minLength="12"
+                  maxLength="128"
+                  autoComplete={
+                    mode === "login" ? "current-password" : "new-password"
+                  }
+                />
+              </label>
+              <button className="primary">
+                {mode === "login" ? "Sign in" : "Create account"}
+              </button>
+            </form>
+          </section>
+        </div>
+      ) : !room ? (
+        <div className="workspace" id="workspace-content" tabIndex={-1}>
+          <h1>Plan it together.</h1>
+          <p>Start a room for Bengaluru or join one with an invitation code.</p>
+          <Dashboard api={api} onOpen={(id) => run(() => open(id))} />
+          <div className="forms">
+            <section className="panel">
+              <h2>Start a trip</h2>
+              <p>Choose the dates and a group budget.</p>
+              <form onSubmit={create}>
+                <label>
+                  Destination
+                  <input value="Bengaluru, India" readOnly />
+                </label>
+                <div className="row">
+                  <label>
+                    Start date
+                    <input
+                      name="start"
+                      type="date"
+                      defaultValue="2026-11-10"
+                      required
+                    />
+                  </label>
+                  <label>
+                    End date
+                    <input
+                      name="end"
+                      type="date"
+                      defaultValue="2026-11-14"
+                      required
+                    />
+                  </label>
+                </div>
+                <label>
+                  Group budget in INR (₹)
+                  <input name="budget" defaultValue="25000.00" required />
+                </label>
+                <button className="primary">Create room</button>
+              </form>
+            </section>
+            <section className="panel">
+              <h2>Join a trip</h2>
+              <p>Paste the code your trip leader shared with you.</p>
+              <form onSubmit={join}>
+                <label>
+                  Invitation code
+                  <input name="code" required />
+                </label>
+                <button className="secondary">Join room</button>
+              </form>
+            </section>
+          </div>
+        </div>
+      ) : (
+        <div className="workspace" id="workspace-content" tabIndex={-1}>
+          <button
+            className="link"
+            onClick={() => {
+              R(null);
+              I("");
+              II("");
+            }}
+          >
+            ← Back
+          </button>
+          <div className="roomHeading">
+            <div>
+              <h1>{room.destination}</h1>
+              <p>
+                {tripDate(room.startDate)} – {tripDate(room.endDate)} ·{" "}
+                {timeLabel(room)}
+              </p>
+            </div>
+            <div className="roomMeta">
+              <Badge>{room.role}</Badge>
+              <Badge
+                tone={board.trip?.status === "finalized" ? "locked" : "success"}
+              >
+                {board.trip?.status || "Loading room"}
+              </Badge>
+              <Badge>{(board.members || room.members).length} travelers</Badge>
+            </div>
+          </div>
+          <nav className="roomNav" aria-label="Trip workspace">
+            <a href="#itinerary">Itinerary</a>
+            <a href="#budget">Budget</a>
+            <a href="#votes">Voting</a>
+            <a href="#conflicts">Conflicts</a>
+            <a href="#concierge">Concierge</a>
+            <a href="#recommendations">Ideas</a>
+            <a href="#room-chat">Chat</a>
+            <a href="#travelers">Travelers</a>
+            {room.role === "leader" && (
+              <a href="#room-controls">Room controls</a>
+            )}
+            {user.isAdmin && <a href="#dataset-admin">Admin</a>}
+          </nav>
+          <div className="statusBar" role="status">
+            <span>
+              <i
+                className={
+                  "statusDot " + (connection === "connected" ? "online" : "")
+                }
+              />
+              {connection === "connected"
+                ? "Live connection"
+                : connection === "connecting"
+                  ? "Connecting to room…"
+                  : "Disconnected · reconnecting automatically"}
+            </span>
+            <span>
+              {persistenceFailed
+                ? "Saving unavailable · changes are not confirmed"
+                : connection !== "connected"
+                  ? "Save status unavailable"
+                  : !board.roomEpoch
+                    ? "Waiting for authoritative snapshot"
+                    : board.roomSeq > board.committedSeq
+                      ? "Saving changes…"
+                      : "All displayed changes saved"}
+            </span>
+            <span>{quality}</span>
+          </div>
+          {invite && (
+            <div className="invite">
+              <strong>Invite your group</strong>
+              <p>Share this code with someone you trust.</p>
+              <code>{invite}</code>
+            </div>
+          )}
+          <div className="board" data-snapshot-ready={Boolean(board.roomEpoch)}>
+            <section id="itinerary">
+              <SectionTitle
+                title="Shared itinerary"
+                description="A shared plan, one day at a time."
+              >
+                <Badge>{board.items.length} activities</Badge>
+              </SectionTitle>
+              {board.trip?.status === "finalized" && (
+                <p role="status">Finalized itinerary · read only</p>
+              )}
+              {board.trip?.roomLocked && (
+                <p role="status">The trip Leader has locked board changes.</p>
+              )}
+              {board.items.length === 0 && (
+                <p className="emptyState">
+                  Your itinerary is ready for ideas. Choose a day and time, then
+                  add a sample place below.
+                </p>
+              )}
+              <BoardGrid
+                key={room.tripId}
+                board={board}
+                room={room}
+                connection={connection}
+                onSelectedMove={(item) => changeItem(item, "move")}
+                onDropMove={dropMove}
+                onRemove={(item) => changeItem(item, "remove")}
+                onLock={(item) => changeItem(item, "lock")}
+                onUnlock={(item) => changeItem(item, "unlock")}
+              />
+              <h2 id="catalog">Ideas for your trip</h2>
+              <p>
+                Sample places are fictional. New pins last one hour; times are{" "}
+                {timeLabel(room)}.
+              </p>
+              <div className="selectionBar">
+                <p>
+                  Selected slot for new activities, Concierge requests and “Move
+                  to selected time”.
+                </p>
+                <div className="row">
+                  <label>
+                    Day
+                    <input
+                      type="date"
+                      value={day}
+                      min={utcRange.startDate}
+                      max={utcRange.endDate}
+                      onChange={(e) => D(e.target.value)}
+                    />
+                  </label>
+                  <label>
+                    Start time ({timeLabel(room)})
+                    <input
+                      type="time"
+                      value={time}
+                      onChange={(e) => S(e.target.value)}
+                    />
+                  </label>
+                </div>
+              </div>
+              {venues.map((v) => (
+                <article className="place" key={v.venueId}>
+                  <div>
+                    <Badge>{v.category}</Badge>
+                    <h3>{v.name}</h3>
+                    <span>
+                      {new Intl.NumberFormat("en-IN", {
+                        style: "currency",
+                        currency: room.currency,
+                      }).format(v.pricePerPerson)}{" "}
+                      / person
+                    </span>
+                  </div>
+                  <button
+                    className="secondary"
+                    disabled={
+                      connection !== "connected" ||
+                      board.trip?.status === "finalized" ||
+                      board.trip?.roomLocked ||
+                      room.role === "viewer" ||
+                      (room.role === "planner" && !room.canPin)
+                    }
+                    onClick={() => pin(v)}
+                  >
+                    Add to itinerary
+                  </button>
+                </article>
+              ))}
+            </section>
+            <aside>
+              <PlanningPanel
+                key={room.tripId}
+                venues={venues}
+                room={room}
+                connection={connection}
+                api={api}
+                tripId={room.tripId}
+                board={board}
+                userId={user.userId}
+                role={room.role}
+                onRefresh={() =>
+                  socket.current?.send(
+                    JSON.stringify({
+                      event: "trip.snapshot.request",
+                      payload: {},
+                    }),
+                  )
+                }
+              />
+              <ConciergePanel
+                key={room.tripId}
+                api={api}
+                tripId={room.tripId}
+                userId={user.userId}
+                isLeader={room.role === "leader"}
+                board={board}
+                room={room}
+                day={day}
+                time={time}
+                onResync={() =>
+                  socket.current?.readyState === WebSocket.OPEN &&
+                  socket.current.send(
+                    JSON.stringify({
+                      event: "trip.snapshot.request",
+                      payload: {},
+                    }),
+                  )
+                }
+              />
+              <section className="panel chatPanel" id="room-chat">
+                <h2>Room chat</h2>
+                {board.chat?.nextCursor && (
+                  <button className="link" onClick={olderChat}>
+                    Load older messages
+                  </button>
+                )}
+                <div className="chatHistory" aria-live="polite">
+                  {!(board.chat?.items || []).length && (
+                    <p>
+                      Share an idea with your group. Messages are saved with the
+                      room.
+                    </p>
+                  )}
+                  {Object.keys(typing)
+                    .filter((id) => id !== user.userId)
+                    .map((id) => (
+                      <p key={id}>
+                        {(board.members || room.members).find(
+                          (m) => m.userId === id,
+                        )?.displayName || "Traveler"}{" "}
+                        is typing…
+                      </p>
+                    ))}
+                  {(board.chat?.items || []).map((message) => (
+                    <div className="chatMessage" key={message.messageId}>
+                      <p>
+                        <strong>
+                          {(board.members || room.members).find(
+                            (m) => m.userId === message.userId,
+                          )?.displayName || "Traveler"}
+                        </strong>
+                        : {message.body}
+                      </p>
+                      {["👍", "❤️", "😂", "🎉"].map((emoji) => {
+                        const reaction = (message.reactions || []).find(
+                            (r) => r.emoji === emoji,
+                          ),
+                          pending = Object.values(pendingReactions).find(
+                            (r) =>
+                              r.messageId === message.messageId &&
+                              r.emoji === emoji,
+                          ),
+                          selected = pending
+                            ? pending.active
+                            : !!reaction?.userIds.includes(user.userId);
+                        const count =
+                          (reaction?.userIds.length || 0) +
+                          (pending ? (pending.active ? 1 : -1) : 0);
+                        return (
+                          <button
+                            type="button"
+                            className="link"
+                            key={emoji}
+                            aria-label={`React ${emoji}`}
+                            aria-pressed={selected}
+                            disabled={
+                              !!pending ||
+                              connection !== "connected" ||
+                              board.trip?.status === "finalized" ||
+                              !!me?.muted
+                            }
+                            onClick={() => react(message, emoji)}
+                          >
+                            {emoji} {Math.max(0, count)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+                <form onSubmit={sendChat}>
+                  <label>
+                    Message
+                    <input
+                      name="message"
+                      disabled={
+                        !!me?.muted || board.trip?.status === "finalized"
+                      }
+                      maxLength="2000"
+                      onChange={() => typingSignal(true)}
+                      onBlur={() => typingSignal(false)}
+                      required
+                    />
+                  </label>
+                  <button
+                    className="secondary"
+                    disabled={
+                      connection !== "connected" ||
+                      board.trip?.status === "finalized" ||
+                      !!me?.muted
+                    }
+                  >
+                    Send message
+                  </button>
+                </form>
+              </section>
+              <section className="panel travelersPanel" id="travelers">
+                <h2>Travelers</h2>
+                <p className="notice">
+                  {board.leaderConnected
+                    ? "Leader connected"
+                    : "Leader disconnected · lock and finalize actions are paused."}
+                </p>
+                {(board.members || room.members).map((m) => (
+                  <div className="member" key={m.userId}>
+                    <span className="avatar" aria-hidden="true">
+                      {m.displayName.slice(0, 2).toUpperCase()}
+                    </span>
+                    <div>
+                      <strong>
+                        {m.displayName}
+                        {m.userId === user.userId ? " (you)" : ""}
+                      </strong>
+                      <small>
+                        {m.role}
+                        {m.muted ? " · muted" : ""}
+                      </small>
+                    </div>
+                    <Badge
+                      tone={
+                        board.connectedUsers?.includes(m.userId)
+                          ? "success"
+                          : "neutral"
+                      }
+                    >
+                      {board.connectedUsers?.includes(m.userId)
+                        ? "online"
+                        : "offline"}
+                    </Badge>
+                  </div>
+                ))}
+              </section>
+            </aside>
+          </div>
+        </div>
+      )}
+      {user &&
+        room?.role === "leader" &&
+        board.trip?.status !== "finalized" && (
+          <ModerationControls
+            members={board.members || room.members}
+            userId={user.userId}
+            connectedUsers={board.connectedUsers || []}
+            roomLocked={!!board.trip?.roomLocked}
+            enabled={
+              connection === "connected" &&
+              board.leaderConnected &&
+              !moderationPending
+            }
+            onCommand={moderate}
+          />
+        )}
+      {user &&
+        room?.role === "leader" &&
+        board.trip?.status !== "finalized" && (
+          <section className="panel inviteControls" id="invite-controls">
+            <h2>Invite controls</h2>
+            <p>Create a single-use code valid for seven days.</p>
+            <label>
+              Participant role
+              <select value={inviteRole} onChange={(e) => IR(e.target.value)}>
+                <option value="planner">Planner</option>
+                <option value="viewer">Viewer</option>
+              </select>
+            </label>
+            <button className="secondary" onClick={createInvite}>
+              Create invitation
+            </button>
+            {inviteId && (
+              <button className="link" onClick={revokeInvite}>
+                Revoke displayed invitation
+              </button>
+            )}
+          </section>
+        )}
+      {user?.isAdmin && (
+        <DatasetAdmin key={user.userId} api={api} tripId={room?.tripId} />
+      )}
+      <footer>
+        TripSync AI is an independent educational prototype. Sample places are
+        fictional.
+      </footer>
+    </main>
+  );
+}
+createRoot(document.getElementById("root")).render(<App />);

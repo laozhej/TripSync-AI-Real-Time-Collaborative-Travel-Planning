@@ -1,5 +1,79 @@
-import React,{useState} from 'react';
-export default function SplitEditor({item,members,onSave,disabled=false}){
- const [mode,setMode]=useState(item.splitMode||'even');
- return <details><summary>Split cost: {item.name}</summary><p className="helpText">Even shares divide the cost equally. Weighted shares use relative weights; zero means no charge. At least one selected traveler needs a positive weight.</p><form onSubmit={e=>{e.preventDefault();const values=new FormData(e.currentTarget);const ids=values.getAll('attendee');onSave({itemId:item.itemId,expectedPositionVersion:item.positionVersion,attendeeIds:ids,splitMode:mode,weights:mode==='weighted'?Object.fromEntries(ids.map(uid=>[uid,Number(values.get(uid))])):{}})}}><fieldset disabled={disabled}><legend>Attendees and split</legend><label>Split method<select value={mode} onChange={e=>setMode(e.target.value)}><option value="even">Even</option><option value="weighted">Weighted</option></select></label>{members.map(m=><div className="splitMember" key={m.userId}><label><input type="checkbox" name="attendee" value={m.userId} defaultChecked={item.attendeeIds.includes(m.userId)}/>{m.displayName}</label>{mode==='weighted'&&<label>Weight for {m.displayName}<input type="number" name={m.userId} min="0" max="2147483647" step="1" defaultValue={item.weights?.[m.userId]??1} required/></label>}</div>)}</fieldset><button className="secondary" disabled={disabled}>Save split</button></form></details>
+import React, { useState } from "react";
+export default function SplitEditor({
+  item,
+  members,
+  onSave,
+  disabled = false,
+}) {
+  const [mode, setMode] = useState(item.splitMode || "even");
+  return (
+    <details>
+      <summary>Split cost: {item.name}</summary>
+      <p className="helpText">
+        Even shares divide the cost equally. Weighted shares use relative
+        weights; zero means no charge. At least one selected traveler needs a
+        positive weight.
+      </p>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const values = new FormData(e.currentTarget);
+          const ids = values.getAll("attendee");
+          onSave({
+            itemId: item.itemId,
+            expectedPositionVersion: item.positionVersion,
+            attendeeIds: ids,
+            splitMode: mode,
+            weights:
+              mode === "weighted"
+                ? Object.fromEntries(
+                    ids.map((uid) => [uid, Number(values.get(uid))]),
+                  )
+                : {},
+          });
+        }}
+      >
+        <fieldset disabled={disabled}>
+          <legend>Attendees and split</legend>
+          <label>
+            Split method
+            <select value={mode} onChange={(e) => setMode(e.target.value)}>
+              <option value="even">Even</option>
+              <option value="weighted">Weighted</option>
+            </select>
+          </label>
+          {members.map((m) => (
+            <div className="splitMember" key={m.userId}>
+              <label>
+                <input
+                  type="checkbox"
+                  name="attendee"
+                  value={m.userId}
+                  defaultChecked={item.attendeeIds.includes(m.userId)}
+                />
+                {m.displayName}
+              </label>
+              {mode === "weighted" && (
+                <label>
+                  Weight for {m.displayName}
+                  <input
+                    type="number"
+                    name={m.userId}
+                    min="0"
+                    max="2147483647"
+                    step="1"
+                    defaultValue={item.weights?.[m.userId] ?? 1}
+                    required
+                  />
+                </label>
+              )}
+            </div>
+          ))}
+        </fieldset>
+        <button className="secondary" disabled={disabled}>
+          Save split
+        </button>
+      </form>
+    </details>
+  );
 }
