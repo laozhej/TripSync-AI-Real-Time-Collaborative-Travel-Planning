@@ -24,7 +24,7 @@ env['PYTHONPATH'] = str(ROOT / 'backend')
 env['DATABASE_URL'] = url.set(database=name).render_as_string(hide_password=False)
 env['JWT_SIGNING_KEY'] = 'temporary-browser-test-key-' + uuid4().hex
 env['ALLOWED_ORIGINS'] = 'http://127.0.0.1:5173'
-env['BROWSER_SHORT_ACCESS'] = '1'
+env['BROWSER_SHORT_ACCESS'] = '0' if len(sys.argv)>1 else '1'
 
 
 async def main():
@@ -39,9 +39,10 @@ async def main():
     parsed=urlsplit(model_url)
     if parsed.scheme!='http' or parsed.hostname not in ('127.0.0.1','localhost','::1') or parsed.username or parsed.password or parsed.path not in ('','/') or parsed.query or parsed.fragment:
         raise RuntimeError('Browser test requires local inference')
-    warm=httpx.post(model_url.rstrip('/')+'/api/chat',json={'model':env.get('CONCIERGE_MODEL') or config.get('CONCIERGE_MODEL') or 'qwen2.5:1.5b',
-        'messages':[],'stream':False,'keep_alive':'5m'},timeout=60,trust_env=False)
-    warm.raise_for_status()
+    if len(sys.argv)==1:
+        warm=httpx.post(model_url.rstrip('/')+'/api/chat',json={'model':env.get('CONCIERGE_MODEL') or config.get('CONCIERGE_MODEL') or 'qwen2.5:1.5b',
+            'messages':[],'stream':False,'keep_alive':'5m'},timeout=60,trust_env=False)
+        warm.raise_for_status()
     admin = create_async_engine(url.set(database='postgres'), isolation_level='AUTOCOMMIT')
     processes = []
     created = False
@@ -70,7 +71,14 @@ async def main():
                     time.sleep(.25)
             else:
                 raise RuntimeError('Test server did not become ready')
-        subprocess.run([sys.executable, 'backend/tests/browser_phase1.py'], cwd=ROOT, env=env, check=True, timeout=90)
+        result=subprocess.run([sys.executable, sys.argv[1] if len(sys.argv)>1 else 'backend/tests/browser_phase1.py'], cwd=ROOT, env=env, capture_output=True,text=True,timeout=150)
+        if result.returncode:
+            diagnostic=(result.stdout+'\n'+result.stderr).split('Aria snapshot:')[0]
+            for secret in (env['DATABASE_URL'],env['JWT_SIGNING_KEY']):diagnostic=diagnostic.replace(secret,'[REDACTED]')
+            (ROOT/'.local').mkdir(exist_ok=True)
+            (ROOT/'.local'/'browser-failure.log').write_text(diagnostic,encoding='utf-8')
+            raise RuntimeError('Browser checks failed; sanitized diagnostics in .local/browser-failure.log')
+        print(result.stdout.strip())
     finally:
         for process in processes:
             process.terminate()

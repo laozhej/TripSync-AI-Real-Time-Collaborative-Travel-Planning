@@ -7,11 +7,11 @@ import os
 import time
 from collections import deque
 from uuid import UUID, uuid4
-from typing import Literal
+from typing import Literal, Annotated
 
 import jwt
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, ValidationError, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, ValidationError, field_validator, model_validator
 from sqlalchemy import text
 
 from app.api.auth import authenticated, auth_config
@@ -32,7 +32,14 @@ class Pin(BaseModel):
     startTime: datetime
     endTime: datetime
     attendeeIds: list[UUID] = Field(default_factory=list, max_length=50)
-    splitMode: str = Field(default='even', pattern='^even$')
+    splitMode: Literal['even','weighted'] = 'even'
+    weights: dict[UUID, Annotated[StrictInt,Field(ge=0,le=2**31-1)]] = Field(default_factory=dict,max_length=50)
+
+    @model_validator(mode='after')
+    def valid_split(self):
+        if self.splitMode=='weighted' and (not self.attendeeIds or set(self.weights)!=set(self.attendeeIds) or sum(self.weights.values())<=0):raise ValueError('weighted split requires attendees and positive weights')
+        if self.splitMode=='even' and self.weights:raise ValueError('even split does not accept weights')
+        return self
 
 
 class ItemCommand(BaseModel):
@@ -193,6 +200,16 @@ async def socket_room(socket: WebSocket, trip_id: UUID):
                     command = ({'move':Move, 'unlock':Unlock}.get(operation, ItemCommand)).model_validate(message['payload'])
                     ack = await room.change_item(actor, command, operation)
                     queue.put_nowait(envelope('trip.command.ack', trip_id, ack))
+                elif message['event'] in ('trip.vote.open','trip.vote.cast','trip.vote.start','trip.vote.submit'):
+                    from app.voting.service import OpenVote,CastVote,open_vote,cast_vote
+                    opening=message['event'] in ('trip.vote.open','trip.vote.start')
+                    command=(OpenVote if opening else CastVote).model_validate(message['payload'])
+                    ack=await (open_vote if opening else cast_vote)(room,actor,command)
+                    queue.put_nowait(envelope('trip.command.ack',trip_id,ack))
+                elif message['event']=='trip.board.split':
+                    from app.budget.service import SplitUpdate,update_split
+                    ack=await update_split(room,actor,SplitUpdate.model_validate(message['payload']))
+                    queue.put_nowait(envelope('trip.command.ack',trip_id,ack))
                 elif message['event'] == 'trip.chat.send':
                     command = Chat.model_validate(message['payload'])
                     ack = await room.send_chat(actor, command)

@@ -7,8 +7,8 @@ export default function BoardGrid({board,room,connection,onSelectedMove,onDropMo
   const first=Date.parse(range.startDate+'T00:00:00Z'),count=range.count;
   const start=Math.min(offset,Math.max(0,count-1));
   const days=Array.from({length:Math.min(7,count-start)},(_,i)=>({index:start+i,date:new Date(first+(start+i)*86400000).toISOString().slice(0,10)}));
-  const canEdit=connection==='connected'&&!board.trip?.roomLocked&&(room.role==='leader'||(room.role==='planner'&&room.canPin));
-  const canLead=connection==='connected'&&!board.trip?.roomLocked&&room.role==='leader'&&board.leaderConnected;
+  const canEdit=connection==='connected'&&board.trip?.status!=='finalized'&&!board.trip?.roomLocked&&(room.role==='leader'||(room.role==='planner'&&room.canPin));
+  const canLead=connection==='connected'&&board.trip?.status!=='finalized'&&!board.trip?.roomLocked&&room.role==='leader'&&board.leaderConnected;
   function drop(event,day,hour){
     event.preventDefault();if(!canEdit)return;
     let drag,current;

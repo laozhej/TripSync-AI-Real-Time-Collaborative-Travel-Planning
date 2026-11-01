@@ -62,6 +62,7 @@ class Room:
         self.currency = "INR"
         self.seq = self.committed = 0
         self.items = {}
+        self.votes = []
         self.commands = {}
         self.ai_locks = {}
         self.pending = []
@@ -87,7 +88,8 @@ class Room:
                 await conn.execute(text("UPDATE trips SET room_epoch=:epoch,room_seq=committed_seq WHERE id=:id"),
                                    {"epoch":UUID(self.epoch), "id":self.trip_id})
                 rows = (await conn.execute(text("""SELECT i.id,i.venue_id,i.day_index,i.starts_at,i.ends_at,
-                    i.lifecycle_stage,i.position_version,i.price_snapshot_minor,v.name,
+                    i.lifecycle_stage,i.position_version,i.price_snapshot_minor,i.split_mode,v.name,
+                    (SELECT jsonb_object_agg(a.user_id::text,a.weight) FROM item_attendees a WHERE a.item_id=i.id) AS weights,
                     ARRAY(SELECT a.user_id FROM item_attendees a WHERE a.item_id=i.id ORDER BY a.user_id) AS attendees FROM itinerary_items i
                     JOIN venue_metadata v ON v.id=i.venue_id AND v.dataset_id=i.dataset_id
                     WHERE i.trip_id=:id AND i.removed_at IS NULL ORDER BY i.id"""), {"id":self.trip_id})).mappings().all()
@@ -96,8 +98,11 @@ class Room:
                             "dayIndex":row['day_index'],"startTime":row['starts_at'].isoformat(),
                             "endTime":row['ends_at'].isoformat(),"lifecycleStage":row['lifecycle_stage'],
                             "positionVersion":row['position_version'],"pricePerPersonMinor":row['price_snapshot_minor'],
-                            "attendeeIds":[str(uid) for uid in row['attendees']]}
+                            "attendeeIds":[str(uid) for uid in row['attendees']],"weights":row['weights'],"splitMode":row['split_mode']}
                     self.items[item['itemId']] = item
+            from app.voting.service import load_votes
+            async with self.manager.engine.connect() as conn:
+                self.votes = await load_votes(conn,self.trip_id)
             self.loaded = True
             self.audit('trip.room.loaded')
 
@@ -120,22 +125,8 @@ class Room:
                 queue.put_nowait(None)
 
     def budget_summary(self, currency):
-        proposed = locked = 0
-        people = {}
-        for item in self.items.values():
-            price = item.get('pricePerPersonMinor', 0)
-            attendees = item.get('attendeeIds', [])
-            total = price * len(attendees)
-            proposed += total
-            if item['lifecycleStage'] == 'locked':
-                locked += total
-            for uid in attendees:
-                person = people.setdefault(uid, {'userId':uid,'proposedMinor':0,'lockedMinor':0})
-                person['proposedMinor'] += price
-                if item['lifecycleStage'] == 'locked':
-                    person['lockedMinor'] += price
-        return {'currency':currency,'proposedMinor':proposed,'lockedMinor':locked,
-                'perPerson':[people[key] for key in sorted(people)]}
+        from app.budget.engine import summarize
+        return summarize(self.items.values(),currency,self.votes)
 
     async def snapshot_locked(self, actor=None):
         own_constraints = {}
@@ -161,7 +152,11 @@ class Room:
             reactions = await reaction_groups(conn, [m['id'] for m in messages])
             latest_answer = (await conn.execute(text('SELECT response FROM ai_questions WHERE trip_id=:trip ORDER BY created_at DESC,id DESC LIMIT 1'),
                 {'trip':self.trip_id})).scalar_one_or_none()
-        return {'roomEpoch':self.epoch,'roomSeq':self.seq,'committedSeq':self.committed,
+        from app.voting.service import load_votes
+        async with self.manager.engine.connect() as conn:
+            self.votes=await load_votes(conn,self.trip_id)
+            conflicts=(await conn.execute(text('SELECT status,data,opened_seq,resolved_seq FROM conflicts WHERE trip_id=:trip ORDER BY fingerprint'),{'trip':self.trip_id})).mappings().all()
+        return {'votes':self.votes,'conflicts':[dict(c) for c in conflicts],'roomEpoch':self.epoch,'roomSeq':self.seq,'committedSeq':self.committed,
                 'connectedUsers':sorted({str(a['user_id']) for a in self.connections.values()}),
                 'leaderConnected':any(row['role']=='leader' and any(str(a['user_id'])==str(row['user_id']) for a in self.connections.values()) for row in rows),
                 'stateVersion':trip['state_version'],'sessionId':str(trip['planning_session_id']),
@@ -209,6 +204,12 @@ class Room:
                 {'trip':self.trip_id})).mappings().all()
         active = {str(row['user_id']) for row in rows}
         connected = sorted({str(a['user_id']) for a in self.connections.values()} & active)
+        try:
+            async with self.manager.engine.begin() as conn:
+                await conn.execute(text('INSERT INTO presence_ledger(id,trip_id,session_id,connected_planners) VALUES(:id,:trip,:session,:count)'),
+                    {'id':uuid4(),'trip':self.trip_id,'session':UUID(self.session_id),'count':sum(str(r['user_id']) in connected and r['role'] in ('leader','planner') for r in rows)})
+        except Exception:
+            self.fail_locked()
         self.publish(envelope('trip.presence.update', self.trip_id, {
             'stateVersion':state_version,
             'participantId':str(user_id),'action':action,'participantCount':len(connected),
@@ -410,12 +411,18 @@ class Room:
                 current_total = sum(item['pricePerPersonMinor'] * len(item['attendeeIds']) for item in self.items.values())
                 if current_total + venue['price_per_person_minor'] * len(attendees) > 10**12:
                     raise RoomError("ROOM_COST_TOO_LARGE")
+            weights={str(uid):1 for uid in attendees} if command.splitMode=='even' else {str(uid):w for uid,w in command.weights.items()}
+            from app.budget.engine import allocate
+            try:
+                if set(weights)!={str(uid) for uid in attendees}:raise ValueError()
+                allocate(venue['price_per_person_minor']*len(attendees),weights)
+            except ValueError:raise RoomError('INVALID_WEIGHTS') from None
             self.seq += 1
             item_id, event_id = uuid4(), uuid4()
             item = {"itemId":str(item_id),"venueId":str(venue['id']),"name":venue['name'],"dayIndex":command.dayIndex,
                     "startTime":command.startTime.astimezone(timezone.utc).isoformat(),
                     "endTime":command.endTime.astimezone(timezone.utc).isoformat(),"lifecycleStage":"drafting","positionVersion":1,
-                    "pricePerPersonMinor":venue['price_per_person_minor'],"attendeeIds":sorted(str(uid) for uid in attendees)}
+                    "pricePerPersonMinor":venue['price_per_person_minor'],"attendeeIds":sorted(str(uid) for uid in attendees),"splitMode":command.splitMode,"weights":weights}
             self.items[str(item_id)] = item
             payload = item | {"operation":"pin","item":item,"commandId":key,"correlationId":str(command.correlationId),
                 "eventId":str(event_id),"roomEpoch":self.epoch,"roomSeq":self.seq,"durable":False,
@@ -513,6 +520,9 @@ class Room:
                         dict(trip=self.trip_id, seq=next_seq, event=event_id, command=command.commandId,
                              session=trip['planning_session_id'], actor=actor['user_id'],
                              payload=json.dumps(payload | {'commandHash':fingerprint, 'reason':getattr(command,'reason',None)})))
+                    if operation=='lock':
+                        await conn.execute(text("INSERT INTO interactions(id,user_id,trip_id,venue_id,dataset_id,kind,event_id) SELECT :id,:uid,trip_id,venue_id,dataset_id,'lock',:event FROM itinerary_items WHERE id=:item AND trip_id=:trip ON CONFLICT(event_id) DO NOTHING"),
+                            {'id':uuid4(),'uid':actor['user_id'],'event':event_id,'item':command.itemId,'trip':self.trip_id})
                 self.seq = self.committed = next_seq
                 self.items[str(command.itemId)] = item
                 payload['budgetSummary'] = self.budget_summary(self.currency)
@@ -571,17 +581,23 @@ class Room:
             else:
                 await conn.execute(text("""INSERT INTO itinerary_items (id,trip_id,venue_id,dataset_id,day_index,
                 starts_at,ends_at,lifecycle_stage,pinned_by_user_id,position_version,price_snapshot_minor,split_mode)
-                VALUES (:id,:trip,:venue,:dataset,:day,:start,:end,'drafting',:actor,1,:price,'even')"""),
+                VALUES (:id,:trip,:venue,:dataset,:day,:start,:end,'drafting',:actor,1,:price,:split)"""),
                 dict(id=entry['item_id'],trip=self.trip_id,venue=entry['venue'],dataset=entry['dataset'],day=item['dayIndex'],
                      start=datetime.fromisoformat(item['startTime']),end=datetime.fromisoformat(item['endTime']),
-                     actor=entry['actor'],price=entry['price']))
+                     actor=entry['actor'],price=entry['price'],split=item.get('splitMode','even')))
                 for uid in entry['attendees']:
-                    await conn.execute(text("INSERT INTO item_attendees (item_id,user_id,weight) VALUES (:item,:uid,1)"),
-                                   {"item":entry['item_id'],"uid":uid})
+                    await conn.execute(text("INSERT INTO item_attendees (item_id,user_id,weight) VALUES (:item,:uid,:weight)"),
+                                   {"item":entry['item_id'],"uid":uid,"weight":item.get("weights",{}).get(str(uid),1)})
             await conn.execute(text("""INSERT INTO room_events (trip_id,room_seq,event_id,command_id,session_id,actor_id,type,payload)
                 VALUES (:trip,:seq,:event,:command,:session,:actor,'trip.board.update',CAST(:payload AS jsonb))"""),
                 dict(trip=self.trip_id,seq=entry['payload']['roomSeq'],event=entry['event'],command=entry['command'],
                      session=entry['session'],actor=entry['actor'],payload=json.dumps(entry['payload'])))
+        from app.voting.service import sync_conflicts
+        await sync_conflicts(conn,self)
+        for entry in self.pending:
+            if entry.get('operation') is None:
+                await conn.execute(text("INSERT INTO interactions(id,user_id,trip_id,venue_id,dataset_id,kind,event_id) VALUES(:id,:uid,:trip,:venue,:dataset,'pin',:event) ON CONFLICT(event_id) DO NOTHING"),
+                    {'id':uuid4(),'uid':entry['actor'],'trip':self.trip_id,'venue':entry['venue'],'dataset':entry['dataset'],'event':entry['event']})
         return target
 
     def fail_locked(self):
@@ -606,8 +622,13 @@ class Room:
             raise RoomError('PERSISTENCE_DEGRADED')
         try:
             async with self.manager.engine.begin() as conn:
+                conn.info['conflict_notifications']=[]
                 target = await self.persist_locked(conn)
                 yield conn
+                from app.voting.service import sync_conflicts
+                durable=(await conn.execute(text("SELECT committed_seq FROM trips WHERE id=:trip"),{"trip":self.trip_id})).scalar_one()
+                if durable==self.seq:await sync_conflicts(conn,self)
+                notifications=list(conn.info.pop('conflict_notifications',[]))
         except (HTTPException, RoomError):
             raise
         except asyncio.CancelledError:
@@ -618,6 +639,8 @@ class Room:
             raise RoomError('PERSISTENCE_DEGRADED') from exc
         else:
             self.committed_locked(target)
+            for notification in notifications:
+                self.publish(envelope('trip.board.conflict',self.trip_id,notification))
 
     async def flush_locked(self):
         if not self.pending or self.frozen:
@@ -634,14 +657,28 @@ class RoomManager:
         self.model_gate = asyncio.Semaphore(2)
         self.rooms = {}
         self.task = None
+        self.recovered = False
 
     def get(self, trip_id):
         return self.rooms.setdefault(trip_id, Room(self,trip_id))
 
+    async def recover(self):
+        from app.voting.service import tick
+        async with self.engine.connect() as conn:
+            ids=(await conn.execute(text("SELECT DISTINCT trip_id FROM votes WHERE status='open'"))).scalars().all()
+        for trip_id in ids:await tick(self.get(trip_id))
+        self.recovered = True
+
     async def run(self):
         while True:
             await asyncio.sleep(.1)
-            await asyncio.gather(*(room.flush() for room in list(self.rooms.values())))
+            from app.voting.service import tick
+            async def maintain(room):
+                try:
+                    await room.flush()
+                    await tick(room)
+                except RoomError: pass
+            await asyncio.gather(*(maintain(room) for room in list(self.rooms.values())))
 
     async def close(self):
         if self.task:

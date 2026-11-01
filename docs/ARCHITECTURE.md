@@ -106,3 +106,11 @@ JSON logs whitelist event, trip/session IDs, roomEpoch, roomSeq, committedSeq, c
 ### Indian locale implementation
 
 New UI trips select Bengaluru/INR/Asia-Kolkata. The display/input helper converts IST to offset-aware UTC instants and retains the destination-local dayIndex, including midnight crossing to the previous UTC day. Server validation continues to use IANA Asia/Kolkata. Actor budget events derive currency from the loaded trip; Concierge eligible choices carry the authorized trip currency to factual rendering. The schema accepts INR and legacy EUR, with trip creation requiring a matching dataset currency. No migration rewrites existing monetary values.
+
+## Phase 3 boundaries (2026-11-01)
+
+`app/budget/{engine,service}.py` owns pure exact splits and versioned split edits. `app/concierge/conflicts.py` owns pure fingerprints; `app/voting/service.py` persists elections/ballots/conflict transitions within the room transaction. `app/analytics/service.py` finalizes sessions. `app/recommendations/{engine,service,evaluate}.py` supplies content/CF training, serving and frozen evaluation. `app/api/phase3.py` is the HTTP adapter for these services plus dashboard/Admin operations. React components live under dashboard/votes/admin.
+
+The managed 100-ms maintenance loop flushes rooms, checks deadlines and detects identical-slot contests. Significant services commit before advancing memory/publishing; PostgreSQL version predicates remain the unexpected-writer guard. Startup hydrates all open-vote rooms and resolves overdue rounds before readiness. If startup recovery fails, liveness stays available and readiness stays false until a successful restart. One worker remains mandatory. Conflict notifications use `trip.board.conflict` after commit and carry the committed state boundary; they do not allocate another room sequence.
+
+Small versioned model artifacts live as checksummed JSONB in PostgreSQL, rather than a disk path. Training runs through `asyncio.to_thread`; promotion retires the previous active artifact and inserts the validated replacement atomically. Serving reads the active version on each request, so no redeploy/reload timer is needed. Fresh per-member history is reranked immediately and normalized scores are averaged for the current group.

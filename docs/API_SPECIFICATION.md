@@ -1,6 +1,6 @@
 # REST specification
 
-API v1 design, PRD §7.3. Only the first-slice routes described in the implementation notes below exist; all others remain planned. Base `/api/v1`; JSON UTF-8, unknown fields rejected. Authentication derives actor from JWT `sub`; a body `userId` is rejected, never trusted. Membership/capabilities are read server-side. See [security](SECURITY.md) and [socket schemas](WEBSOCKET_PROTOCOL.md).
+API v1 design, PRD §7.3. Implementation notes and the Phase 3 contract below identify live routes; remaining inventory entries are planned. Base `/api/v1`; JSON UTF-8, unknown fields rejected. Authentication derives actor from JWT `sub`; a body `userId` is rejected, never trusted. Membership/capabilities are read server-side. See [security](SECURITY.md) and [socket schemas](WEBSOCKET_PROTOCOL.md).
 
 ## Common rules
 
@@ -43,21 +43,21 @@ Error shape:
 | DELETE `/trips/{id}/items/{itemId}` | Planner canPin/Leader, Drafting | body `{expectedPositionVersion}` → 200 tombstone,seq,durability |
 | POST `/trips/{id}/items/{itemId}/lock` | Leader | `{expectedPositionVersion}` → 200 Locked item,durable=true |
 | POST `/trips/{id}/items/{itemId}/unlock` | Leader | `{expectedPositionVersion,reason}` → 200 Drafting item,durable=true |
-| POST `/trips/{id}/votes` | Leader | `{itemIds,expectedVersions,closesAt?}` → 201 vote,eligibleCount,options |
-| PUT `/trips/{id}/votes/{voteId}/ballot` | Eligible Planner/Leader | `{choiceVenueId,expectedBallotVersion}` → 200 ballot; server actor |
+| POST `/trips/{id}/votes` | Leader | `{commandId,correlationId,expectedVersions:{itemUUID:version},durationSeconds?}` → 200 durable vote/affectedItems/budgetSummary |
+| POST `/trips/{id}/votes/cast` | Eligible Planner/Leader | `{commandId,correlationId,voteId,choiceVenueId,expectedBallotVersion}` → 200 durable vote; server actor |
 | GET `/trips/{id}/votes/{voteId}` | Member | → vote with counts/deadline/status/result |
 | GET `/trips/{id}/budgets` | Member | → currency,item allocations,committed/proposed totals and version |
-| GET `/trips/{id}/conflicts` | Member | status filter → paged conflict records |
+| GET `/trips/{id}/conflicts` | Member | → `{items:[{status,data,opened_seq,resolved_seq}]}` conflict history |
 | GET `/trips/{id}/chat` | Member | before cursor → chat with reactions; committed only |
 | POST `/trips/{id}/chat` | Unmuted member | `{body}` → 201 durable message; socket equivalent preferred |
 | GET `/destinations/{destination}/venues` | Auth | near/radius/category/cursor → mandatory catalog response |
 | GET `/destinations/{destination}/venues/{venueId}` | Auth | datasetVersion query → full authored venue with citation ID |
 | POST `/trips/{id}/ai/ask` | Member | constrained request below → 200 answer/status/sources |
-| GET `/trips/{id}/recommendations` | Member | `limit` max 20 → ranked venues/destinations,modelVersion,asOf |
-| POST `/trips/{id}/interactions` | Member | `{venueId,kind:"view"|"like",liked?}` → 201; pin/lock/co_travel server-derived |
-| GET `/trips/{id}/analytics` | Member | sessionId optional → metrics,asOfSeq,finalBudget |
-| POST `/admin/datasets` | Admin | multipart file JSON/YAML → 201 validation summary/staging datasetId or 422 all bounded errors |
-| POST `/admin/datasets/{datasetId}/activate` | Admin | `{expectedVersion}` → 200 active version; atomic |
+| GET `/trips/{id}/recommendations` | Member | → top five exploratory items,modelVersion,hybridReady,generatedAt,interactionWatermark |
+| POST `/trips/{id}/interactions` | Member | `{venueId,kind:"view"|"like",eventId}` → 201; pin/lock server-derived |
+| GET `/trips/{id}/analytics` | Member | → sessionId,throughSeq,duration/peak/AI/conflict metrics,finalBudgets |
+| POST `/admin/datasets` | Admin | UTF-8 JSON body ≤2 MiB → 201 staging datasetId/version or 422 bounded field paths |
+| POST `/admin/datasets/{datasetId}/activate` | Admin | no body → 200 datasetId/status; atomic staging activation |
 | GET `/admin/datasets` | Admin | → versions,validation status |
 | GET `/health/live`, `/health/ready`, `/health/gateway` | Private host probe | → status; ready 503 if DB/schema/actors unhealthy; no credentials |
 
@@ -138,3 +138,21 @@ The current HTTP errors retain FastAPI `detail` (string or `{code,...}`), rather
 ### India baseline update
 
 Create-room currency accepts INR or legacy EUR, and must match the selected active dataset. The new default example is destination `Bengaluru, India`, currency `INR`, totalBudget `25000.00`; GET trip returns timezone `Asia/Kolkata`. A noon IST slot is `2026-11-10T12:00:00+05:30` (the same instant as `2026-11-10T06:30:00Z`). Budget minor units in Indian rooms are paise. Earlier mandatory PRD examples and legacy EUR fixtures remain documented as historical examples.
+
+## Phase 3 live contract
+
+All writes below derive the actor from authentication; IDs in examples are UUID placeholders. New domain errors use `{"detail":{"code":"..."}}`, HTTP 409 for stale versions/ballots/closed votes, 403 for capability failure and 404 for unavailable trip/object. Validation errors use FastAPI 422; Admin ingestion returns a bounded human-readable field-path string. No client actor IDs are accepted.
+
+| Route | Live behavior |
+|---|---|
+| GET `/me/dashboard` | Member trip history, active rejoin, declared diets, observed per-currency price range and favored categories; no currency mixing |
+| GET `/trips/{id}/planning` | Same full snapshot as the socket subscription, including votes, conflicts and exact budgets |
+| POST `/trips/{id}/items/split` | commandId,correlationId,itemId,expectedPositionVersion,attendeeIds,splitMode,weights; durable versioned Drafting edit |
+| POST `/trips/{id}/recommendations/train` | Admin account **with trip membership**; off-loop train and atomic active artifact promotion |
+| POST `/trips/{id}/finalize` | commandId,correlationId,expectedStateVersion; connected Leader, no unresolved work, all active items Locked; returns durable session.ended |
+
+Vote opening example: `{"commandId":"<uuid>","correlationId":"<uuid>","expectedVersions":{"<itemUUID1>":1,"<itemUUID2>":1},"durationSeconds":60}`. Ballot example: `{"commandId":"<uuid>","correlationId":"<uuid>","voteId":"<uuid>","choiceVenueId":"<uuid>","expectedBallotVersion":0}`. A successful ballot changes its version to 1; an intentional change supplies 1; repeating a committed command returns status duplicate.
+
+Weighted split example: `{"commandId":"<uuid>","correlationId":"<uuid>","itemId":"<uuid>","expectedPositionVersion":1,"attendeeIds":["<userUUID1>","<userUUID2>"],"splitMode":"weighted","weights":{"<userUUID1>":1,"<userUUID2>":2}}`. Even split accepts no explicit weights. Pin accepts the same optional weighted configuration, while omitted attendees with even mode freeze all currently active memberships.
+
+Catalog's optional `tripId=<uuid>` retrieves that member trip's pinned version; without it the mandatory destination/near/radius example continues to return the active version. Existing PRD mandatory create/catalog/ask examples and compatibility fields are preserved. Final analytics expose proposed and Locked totals separately; finalized sessions require them to agree. Running duration is explicitly as-of-query; finalized duration is exact ended_at minus started_at. A missing historical boundary is labeled unknown.

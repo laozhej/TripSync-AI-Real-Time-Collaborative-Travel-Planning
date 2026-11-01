@@ -51,3 +51,7 @@ TASK-001–007 first-slice acceptance is complete with the clean-database, integ
 TASK-008–013 meet the Week 2 checkpoint in PRD §11.1: live pin/move/lock, CAS conflicts, presence/moderation/reconnect, chat, tested hard matching and a real grounded constrained answer with citations. See PHASE_2_EVIDENCE.md for actual commands/results and boundary details. Pure Voting lifecycle rules are available for Week 3; contested elections, exact weighted budgets, conflict orchestration, recommendations/dashboard, analytics and Admin upload remain TASK-014–020. No final target attainment is implied.
 
 India localization follow-up (2026-10-31): the user selected an Indian baseline after Phase 2. Bengaluru/INR/IST replace the new-trip defaults; legacy trips retain their currency. The completed localization checks are in INDIA_LOCALIZATION_EVIDENCE.md; later phase dependencies remain unchanged.
+
+## Week 3 acceptance — 2026-11-01
+
+TASK-014–020 now function end-to-end: exact budgets/conflicts/elections, dashboard/hybrid recommendations, ledger analytics and Admin immutable ingestion. Actual PostgreSQL/real-model/browser/build/evaluation output and limitations are recorded in PHASE_3_EVIDENCE.md. Week 4 remains open; acceptance of these features does not establish load, latency, restore or submission completeness.

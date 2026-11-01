@@ -51,3 +51,9 @@ No other provisional domain default is silently finalized. Room absence freezes 
 ## ADR-018 — Indian project baseline (2026-10-31)
 
 Selected per explicit user instruction: Bengaluru, India is the authored sample destination, INR uses exact integer paise, and Asia/Kolkata supplies IST display/input. Indian grouping is used for currency presentation. No exchange-rate conversion occurs. Existing immutable EUR datasets/trips stay pinned and retain their original currency; backend totals and Concierge facts derive currency from the trip. The initial-dataset importer can add Bengaluru alongside Lisbon. The original DOCX is retained as source history; this instruction supersedes ADR-012's EUR-only default. Dataset prices are newly authored fictional rupee values, not converted or asserted real travel prices.
+
+## Phase 3 implementation choices — 2026-11-01
+
+ADR-008–016 remain provisional and are implemented as documented. Automatic contests open once per canonical day/time/attendee slot; a partial unique open-slot index allows a Leader to explicitly start another round after completion. Finalization requires all active items Locked in addition to no unresolved vote/conflict, avoiding an ambiguous final budget. Session start is durably observed at second distinct membership join; end is explicit Leader finalization. Historical missing boundaries remain unknown.
+
+ADR-019 implementation: checksummed JSONB model artifacts are atomically promoted in PostgreSQL rather than stored by disk path. The same one Python application performs off-loop CPU training and reads active artifacts per request; no separate recommendation service is introduced. Group affinity is the mean of current members' history-based scores, with collaborative item neighbors learned from self-generated histories; no additional inferred historical social graph is claimed. The fixed synthetic evaluation and its easy category-cohort limitations are recorded in RECOMMENDATION_ENGINE.md.

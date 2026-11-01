@@ -17,6 +17,7 @@ class Preferences(BaseModel):
     model_config=ConfigDict(extra='forbid')
     dietaryTags: list[Diet]=Field(default_factory=list,max_length=4)
     categoryCeilingsMinor: dict[Category,Minor]=Field(default_factory=dict)
+    totalCeilingMinor: Minor | None=None
 
     @model_validator(mode='after')
     def unique_diets(self):
@@ -77,6 +78,8 @@ async def update_constraints(room,actor,command):
             if not group:
                 await conn.execute(text('UPDATE memberships SET constraints=CAST(:constraints AS jsonb) WHERE trip_id=:trip AND user_id=:uid'),
                     {'trip':room.trip_id,'uid':actor['user_id'],'constraints':command.constraints.model_dump_json()})
+            from app.voting.service import sync_conflicts
+            await sync_conflicts(conn,room,seq=seq)
             payload={'roomSeq':seq,'roomEpoch':room.epoch,'stateVersion':version,'durable':True,
                      'commandId':str(command.commandId),'correlationId':str(command.correlationId),'eventId':str(uuid4()),
                      'targetUserId':str(command.targetUserId) if command.targetUserId else None,'categoryCeilingsMinor':ceilings}

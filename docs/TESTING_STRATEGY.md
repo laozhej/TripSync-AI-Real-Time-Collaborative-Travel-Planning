@@ -58,3 +58,7 @@ Provisional planning duration: first live session start (second distinct member 
 ## Evidence output
 
 During implementation save raw test output, command/config versions and timestamps in `evidence/tests/`; performance CSV/JSON plus method in `evidence/performance/`; annotated recordings and manual ledger in `evidence/demo/`. These folders/results do not exist yet. Redact secrets, not failures. [Demo checklist](DEMO_AND_SUBMISSION.md) supplies templates. Documentation verification now checks file/link/ID consistency only; it is not application test evidence.
+
+## Phase 3 actual verification
+
+PHASE_3_EVIDENCE.md records 110 backend passes with real local inference, 8 frontend test passes, production build and two-browser Phase 3 output. Database tests exercise exact recovered 800/1600 weighted budgets, version/ballot/role/removed-member failures, overdue/no-turnout/tie behavior, failed commit rollback, manual analytics and artifact/dataset immutability. Presence and session boundaries are separate durable supporting ledgers rather than board-sequence events. Final analytics uses the exact persisted second-member join through finalization interval; a session lacking a historical observed start reports durationKnown=false. Frozen recommendation cohorts meet the precision gate on that fixture only. Phase 4 measurements/consolidation remain pending.

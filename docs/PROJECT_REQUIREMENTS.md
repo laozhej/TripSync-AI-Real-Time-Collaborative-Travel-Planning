@@ -1,6 +1,6 @@
 # TripSync AI requirements
 
-Status: requirements baseline with partial application implementation; actual coverage is recorded in TRACEABILITY_MATRIX.md and PHASE_1_EVIDENCE.md. Source: [original PRD](../Document/Project%20Document.docx), v1.0, September 2026. Section references below refer to that document. The user's documentation-first request takes precedence over PRD §13.2's immediate scaffolding guidance. TripSync AI is an independent educational prototype with no Airbnb affiliation or integration.
+Status: requirements baseline with partial application implementation; actual coverage is recorded in TRACEABILITY_MATRIX.md and PHASE_1_EVIDENCE.md through PHASE_3_EVIDENCE.md. Source: [original PRD](../Document/Project%20Document.docx), v1.0, September 2026. Section references below refer to that document. The user's documentation-first request takes precedence over PRD §13.2's immediate scaffolding guidance. TripSync AI is an independent educational prototype with no Airbnb affiliation or integration.
 
 ## Interpretation
 
@@ -74,3 +74,5 @@ Open rules: LWW versus CAS; global roles versus membership; Viewer voting; quoru
 ## India baseline — user instruction, 2026-10-31
 
 The user requested an Indian project. New UI-created trips use Bengaluru, India, INR and Asia/Kolkata (IST, UTC+05:30). Monetary calculations remain integer paise (100 paise per rupee); display uses Indian currency grouping. The English interface uses Indian conventions. The project-authored Bengaluru dataset is fictional and covers the existing dietary, hours, radius, budget, lodging, transit and weather test shapes; it makes no claims about real establishments, fares or forecasts. Existing Lisbon/EUR trips and historical acceptance evidence are preserved, without currency conversion or relabeling. UTC remains the wire/storage timestamp convention; Indian board inputs/display use IST. These user instructions override the earlier provisional EUR/destination baseline. Other required phases and security/architecture invariants remain unchanged.
+
+Phase 3 update (2026-11-01): TASK-014–020 are implemented and accepted as recorded in PHASE_3_EVIDENCE.md. Exact splits, conflicts/elections, recommendation/dashboard, analytics and Admin ingestion now have database/browser evidence. Final project gates remain Phase 4; no performance/capacity claim follows from feature acceptance.

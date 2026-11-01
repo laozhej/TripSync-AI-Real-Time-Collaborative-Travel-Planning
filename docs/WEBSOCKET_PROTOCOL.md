@@ -34,10 +34,10 @@ Every mutating command includes UUID commandId and correlationId. At most 64 KiB
 |---|---|---|
 | `trip.board.pin` | venueId,dayIndex,startTime,endTime,attendeeIds,splitMode,weights? | Planner canPin/Leader; new Drafting item |
 | `trip.board.move` | itemId,expectedPositionVersion,dayIndex,startTime,endTime | Drafting, canPin/Leader |
-| `trip.board.edit` | itemId,expectedPositionVersion,attendeeIds?,splitMode?,weights? | Drafting, canPin/Leader |
+| `trip.board.split` | itemId,expectedPositionVersion,attendeeIds,splitMode,weights | Drafting, canPin/Leader |
 | `trip.board.remove` | itemId,expectedPositionVersion | Drafting, canPin/Leader |
 | `trip.board.lock` / `trip.board.unlock` | itemId,expectedPositionVersion,reason for unlock | Leader; explicit override unlock |
-| `trip.vote.start` | itemIds,expectedVersions,closesAt? | Leader; uses HTTP vote service |
+| `trip.vote.start` | expectedVersions,durationSeconds? | Leader; uses HTTP vote service |
 | `trip.vote.submit` | voteId,choiceVenueId,expectedBallotVersion | Eligible Planner/Leader; no request userId |
 | `trip.chat.send` | body | Unmuted member |
 | `trip.chat.typing` | isTyping bool | Unmuted member; expires after 3 s |
@@ -93,3 +93,11 @@ Proposed addition `trip.constraints.update` is both the client command and its c
 `trip.ai.suggestion` is now a committed sequenced event. It contains the HTTP answer fields described in API_SPECIFICATION. Clients advance their aggregate sequence on AI/constraints/moderation events as well as board/chat/reactions. Ephemeral presence/typing/pong events do not advance roomSeq. Presence includes current stateVersion, including updates after an HTTP join, so the next deliberate settings action uses the latest observed version. A stale settings action still rejects explicitly and requests reconciliation.
 
 Snapshots now include active member mute/role flags, own `preferences`, trip `categoryCeilingsMinor`, connectedUsers/leaderConnected, current chat/reactions/cursor and the latest committed suggestion, alongside lifecycle/budgets/watermarks. A snapshot or new epoch replaces the client's aggregate; it does not silently replay uncommitted commands. Timed election/ballot and conflict fields remain Phase 3 additions, not fabricated empty working services. Browser token expiry/revocation, multi-tab disconnect and actual crash tests are recorded in [Phase 2 evidence](PHASE_2_EVIDENCE.md).
+
+## Phase 3 live additions
+
+`trip.vote.start`/`trip.vote.open` commands accept expectedVersions keyed by item UUID and durationSeconds 10..300 (default 60). `trip.vote.submit`/`trip.vote.cast` accept voteId,choiceVenueId,expectedBallotVersion. Both invoke the same election services as REST. Common commandId/correlationId remain required. `trip.board.split` performs versioned attendee/even-or-weighted edits through the same service as HTTP.
+
+Core `trip.vote.open`, `trip.vote.cast` and `trip.vote.resolved` retain their PRD fields and additionally carry a complete bounded vote object. Open/resolved carry budgetSummary and affectedItems; resolution also carries activeItems/archivedItems. The client requests a full snapshot to reconcile these multi-item transitions. Cast includes authenticated userId and incremented ballotVersion. No winner is published before commit.
+
+`trip.board.conflict` is now emitted after its transaction commits: `{fingerprint,conflictType,itemIds,details,status,roomSeq,roomEpoch,durable:true}`. Open and resolved incidents carry the resulting committed boundary without consuming a new sequence; clients refetch the snapshot. Snapshots include persisted open/resolved history and current ballots. `session.ended` triggers a finalized snapshot. `trip.recommendations.updated` is an invalidation signal; it does not advance roomSeq. The browser separately increments its recommendation refresh token so a same-sequence model/interaction update still refetches the rail. The server-assigned envelope and all original core event names remain unchanged.

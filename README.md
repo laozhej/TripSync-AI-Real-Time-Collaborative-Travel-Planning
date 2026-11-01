@@ -55,3 +55,7 @@ Weeks: 1 foundation + thin slice; 2 board and Concierge; 3 voting/personalizatio
 Follow [environment setup](docs/ENVIRONMENT_SETUP.md) to install dependencies, configure a private `.env`, migrate a disposable PostgreSQL database and start the API and React client. The documented first-slice scenario covers two accounts, room creation and joining, a shared pin, and its committed watermark. [Implementation evidence](docs/PHASE_1_EVIDENCE.md) records the actual tests, limitations and remaining acceptance work.
 
 The app is incomplete and intended for local development only. The Concierge, voting, recommendations, full board lifecycle, presence and other later-phase features are not implemented. The first-slice snapshot omits fields for those later features; final security and performance validation remains in phase 4.
+
+### Phase 3 implemented
+
+Exact weighted budgets, durable conflicts/timed elections, dashboard/group recommendations, session analytics and Admin dataset staging/activation are available. [Phase 3 evidence](docs/PHASE_3_EVIDENCE.md) records actual database, browser, real-model and evaluation results. Current migration head: `0011_phase3`; retain one application worker. Use the Admin room button or `python -m app.cli train-recommendations --destination "Bengaluru, India"` to refresh a model after collecting likes/pins. Phase 4 performance/security/recovery/submission work remains open.

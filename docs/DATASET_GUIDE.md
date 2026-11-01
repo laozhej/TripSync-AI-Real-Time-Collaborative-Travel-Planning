@@ -51,3 +51,9 @@ The imported initial version now includes a generated venue tsvector and GIN ind
 ## Current Indian sample
 
 `data/destinations/bengaluru.json` is the default UI destination: Bengaluru, India; Asia/Kolkata; INR. Six fictional places include dietary coverage, an over-ceiling meal, restricted/overnight hours, lodging and an out-of-radius candidate, plus explicitly synthetic transit/weather records. Every price/rating/hour/location is project-authored demonstration metadata, not verified real travel information. Import it as a new destination with the existing CLI; do not overwrite Lisbon versions or convert active trips. Dataset currency accepts INR and legacy EUR.
+
+## Phase 3 Admin ingestion
+
+Admin uploads a UTF-8 JSON bundle (schemaVersion 1) through the file form or POST /api/v1/admin/datasets with application/json. The streaming body is capped at 2 MiB. Duplicate keys, non-finite numbers, unknown fields, invalid positive decimal-string prices, tags, coordinates, hours and source links reject before writes; validation returns bounded field paths. Successful validation inserts an immutable staging version plus metadata/search index in one transaction. Explicit activation retires the current version and activates staging atomically. Duplicate content returns its existing dataset ID. Retired versions cannot be reactivated.
+
+Existing trips remain pinned. Catalog calls may supply `tripId` to retrieve that member trip's immutable version; the board always does so when reopening a room. Without tripId, the catalog serves the active version for new trip creation. Account Admin does not bypass trip membership for catalog or recommendations. No live travel integration or YAML parser is added.

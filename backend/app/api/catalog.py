@@ -3,6 +3,7 @@ import math
 import base64
 import json
 import hashlib
+from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import text
 from app.api.auth import authenticated
@@ -21,7 +22,7 @@ def distance_km(a, b, c, d):
 async def venues(destination: str, request: Request, near: str | None = None,
                  radiusKm: float | None = Query(default=None, gt=0, le=20, allow_inf_nan=False),
                  limit: int = Query(default=25, ge=1, le=100), cursor: str | None = None,
-                 actor=Depends(authenticated)):
+                 tripId: UUID | None = None, actor=Depends(authenticated)):
     if len(destination) > 200:
         raise HTTPException(422, "Invalid destination")
     coordinates = None
@@ -39,7 +40,12 @@ async def venues(destination: str, request: Request, near: str | None = None,
     elif radiusKm is not None:
         raise HTTPException(422, "radiusKm requires near")
     async with request.app.state.engine.connect() as conn:
-        dataset = (await conn.execute(text("SELECT id,version FROM datasets WHERE destination=:destination AND status='active'"),
+        if tripId is not None:
+            dataset=(await conn.execute(text('''SELECT d.id,d.version FROM trips t JOIN datasets d ON d.id=t.dataset_id
+                JOIN memberships m ON m.trip_id=t.id WHERE t.id=:trip AND t.destination=:destination
+                AND m.user_id=:uid AND m.status='active' '''),{'trip':tripId,'destination':destination,'uid':actor['user_id']})).mappings().first()
+        else:
+            dataset = (await conn.execute(text("SELECT id,version FROM datasets WHERE destination=:destination AND status='active'"),
                                       {"destination": destination})).mappings().first()
         if not dataset:
             raise HTTPException(404, "Destination unavailable")

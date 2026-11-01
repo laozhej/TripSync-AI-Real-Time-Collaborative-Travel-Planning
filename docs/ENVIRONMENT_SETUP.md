@@ -98,3 +98,9 @@ npm run build --prefix frontend
 ```
 
 The clean setup and recovery/browser wrappers create and remove their own randomly named PostgreSQL databases. They require CREATEDB; the recovery drill also needs permission to terminate connections to its own database. Browser testing needs Chrome and free ports 8000/5173; recovery uses 8001. The browser test preloads the real local model and uses a test-only eight-second first JWT to verify refresh. `RUN_LIVE_MODEL=1` opts the backend suite into the actual-model acceptance test; leaving it unset skips that specific test and does not establish live-generation evidence. The standard production entry point imports no test factories or fault gates.
+
+## Phase 3 update
+
+Apply `python -m alembic -c backend/alembic.ini upgrade head` with PYTHONPATH=backend; current head is 0011_phase3. Keep one worker. No new dependency is required. Train the current destination model with `python -m app.cli train-recommendations --destination "Bengaluru, India"`. Training without interactions creates a disclosed cold-start artifact; use likes/pins from distinct test participants to provide actual CF evidence.
+
+Verification commands: `.venv/Scripts/python backend/tests/clean_setup.py` (disposable PostgreSQL, both sample datasets, complete backend suite); `npm --prefix frontend run test:unit`; `npm --prefix frontend run build`; `.venv/Scripts/python backend/tests/browser_clean_setup.py backend/tests/browser_phase3.py`; and the evaluation command in RECOMMENDATION_ENGINE.md. The Phase 3 browser run does not require inference; the default existing browser script still verifies real Concierge separately after local-model preload. Test database and process cleanup is scoped to generated disposable resources. Sanitized failed-run diagnostics stay ignored in .local.

@@ -62,6 +62,7 @@ def group(client,request):
     finally:
         for trip in trips:
             params={'trip':UUID(trip)}
+            asyncio.run(sql('DELETE FROM votes WHERE trip_id=:trip',params))
             asyncio.run(sql('DELETE FROM reactions WHERE message_id IN (SELECT id FROM chat_messages WHERE trip_id=:trip)',params))
             asyncio.run(sql('DELETE FROM item_attendees WHERE item_id IN (SELECT id FROM itinerary_items WHERE trip_id=:trip)',params))
             for table in ('ai_questions','chat_messages','room_events','room_snapshots','itinerary_items','invites','memberships','trips'):

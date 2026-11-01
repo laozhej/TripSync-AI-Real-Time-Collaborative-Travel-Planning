@@ -20,7 +20,7 @@ def receive_event(socket):
     # Aggregate assertions ignore separately tested ephemeral presence notifications.
     while True:
         message = socket.receive_json()
-        if message['event'] != 'trip.presence.update':
+        if message['event'] not in ('trip.presence.update','trip.board.conflict'):
             return message
 
 

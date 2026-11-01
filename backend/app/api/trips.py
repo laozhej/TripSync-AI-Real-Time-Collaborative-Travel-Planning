@@ -171,6 +171,8 @@ async def join(body: JoinTrip, request: Request, actor=Depends(authenticated), i
                                dict(trip=trip_id, uid=actor['user_id'], role=invite['assigned_role']))
             await conn.execute(text("UPDATE invites SET uses=uses+1 WHERE id=:id"), {"id":invite['id']})
             await conn.execute(text("UPDATE trips SET status='live', state_version=state_version+1 WHERE id=:trip"), {"trip":trip_id})
+            await conn.execute(text('INSERT INTO session_boundaries(trip_id,session_id) VALUES(:trip,:session) ON CONFLICT(trip_id) DO NOTHING'),
+                               {'trip':trip_id,'session':UUID(room.session_id)})
             result = {"tripId":str(trip_id), "role":invite['assigned_role']}
         await remember(conn, actor, key, 'join', body_hash, result)
     async with room.lock:

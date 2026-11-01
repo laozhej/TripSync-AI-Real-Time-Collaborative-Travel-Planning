@@ -54,11 +54,23 @@ async def create_admin():
     finally:
         await engine.dispose()
 
+async def train_recommendations(destination):
+    from app.recommendations.service import training
+    import json
+    load_dotenv(Path(__file__).resolve().parents[2] / '.env')
+    engine=create_async_engine(os.environ['DATABASE_URL'],pool_pre_ping=True)
+    try:
+        async with engine.connect() as conn:
+            dataset=(await conn.execute(text("SELECT id FROM datasets WHERE destination=:name AND status='active'"),{'name':destination})).scalar_one()
+        print(json.dumps(await training(engine,dataset)))
+    finally:await engine.dispose()
+
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["import-dataset", "init-local-key", "create-admin"])
+    parser.add_argument("command", choices=["import-dataset", "init-local-key", "create-admin", "train-recommendations"])
     parser.add_argument("path", type=Path, nargs='?')
+    parser.add_argument('--destination',default='Bengaluru, India')
     args = parser.parse_args()
     if args.command == 'import-dataset':
         if args.path is None:
@@ -66,6 +78,8 @@ def main():
         asyncio.run(run(args.path))
     elif args.command == 'init-local-key':
         init_local_key()
+    elif args.command=='train-recommendations':
+        asyncio.run(train_recommendations(args.destination))
     else:
         asyncio.run(create_admin())
 

@@ -76,3 +76,18 @@ Explicit user requirement: INR/paise, Asia/Kolkata IST board and an authored Ind
 ### Phase 3 allocation increment (2026-11-01)
 
 REQ-020 / TASK-014: `app/budget/engine.py`, `tests/test_budget.py`: 9 passed for manual even/weighted/remainder/zero-weight fixtures, conservation and vote reservations. This increment alone does not accept the entire Phase 3 UI/election workflow. Phase 3's final acceptance record is PHASE_3_EVIDENCE.md.
+
+## Phase 3 acceptance — 2026-11-01
+
+| Requirements / task | Implemented evidence |
+|---|---|
+| REQ-020 / TASK-014 | budget engine/service, test_budget and database/browser weighted splits; recovery fixture 2400 minor units = 800/1600 |
+| REQ-018 / TASK-015 | pure overlap/ceiling rules, transactional conflicts/history and post-commit core conflict notifications; state correction resolves one incident |
+| REQ-019 / TASK-016 | shared HTTP/socket election service, managed deadlines/recovery, eligibility/removal/stale ballots, tie/no-turnout and failed-commit tests; two Chrome clients share one locked winner |
+| REQ-023 / TASK-017 | real interactions/content+item-neighbor CF, atomic artifacts/fresh-history rerank, failed-artifact retention; frozen 40-user evaluation Precision@5 1.00 with disclosed easy-cohort limits |
+| REQ-022 / TASK-018 | dashboard history/rejoin, declared diets, per-currency observed price ranges and derived categories; Chrome active rejoin/finalized history |
+| REQ-024 / TASK-019 | durable session/presence/conflict ledgers, exact finalized duration, peak=1/AI=1/conflicts=1→1 and final 800/1600 manual fixture |
+| REQ-011/025 / TASK-020 | bounded Admin JSON validation/staging/activation, invalid field errors and immutable pinned catalog; PostgreSQL and browser checks |
+| REQ-003/026/027/029/031/032 | role/trip boundaries, original core envelopes/events, significant transaction persistence, docs/schema/setup updates and actual commands/results |
+
+See PHASE_3_EVIDENCE.md for the final 110-test backend run (including real inference), 8 frontend tests, production build, browser output, environment, failures and limitations. Requirement coverage here does not imply the remaining Phase 4 full security/performance/recovery/submission gates have passed.

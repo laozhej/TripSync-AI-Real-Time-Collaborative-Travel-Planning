@@ -70,6 +70,7 @@ async def moderate(room, actor, command: Moderation):
                     params | {'muted':command.action == 'mute'})
             elif command.action == 'remove':
                 await conn.execute(text("UPDATE memberships SET status='removed' WHERE trip_id=:trip AND user_id=:target"), params)
+                await conn.execute(text("DELETE FROM ballots WHERE user_id=:target AND vote_id IN (SELECT id FROM votes WHERE trip_id=:trip AND status='open')"),params)
             elif command.action == 'transfer':
                 await conn.execute(text("UPDATE memberships SET role='planner' WHERE trip_id=:trip AND user_id=:uid AND role='leader'"),
                     {'trip':room.trip_id,'uid':actor['user_id']})

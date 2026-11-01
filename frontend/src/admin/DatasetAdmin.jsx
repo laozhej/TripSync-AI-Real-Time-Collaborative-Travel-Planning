@@ -1,0 +1,9 @@
+import React,{useState,useEffect} from 'react';
+export default function DatasetAdmin({api,tripId}){
+ const [items,setItems]=useState(null),[error,setError]=useState(''),[message,setMessage]=useState('');
+ const refresh=()=>api('/api/v1/admin/datasets').then(d=>setItems(d.items));
+ useEffect(()=>{refresh().catch(()=>{});},[]);
+ if(items===null)return null;
+ async function upload(e){e.preventDefault();setError('');try{const file=e.currentTarget.elements.bundle.files[0];if(!file||file.size>2097152)throw Error('Choose a JSON dataset up to 2 MiB.');const body=await file.text();const result=await api('/api/v1/admin/datasets',{method:'POST',body});setMessage(`Dataset ${result.status}; review its version before activation.`);await refresh()}catch(e){setError(e.message)}}
+ return <section className="panel"><h2>Admin dataset management</h2><p>Upload a fictional destination JSON bundle. Activation affects new trips; existing trips keep their version.</p>{error&&<p role="alert">{error}</p>}{message&&<p role="status">{message}</p>}{tripId&&<button className="secondary" onClick={async()=>{try{const result=await api(`/api/v1/trips/${tripId}/recommendations/train`,{method:'POST'});setMessage(`Recommendation model ${result.modelVersion} activated.`)}catch(e){setError(e.message)}}}>Refresh recommendation model</button>}<form onSubmit={upload}><label>Destination JSON<input name="bundle" type="file" accept=".json,application/json" required/></label><button>Validate and stage</button></form>{items.map(d=><p key={d.datasetId}>{d.destination} · v{d.version} · {d.status} {d.status==='staging'&&<button onClick={async()=>{try{await api(`/api/v1/admin/datasets/${d.datasetId}/activate`,{method:'POST'});await refresh()}catch(e){setError(e.message)}}}>Activate version {d.version}</button>}</p>)}</section>
+}
