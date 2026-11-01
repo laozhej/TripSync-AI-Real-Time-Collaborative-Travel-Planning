@@ -1,0 +1,301 @@
+{
+  "seed": 7312026,
+  "fixtureSha256": "7944cec86d95b498a02d133b086da0e5b00144eff7056fb15f8dd81cd190b077",
+  "trainCount": 120,
+  "validationCount": 80,
+  "testCount": 200,
+  "catalogSize": 40,
+  "testUsers": 40,
+  "split": "per-user chronological 3 train / 2 validation / 5 test; validation positives excluded as already seen",
+  "precisionAt5": {
+    "hybrid": 1.0,
+    "content": 1.0,
+    "cf": 0.915,
+    "popularity": 0.11000000000000001
+  },
+  "target": 0.6,
+  "targetMet": true,
+  "perUser": [
+    {
+      "user": "0",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 0.8,
+      "popularity": 0.2
+    },
+    {
+      "user": "1",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 1.0,
+      "popularity": 0.2
+    },
+    {
+      "user": "2",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 0.8,
+      "popularity": 0.4
+    },
+    {
+      "user": "3",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 0.8,
+      "popularity": 0.0
+    },
+    {
+      "user": "4",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 0.8,
+      "popularity": 0.2
+    },
+    {
+      "user": "5",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 1.0,
+      "popularity": 0.0
+    },
+    {
+      "user": "6",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 0.8,
+      "popularity": 0.0
+    },
+    {
+      "user": "7",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 0.8,
+      "popularity": 0.0
+    },
+    {
+      "user": "8",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 0.8,
+      "popularity": 0.4
+    },
+    {
+      "user": "9",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 1.0,
+      "popularity": 0.0
+    },
+    {
+      "user": "10",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 0.8,
+      "popularity": 0.4
+    },
+    {
+      "user": "11",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 1.0,
+      "popularity": 0.0
+    },
+    {
+      "user": "12",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 1.0,
+      "popularity": 0.0
+    },
+    {
+      "user": "13",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 1.0,
+      "popularity": 0.2
+    },
+    {
+      "user": "14",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 0.6,
+      "popularity": 0.2
+    },
+    {
+      "user": "15",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 1.0,
+      "popularity": 0.0
+    },
+    {
+      "user": "16",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 1.0,
+      "popularity": 0.2
+    },
+    {
+      "user": "17",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 1.0,
+      "popularity": 0.0
+    },
+    {
+      "user": "18",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 0.8,
+      "popularity": 0.0
+    },
+    {
+      "user": "19",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 1.0,
+      "popularity": 0.0
+    },
+    {
+      "user": "20",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 1.0,
+      "popularity": 0.2
+    },
+    {
+      "user": "21",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 1.0,
+      "popularity": 0.0
+    },
+    {
+      "user": "22",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 0.8,
+      "popularity": 0.4
+    },
+    {
+      "user": "23",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 1.0,
+      "popularity": 0.0
+    },
+    {
+      "user": "24",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 0.8,
+      "popularity": 0.2
+    },
+    {
+      "user": "25",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 1.0,
+      "popularity": 0.2
+    },
+    {
+      "user": "26",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 1.0,
+      "popularity": 0.0
+    },
+    {
+      "user": "27",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 1.0,
+      "popularity": 0.0
+    },
+    {
+      "user": "28",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 1.0,
+      "popularity": 0.2
+    },
+    {
+      "user": "29",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 1.0,
+      "popularity": 0.0
+    },
+    {
+      "user": "30",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 1.0,
+      "popularity": 0.2
+    },
+    {
+      "user": "31",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 1.0,
+      "popularity": 0.0
+    },
+    {
+      "user": "32",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 0.4,
+      "popularity": 0.2
+    },
+    {
+      "user": "33",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 1.0,
+      "popularity": 0.0
+    },
+    {
+      "user": "34",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 1.0,
+      "popularity": 0.2
+    },
+    {
+      "user": "35",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 1.0,
+      "popularity": 0.0
+    },
+    {
+      "user": "36",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 1.0,
+      "popularity": 0.0
+    },
+    {
+      "user": "37",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 1.0,
+      "popularity": 0.0
+    },
+    {
+      "user": "38",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 0.8,
+      "popularity": 0.2
+    },
+    {
+      "user": "39",
+      "hybrid": 1.0,
+      "content": 1.0,
+      "cf": 1.0,
+      "popularity": 0.0
+    }
+  ],
+  "limitations": "Synthetic single-category cohorts; no claim about real travelers. All eligible unseen catalog candidates ranked."
+}
