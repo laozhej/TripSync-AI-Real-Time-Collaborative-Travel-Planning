@@ -1,6 +1,7 @@
 # TripSync AI — Master Implementation To-Do List
 
-**Status:** Implementation Backlog & Milestone Tracking  
+**Status:** Phases 1–3 accepted; Phase 4 pending (updated 2026-11-01)
+
 **Architecture Track:** Track A (FastAPI + Native WebSockets + PostgreSQL + SQLAlchemy async/asyncpg + Pytest + React)  
 **Primary References:** [TASKS.md](TASKS.md) | [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | [PROJECT_REQUIREMENTS.md](PROJECT_REQUIREMENTS.md) | [ARCHITECTURE.md](ARCHITECTURE.md) | [DECISIONS.md](DECISIONS.md)
 
@@ -12,8 +13,10 @@
 |---|---|---|---|---|
 | **Phase 1 (Week 1)** | Foundation & First Thin Slice | TASK-001 – TASK-007 | P0 | Complete for first-slice acceptance; see [evidence](PHASE_1_EVIDENCE.md) |
 | **Phase 2 (Week 2)** | Board State Machine, Presence & AI Concierge | TASK-008 – TASK-013 | P0 / P1 | Accepted for the Week 2 checkpoint; see [evidence](PHASE_2_EVIDENCE.md) |
-| **Phase 3 (Week 3)** | Exact Budgets, Contested Voting & Personalization | TASK-014 – TASK-020 | P0 / P1 | Pending |
+| **Phase 3 (Week 3)** | Exact Budgets, Contested Voting & Personalization | TASK-014 – TASK-020 | P0 / P1 | Complete; see [evidence](PHASE_3_EVIDENCE.md) |
 | **Phase 4 (Week 4)** | Hardening, Performance Benchmarking & Evidence | TASK-021 – TASK-025 | P0 | Pending |
+
+**Accepted tasks:** 20 of 25. **Next:** TASK-021, end-to-end and security consolidation. Phase 4 performance, recovery and submission gates remain unverified.
 
 ---
 
@@ -73,7 +76,7 @@
 
 ## Phase 2: Board State Machine, Presence & AI Concierge (Week 2)
 > **Milestone Objective:** Lifecycle-correct collaborative canvas, optimistic concurrency control (CAS), presence, and grounded RAG suggestions.
-> Accepted evidence is in [PHASE_2_EVIDENCE.md](PHASE_2_EVIDENCE.md). Voting state rules are Phase 2 primitives; live timed elections and atomic winner orchestration remain Phase 3 TASK-016 per PRD §11.1.
+> Accepted evidence is in [PHASE_2_EVIDENCE.md](PHASE_2_EVIDENCE.md). Voting state rules are Phase 2 primitives; live timed elections and atomic winner orchestration were subsequently completed in Phase 3 TASK-016 per PRD §11.1.
 
 - [x] **TASK-008: Full Board Lifecycle, CAS Concurrency & Stale Rejection**
   - **Priority:** P0 | **Week:** W2 | **Depends on:** TASK-007
@@ -125,54 +128,55 @@
 ---
 
 ## Phase 3: Exact Budgets, Contested Voting & Personalization (Week 3)
-> **Milestone Objective:** Exact integer cents split engine, contested elections, synthetic recommendation engine, dashboard, and Admin dataset ingestion.
+> **Milestone Objective:** Exact integer minor-unit splits (INR paise; legacy EUR cents), contested elections, hybrid recommendations, dashboard, and Admin dataset ingestion.
+> **Accepted 2026-11-01:** [PHASE_3_EVIDENCE.md](PHASE_3_EVIDENCE.md) records 110 backend tests passing, including real local inference; 8 frontend tests; production build; and the two-browser Phase 3 workflow. The synthetic recommendation evaluation and historical session-duration limitations are documented there. No Phase 4 measurement target is implied.
 
-- [ ] **TASK-014: Exact Budget Math & Running Allocations**
+- [x] **TASK-014: Exact Budget Math & Running Allocations**
   - **Priority:** P0 | **Week:** W3 | **Depends on:** TASK-008
   - **Requirements:** REQ-020
-  - **Planned Files:** `backend/app/budget/`, `frontend/src/budget/`
-  - **Acceptance:** Integer minor-unit calculations (`bigint`, EUR cents); even split with remainder cents assigned by stable ascending user IDs; weighted split with descending fractional remainder distribution; separate committed (Locked) from proposed totals; slot reservation for open voting candidates.
+  - **Implemented Files:** `backend/app/budget/`, `frontend/src/votes/`
+  - **Acceptance:** Integer minor-unit calculations (`bigint`, INR paise and preserved legacy EUR cents); even split with remainder cents assigned by stable ascending user IDs; weighted split with descending fractional remainder distribution; separate committed (Locked) from proposed totals; slot reservation for open voting candidates.
   - **Verification:** `BUD-01`, `BUD-02`, `BUD-03`
 
-- [ ] **TASK-015: Idempotent Schedule Overlap & Budget Breach Conflict Detection**
+- [x] **TASK-015: Idempotent Schedule Overlap & Budget Breach Conflict Detection**
   - **Priority:** P0 | **Week:** W3 | **Depends on:** TASK-011, TASK-014
   - **Requirements:** REQ-018
-  - **Planned Files:** `backend/app/concierge/conflicts.py`, `frontend/src/board/`
-  - **Acceptance:** Conflict detector identifying half-open time overlaps for shared attendees and total/category budget breaches; assign unique conflict fingerprints; notify clients within 1 s in ≥95% of cases; auto-resolve when underlying items are edited or removed.
+  - **Implemented Files:** `backend/app/concierge/conflicts.py`, `backend/app/voting/service.py`, `frontend/src/votes/`
+  - **Acceptance:** Conflict detector identifying half-open time overlaps for shared attendees and separate group/personal total-budget breaches; category ceilings remain Concierge hard filters. Assign stable conflict fingerprints, publish durable notifications and resolve incidents when the underlying plan is corrected. The ≤1 s / ≥95% notification measurement remains TASK-022.
   - **Verification:** `CONFLICT-01`
 
-- [ ] **TASK-016: Timed Contested-Slot Voting & Durable Resolution**
+- [x] **TASK-016: Timed Contested-Slot Voting & Durable Resolution**
   - **Priority:** P0 | **Week:** W3 | **Depends on:** TASK-009, TASK-014, TASK-015
   - **Requirements:** REQ-019
-  - **Planned Files:** `backend/app/voting/`, `frontend/src/votes/`
+  - **Implemented Files:** `backend/app/voting/`, `frontend/src/votes/`
   - **Acceptance:** Open timed election (Leader manual or system auto-open for identical contested slots); eligible voter snapshot; changeable ballots before deadline (default 60 s); deterministic tiebreak by ascending venue ID; atomic winner application (`Locked`), loser archiving (`Drafting` archive), and budget recomputation.
   - **Verification:** `VOTE-01` through `VOTE-04`
 
-- [ ] **TASK-017: Synthetic Interaction Generator & Hybrid Recommendation Engine**
+- [x] **TASK-017: Synthetic Interaction Generator & Hybrid Recommendation Engine**
   - **Priority:** P1 | **Week:** W3 | **Depends on:** TASK-004, TASK-014
   - **Requirements:** REQ-023
-  - **Planned Files:** `backend/app/recommendations/`, `data/interactions/`
-  - **Acceptance:** Scripted generator creating realistic synthetic user interactions (view, like, pin, lock, co-travel); item-item CF + content cosine hybrid model; CLI batch training and atomic model promotion; zero-redeploy serving cache invalidation; evaluate on chronological held-out test split targeting Precision@5 ≥ 0.6.
+  - **Implemented Files:** `backend/app/recommendations/`, `data/interactions/`
+  - **Acceptance:** Real view/like endpoints and server-derived pin/lock interactions; content cosine + item-item CF with current-member history aggregation; CLI batch training, atomic artifact promotion and serving refresh without redeploy. Frozen chronological synthetic-cohort evaluation reports Precision@5 1.00 against the 0.6 gate; its easy single-category cohorts do not establish real-traveler relevance or a learned social graph.
   - **Verification:** `REC-01` through `REC-05`
 
-- [ ] **TASK-018: User Dashboard, Preferences & Active Room Rejoin**
+- [x] **TASK-018: User Dashboard, Preferences & Active Room Rejoin**
   - **Priority:** P1 | **Week:** W3 | **Depends on:** TASK-009, TASK-017
   - **Requirements:** REQ-022
-  - **Planned Files:** `frontend/src/dashboard/`, `backend/app/api/me.py`
-  - **Acceptance:** User dashboard displaying joined trip history, active room rejoin links, and derived/declared preference profile editor.
+  - **Implemented Files:** `frontend/src/dashboard/`, `backend/app/api/phase3.py`, `frontend/src/board/ConciergePanel.jsx`
+  - **Acceptance:** Membership-scoped dashboard displaying joined/finalized trip history, active-room rejoin, declared diets, derived categories and per-currency observed price ranges. Room preference controls edit dietary, category and total ceilings.
   - **Verification:** `E2E-01`, `SEC-03`
 
-- [ ] **TASK-019: Session Analytics & Audit Ledger Reconciliation**
+- [x] **TASK-019: Session Analytics & Audit Ledger Reconciliation**
   - **Priority:** P0 | **Week:** W3 | **Depends on:** TASK-011, TASK-015, TASK-016
   - **Requirements:** REQ-024
-  - **Planned Files:** `backend/app/analytics/`, `frontend/src/dashboard/`
+  - **Implemented Files:** `backend/app/analytics/`, `backend/app/api/phase3.py`, `frontend/src/votes/PlanningPanel.jsx`
   - **Acceptance:** Record planning session start/end, peak concurrency (distinct connected Planners/Leaders), AI question counts, flagged/resolved conflicts, and final budgets; reconcile metrics 100% against an independent manual audit ledger.
   - **Verification:** `ANA-01`
 
-- [ ] **TASK-020: Admin Upload Portal, Staging & Atomic Dataset Activation**
+- [x] **TASK-020: Admin Upload Portal, Staging & Atomic Dataset Activation**
   - **Priority:** P0 | **Week:** W3 | **Depends on:** TASK-003, TASK-004
   - **Requirements:** REQ-011, REQ-025
-  - **Planned Files:** `frontend/src/admin/`, `backend/app/datasets/`
+  - **Implemented Files:** `frontend/src/admin/`, `backend/app/datasets/`, `backend/app/api/phase3.py`
   - **Acceptance:** Admin-only upload portal (`POST /api/v1/admin/datasets`) with schema validation; bounded error reporting; atomic activation of immutable versions; active trips remain pinned to their initial dataset version.
   - **Verification:** `DATA-01`, `DATA-02`, `DATA-03`, `SEC-04`
 
@@ -234,7 +238,7 @@
 | `CHAT-01` | Durable chat, typing indicator expiration, mute enforcement | TASK-010 |
 | `SYNC-01` | Snapshot delivery, reconnect, sequence gap handling, epoch recovery | TASK-006, TASK-009, TASK-011 |
 | `AI-01..07` | 4 hard filters, scoring, grounded model RAG, source citations, fallback | TASK-012, TASK-013 |
-| `BUD-01..03` | Integer cents math, even/weighted split remainders, reservations | TASK-014 |
+| `BUD-01..03` | Integer minor-unit math, even/weighted split remainders, reservations | TASK-014 |
 | `VOTE-01..04` | Ballot submission, tiebreaking, deadline resolution, crash recovery | TASK-016 |
 | `CONFLICT-01` | Schedule overlap and budget breach detection and resolution | TASK-015 |
 | `REC-01..05` | Hybrid recommendation training, cold start, Precision@5 ≥ 0.6 | TASK-017 |
