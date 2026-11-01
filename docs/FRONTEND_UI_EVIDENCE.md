@@ -35,3 +35,11 @@ Files: `votes/PlanningPanel.jsx`, `votes/SplitEditor.jsx`. Separate budget/confl
 ### Increment 5 — dashboard and recommendations
 
 Files: `dashboard/Dashboard.jsx` (recommendation cards are in the preceding PlanningPanel increment). Trip history/rejoin, favored categories, declared diets and per-currency observed price ranges now have distinct presentation and honest empty/loading states. Recommendations join only the authorized trip-pinned catalog and explain exploratory/model status; a like success appears only after the existing interaction API confirms it. No client recommendation scoring or currency conversion. Eight unit tests and build passed; browser verification pending.
+
+### Increment 6 — Admin lifecycle and activation
+
+Files: `admin/DatasetAdmin.jsx`. Admin-only mount remains derived from authenticated account data, with server authorization intact. Upload limits/field diagnostics, dataset checksums and lifecycle badges, a native confirmation dialog before activation, pending controls and actual model-refresh results are visible. Activation still uses the same endpoint and keeps existing trips pinned. Eight unit tests and build passed. Confirmation and keyboard behavior require the upcoming browser checks.
+
+### Increment 7 — Concierge presentation
+
+Files: `board/ConciergePanel.jsx`, shared CSS. Added a navigable Concierge section, request busy state, result/status badges and authored-source presentation; request bodies, hard-filter/backend ownership and canonical source lookup remain unchanged. Existing stale-answer warning retained. Responsive/keyboard/browser verification follows.
