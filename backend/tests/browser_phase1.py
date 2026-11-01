@@ -9,6 +9,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from playwright.sync_api import expect, sync_playwright
+from browser_ui_audit import audit
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
@@ -51,7 +52,7 @@ async def cleanup():
 try:
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True, executable_path=r'C:\Program Files\Google\Chrome\Application\chrome.exe')
-        contexts = [browser.new_context(), browser.new_context()]
+        contexts = [browser.new_context(reduced_motion='reduce'), browser.new_context(reduced_motion='reduce')]
         for context in contexts:
             context.add_init_script("""(() => {
                 const Native = window.WebSocket; window.__testSockets = [];
@@ -61,7 +62,7 @@ try:
             })()""")
         pages = [context.new_page() for context in contexts]
         for page,email,name in zip(pages,emails,['Leader','Planner']):
-            page.goto('http://127.0.0.1:5173/', wait_until='networkidle')
+            page.goto(os.environ.get('BROWSER_BASE_URL','http://127.0.0.1:5173/'), wait_until='networkidle')
             page.get_by_role('button',name='Create account').click()
             page.get_by_label('Display name').fill(name)
             page.get_by_label('Email').fill(email)
@@ -79,19 +80,19 @@ try:
         planner.locator('[data-snapshot-ready="true"]').wait_for()
         snapshot_ms = (time.monotonic()-started)*1000
         assert snapshot_ms <= 2000, f'Join to snapshot took {snapshot_ms:.1f} ms'
-        leader.get_by_text(re.compile(r'· connected$')).wait_for()
-        planner.get_by_text(re.compile(r'· connected$')).wait_for()
+        leader.get_by_text('Live connection',exact=True).wait_for()
+        planner.get_by_text('Live connection',exact=True).wait_for()
         place = planner.locator('.place').filter(has=planner.get_by_role('button',name='Add to itinerary')).first
         name = place.locator('h3').inner_text()
         place.get_by_role('button',name='Add to itinerary').click()
         for page in pages:
             page.get_by_role('heading',name='Shared itinerary').wait_for()
-            expect(page.get_by_role('heading',name=name,exact=True)).to_have_count(2)
+            expect(page.locator('.gridCard').get_by_role('heading',name=name,exact=True)).to_have_count(1)
             page.get_by_text('All displayed changes saved').wait_for()
         # The test-only server gives the first access token an 8-second TTL.
         # Both the in-memory HTTP token and HttpOnly socket token expire together.
         planner.wait_for_function("window.__testSockets.length >= 2 && window.__testSockets.at(-1).readyState === 1",timeout=20000)
-        expect(planner.get_by_role('heading',name=name,exact=True)).to_have_count(2)
+        expect(planner.locator('.gridCard').get_by_role('heading',name=name,exact=True)).to_have_count(1)
         planner.get_by_label('Start time (IST)').fill('13:00')
         planner.get_by_role('button',name='Move to selected time').click()
         for page in pages:
@@ -112,7 +113,7 @@ try:
         expect(leader.get_by_role('button',name='React 👍')).to_contain_text('1')
         planner.evaluate("window.__testSockets.at(-1).close(4000)")
         planner.wait_for_function("window.__testSockets.length >= 2 && window.__testSockets.at(-1).readyState === 1")
-        expect(planner.get_by_role('heading',name=name,exact=True)).to_have_count(2)
+        expect(planner.locator('.gridCard').get_by_role('heading',name=name,exact=True)).to_have_count(1)
         expect(planner.get_by_text('Hello <travelers>!', exact=False)).to_be_visible()
         expect(planner.get_by_role('button',name='React 👍')).to_have_attribute('aria-pressed','true')
         # Actual native drag/drop uses the captured version and persists only the drop.
@@ -121,6 +122,19 @@ try:
         for page in pages:
             expect(page.locator('.gridCard').first).to_contain_text('2026-11-11 14:00 IST')
             page.get_by_text('All displayed changes saved').wait_for()
+        expect(leader.get_by_role('region',name='Scrollable itinerary grid')).to_be_visible()
+        if os.environ.get('UI_AXE_PATH'):
+            audit(leader,'final-region-room-light')
+            leader.set_viewport_size({'width':1440,'height':1000})
+            leader.evaluate('window.scrollTo(0,0)')
+            leader.screenshot(path='.local/ui-final-room-light.png',animations='disabled')
+            leader.get_by_role('button',name='Switch to dark theme').click()
+            audit(leader,'final-region-room-dark')
+            leader.screenshot(path='.local/ui-final-room-dark.png',animations='disabled')
+            leader.set_viewport_size({'width':390,'height':844})
+            assert leader.evaluate('document.documentElement.scrollWidth <= innerWidth+1')
+            leader.screenshot(path='.local/ui-final-room-mobile.png',animations='disabled')
+            leader.set_viewport_size({'width':1440,'height':1000})
         leader.get_by_text('Budget and dietary preferences',exact=True).click()
         leader.get_by_label('Group category ceiling (INR/person)').fill('500.00')
         leader.get_by_role('button',name='Save group ceiling',exact=True).click()

@@ -18,6 +18,19 @@ const commandErrors = {
   FORBIDDEN: "You do not have permission for this action.",
   STALE_STATE_VERSION:
     "The room settings changed. Review the current settings before trying again.",
+  STALE_POSITION_VERSION:
+    "This activity changed. Review its latest time, attendees and split before submitting again.",
+  STALE_BALLOT_VERSION:
+    "Your ballot changed in another session. Review your current selection before voting again.",
+  VOTE_CLOSED: "This vote has closed. Wait for the server result.",
+  INVALID_VOTE:
+    "Choose at least two distinct drafting activities with the same slot and attendees.",
+  VOTE_ALREADY_OPENED:
+    "A vote is already open for this slot. Review the current vote.",
+  INVALID_WEIGHTS:
+    "Choose attendees with nonnegative whole-number weights and a positive total weight.",
+  UNRESOLVED_PLAN:
+    "Lock all activities and resolve open votes and conflicts before finalizing.",
   LEADER_DISCONNECTED:
     "The trip Leader is disconnected. Restricted actions are paused.",
   INVALID_TARGET:
@@ -1070,7 +1083,8 @@ function App() {
                 userId={user.userId}
                 role={room.role}
                 onRefresh={() =>
-                  socket.current?.send(
+                  socket.current?.readyState === WebSocket.OPEN &&
+                  socket.current.send(
                     JSON.stringify({
                       event: "trip.snapshot.request",
                       payload: {},

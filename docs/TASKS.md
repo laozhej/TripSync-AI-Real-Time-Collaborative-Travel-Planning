@@ -47,3 +47,7 @@ User-authorized after Phase 2: default destination Bengaluru/India, INR/paise an
 ## Phase 3 acceptance — 2026-11-01
 
 TASK-014–020 are accepted with real PostgreSQL and two-context Chrome evidence in PHASE_3_EVIDENCE.md. Final full backend run: 110 passed including real Qwen inference, no skips; frontend tests 8 passed and production build succeeded. Exact recovered weighted allocations, fixed synthetic held-out evaluation, ledger reconciliation, model refresh and Admin immutable activation are verified. The evaluation's simple synthetic cohorts and unknown historical session boundaries are explicit limitations. Phase 4 TASK-021–025 and all final performance/security/restore/submission gates remain unchecked.
+
+## Phase 3 frontend presentation follow-up
+
+User-requested presentation work is recorded in FRONTEND_UI_EVIDENCE.md with actual browser/build/accessibility checks. This follow-up does not check off TASK-021–025 or claim full project accessibility/security/performance acceptance.

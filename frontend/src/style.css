@@ -1070,6 +1070,11 @@ dd {
   white-space: nowrap;
   border: 0;
 }
+.conciergeControls {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
 .helpText {
   font-size: 12px;
   margin-top: 12px;

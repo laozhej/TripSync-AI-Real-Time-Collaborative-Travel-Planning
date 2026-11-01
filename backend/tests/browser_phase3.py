@@ -3,6 +3,7 @@ import asyncio,json,os,secrets
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from playwright.sync_api import sync_playwright,expect
+from browser_ui_audit import audit
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
@@ -18,7 +19,7 @@ async def promote():
 
 with sync_playwright() as pw:
     browser=pw.chromium.launch(headless=True,executable_path=r'C:\Program Files\Google\Chrome\Application\chrome.exe')
-    contexts=[browser.new_context() for _ in emails];pages=[c.new_page() for c in contexts];errors=[]
+    contexts=[browser.new_context(reduced_motion='reduce') for _ in emails];pages=[c.new_page() for c in contexts];errors=[]
     failures=[]
     for page,email in zip(pages,emails):
         page.on('pageerror',lambda e:errors.append(str(e)))
@@ -73,7 +74,40 @@ with sync_playwright() as pw:
     leader.get_by_label('Destination JSON').set_input_files({'name':'valid.json','mimeType':'application/json','buffer':json.dumps(bundle).encode()})
     leader.get_by_role('button',name='Validate and stage').click()
     leader.get_by_role('button',name='Activate version 1',exact=True).click()
+    dialog=leader.get_by_role('dialog',name='Activate dataset version?')
+    expect(dialog).to_be_visible()
+    expect(dialog.get_by_role('button',name='Cancel')).to_be_focused()
+    audit(leader,'activation-dialog')
+    leader.keyboard.press('Escape')
+    expect(dialog).to_have_count(0)
+    expect(leader.get_by_role('button',name='Activate version 1',exact=True)).to_be_focused()
+    leader.get_by_role('button',name='Activate version 1',exact=True).click()
+    dialog.get_by_role('button',name='Confirm activation',exact=True).click()
     expect(leader.get_by_text('Browser staging '+suffix+' · v1 · active',exact=True)).to_be_visible()
+    # Inspect real server-fed states and capture responsive/theme variants.
+    expect(planner.get_by_role('heading',name='Admin dataset management')).to_have_count(0)
+    expect(leader.locator('#conflicts').get_by_text('Resolved conflicts',exact=False)).to_be_visible()
+    expect(leader.locator('#votes').get_by_text('Your selection',exact=True).first).to_be_visible()
+    expect(leader.locator('#votes').get_by_text('Winner',exact=True)).to_be_visible()
+    leader.locator('#itinerary').get_by_role('button',name='Day 1',exact=False).click()
+    expect(leader.locator('.dayGrid thead th')).to_have_count(2)
+    leader.locator('#itinerary').get_by_role('button',name='All days',exact=False).click()
+    Path('.local').mkdir(exist_ok=True)
+    leader.set_viewport_size({'width':1440,'height':1000})
+    leader.evaluate('window.scrollTo(0,0)')
+    audit(leader,'phase3-room-light')
+    leader.screenshot(path='.local/ui-room-light.png',animations='disabled')
+    leader.get_by_role('button',name='Switch to dark theme').click()
+    expect(leader.locator('html')).to_have_attribute('data-theme','dark')
+    audit(leader,'phase3-room-dark')
+    leader.screenshot(path='.local/ui-room-dark.png',animations='disabled')
+    for width in (390,768,1024):
+        leader.set_viewport_size({'width':width,'height':900})
+        assert leader.evaluate('document.documentElement.scrollWidth <= window.innerWidth+1'),width
+        leader.evaluate('window.scrollTo(0,0)')
+        leader.screenshot(path=f'.local/ui-room-{width}.png',animations='disabled')
+    leader.get_by_role('button',name='Switch to light theme').click()
+    leader.set_viewport_size({'width':1440,'height':1000})
     leader.get_by_role('button',name='Finalize trip',exact=True).click()
     expect(leader.get_by_role('button',name='Finalize trip',exact=True)).to_have_count(0)
     leader.get_by_role('button',name='Back',exact=False).click()
@@ -81,6 +115,7 @@ with sync_playwright() as pw:
     leader.locator('[data-snapshot-ready="true"]').wait_for()
     expect(leader.get_by_label('Message',exact=True)).to_be_disabled()
     expect(leader.get_by_role('button',name='Add to itinerary').first).to_be_disabled()
+    audit(leader,'phase3-finalized-mobile')
     assert not errors,errors
     Path('.local').mkdir(exist_ok=True)
     leader.screenshot(path='.local/phase3-browser.png',full_page=True)

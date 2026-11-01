@@ -152,6 +152,9 @@ export default function PlanningPanel({
                 <strong>{money(budget.lockedMinor)}</strong>
               </div>
             </div>
+            <p className="helpText">
+              Group total ceiling: {money(room.totalBudgetMinor)}
+            </p>
             <div className="tableScroll">
               <table>
                 <caption className="srOnly">Per-person budget totals</caption>
