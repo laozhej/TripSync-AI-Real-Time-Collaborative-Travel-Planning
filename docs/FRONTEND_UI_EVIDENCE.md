@@ -17,3 +17,7 @@ Inspection baseline: clean working tree on main; work branch `codex/phase3-front
 Operate mode: itinerary first, contextual planning tools alongside, room status always visible. Forest green and teal actions, sage secondary surfaces, warm off-white canvas; dark surfaces with equivalent semantic contrast. Inter, served locally; compact readable labels, tabular money, clear lifecycle badges. Shared badges, section headings, theme control and confirmation dialog. Responsive grid scroll stays inside its region; keyboard users retain selected-time moves. Follow the user's explicit design/system requirements without introducing product scope.
 
 Verification pending for all changed UI. Phase 4 backlog remains open.
+
+### Increment 2 — tokens and primitives
+
+Files: `frontend/src/style.css`, `frontend/src/ui/{Primitives.jsx,format.js}`, `frontend/public/fonts/{Inter.ttf,OFL.txt}`, `DESIGN.md`. Components: shared badges, headings, theme toggle, native confirmation dialog. Existing components retain their handlers and HTML controls. Build passed after token replacement (31 modules); rendered and keyboard verification remains pending. Browser runner gains optional isolated API/web ports with unchanged defaults; Vite proxy target is configurable for tests, with unchanged development default. No backend application behavior changed.

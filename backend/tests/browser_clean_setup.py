@@ -23,12 +23,16 @@ env = os.environ.copy()
 env['PYTHONPATH'] = str(ROOT / 'backend')
 env['DATABASE_URL'] = url.set(database=name).render_as_string(hide_password=False)
 env['JWT_SIGNING_KEY'] = 'temporary-browser-test-key-' + uuid4().hex
-env['ALLOWED_ORIGINS'] = 'http://127.0.0.1:5173'
+api_port = int(os.environ.get('BROWSER_API_PORT', '8000'))
+web_port = int(os.environ.get('BROWSER_WEB_PORT', '5173'))
+env['BROWSER_BASE_URL'] = f'http://127.0.0.1:{web_port}'
+env['TRIPSYNC_API_TARGET'] = f'http://127.0.0.1:{api_port}'
+env['ALLOWED_ORIGINS'] = env['BROWSER_BASE_URL']
 env['BROWSER_SHORT_ACCESS'] = '0' if len(sys.argv)>1 else '1'
 
 
 async def main():
-    for port in (8000, 5173):
+    for port in (api_port, web_port):
         with socket.socket() as probe:
             probe.bind(('127.0.0.1', port))
     # Explicitly preload the local model. Production requests keep their 2.5-s
@@ -55,11 +59,11 @@ async def main():
             subprocess.run(command, cwd=ROOT, env=env, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
         processes.append(subprocess.Popen([sys.executable, '-m', 'uvicorn', 'browser_server:app', '--app-dir', 'backend/tests',
-            '--host', '127.0.0.1', '--port', '8000', '--workers', '1'], cwd=ROOT, env=env,
+            '--host', '127.0.0.1', '--port', str(api_port), '--workers', '1'], cwd=ROOT, env=env,
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=flags))
-        processes.append(subprocess.Popen(['node', 'node_modules/vite/bin/vite.js', '--host', '127.0.0.1'],
+        processes.append(subprocess.Popen(['node', 'node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', str(web_port), '--strictPort'],
             cwd=ROOT / 'frontend', env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=flags))
-        for address in ('http://127.0.0.1:8000/api/v1/health/ready', 'http://127.0.0.1:5173/'):
+        for address in (env['TRIPSYNC_API_TARGET']+'/api/v1/health/ready', env['BROWSER_BASE_URL']+'/'):
             for _ in range(40):
                 if any(process.poll() is not None for process in processes):
                     raise RuntimeError('Test server exited')

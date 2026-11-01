@@ -23,7 +23,7 @@ with sync_playwright() as pw:
     for page,email in zip(pages,emails):
         page.on('pageerror',lambda e:errors.append(str(e)))
         page.on('response',lambda r:failures.append((r.status,r.url.split('?')[0])) if r.status>=400 else None)
-        page.goto('http://127.0.0.1:5173/')
+        page.goto(os.environ.get('BROWSER_BASE_URL','http://127.0.0.1:5173/'))
         page.get_by_role('button',name='Create account',exact=True).click()
         page.get_by_label('Display name').fill('Traveler '+str(emails.index(email)))
         page.get_by_label('Email',exact=True).fill(email);page.get_by_label('Password',exact=True).fill(password)

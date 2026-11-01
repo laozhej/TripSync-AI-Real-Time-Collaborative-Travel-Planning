@@ -91,3 +91,7 @@ REQ-020 / TASK-014: `app/budget/engine.py`, `tests/test_budget.py`: 9 passed for
 | REQ-003/026/027/029/031/032 | role/trip boundaries, original core envelopes/events, significant transaction persistence, docs/schema/setup updates and actual commands/results |
 
 See PHASE_3_EVIDENCE.md for the final 110-test backend run (including real inference), 8 frontend tests, production build, browser output, environment, failures and limitations. Requirement coverage here does not imply the remaining Phase 4 full security/performance/recovery/submission gates have passed.
+
+## Phase 3 frontend follow-up
+
+Presentation improvements for REQ-005–010, REQ-018–025 and REQ-027 are tracked in FRONTEND_UI_EVIDENCE.md. Existing Phase 3 acceptance remains historical. No Phase 4 acceptance checkbox changes follow from UI implementation alone.
