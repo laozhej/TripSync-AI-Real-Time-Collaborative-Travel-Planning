@@ -31,3 +31,7 @@ The isolated-port baseline browser run completed successfully: Phase 3 two parti
 ### Increment 4 — budgets, elections and conflicts
 
 Files: `votes/PlanningPanel.jsx`, `votes/SplitEditor.jsx`. Separate budget/conflict/vote sections show backend totals, clear attendee/weight editing, selected ballot, timer, winner/cancellation and resolved conflict history. Existing API payloads and server rules are preserved. Errors request authoritative resync without silent retry. Historical vote slots not present on the board are explicitly unavailable; prices join only the pinned catalog. Analytics preserves unknown historical duration and shows per-person totals. Eight unit tests and production build passed; real-browser acceptance remains pending.
+
+### Increment 5 — dashboard and recommendations
+
+Files: `dashboard/Dashboard.jsx` (recommendation cards are in the preceding PlanningPanel increment). Trip history/rejoin, favored categories, declared diets and per-currency observed price ranges now have distinct presentation and honest empty/loading states. Recommendations join only the authorized trip-pinned catalog and explain exploratory/model status; a like success appears only after the existing interaction API confirms it. No client recommendation scoring or currency conversion. Eight unit tests and build passed; browser verification pending.
