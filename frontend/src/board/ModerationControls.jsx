@@ -7,7 +7,7 @@ export default function ModerationControls({members, userId, connectedUsers, roo
       : `Make ${member.displayName} the trip Leader? You will become a Planner.`;
     if (window.confirm(message)) onCommand(action, member.userId);
   }
-  return <section className="panel inviteControls" aria-label="Leader moderation">
+  return <section className="panel inviteControls" id="room-controls" aria-label="Leader moderation">
     <h2>Room controls</h2>
     <p>{roomLocked ? 'The board is locked. Members can still read and chat.' : 'The board is open for planning.'}</p>
     <button className="secondary" disabled={!enabled} onClick={()=>onCommand(roomLocked?'unlockRoom':'lockRoom')}>
