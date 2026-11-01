@@ -59,3 +59,5 @@ TASK-014–020 now function end-to-end: exact budgets/conflicts/elections, dashb
 ## Phase 3 frontend presentation follow-up — 2026-11-01
 
 The user authorized an in-scope UI improvement across the accepted Phase 3 features: shared workspace/navigation, theme tokens, itinerary/day controls, budget/vote/conflict cards, dashboard/recommendations and confirmed Admin dataset activation. Increment-by-increment changes and actual tests are in FRONTEND_UI_EVIDENCE.md. Backend application behavior and contracts are unchanged. Phase 4 gates remain open.
+
+Frontend draft alignment: the user supplied a working HTML layout and requested it as the visual target. The connected sidebar/page/overview implementation and actual regression results are recorded in FRONTEND_UI_EVIDENCE.md; no phase acceptance checkbox changes.

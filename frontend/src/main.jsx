@@ -7,6 +7,11 @@ import Dashboard from "./dashboard/Dashboard.jsx";
 import PlanningPanel from "./votes/PlanningPanel.jsx";
 import DatasetAdmin from "./admin/DatasetAdmin.jsx";
 import BoardGrid from "./board/BoardGrid.jsx";
+import TripOverview, {
+  WorkspaceSidebar,
+  Icon,
+  workspacePages,
+} from "./workspace/TripOverview.jsx";
 import { Badge, SectionTitle, ThemeToggle } from "./ui/Primitives.jsx";
 import { tripDate } from "./ui/format.js";
 import {
@@ -52,6 +57,25 @@ function commandError(code) {
   );
 }
 function App() {
+  const [view, setView] = useState("overview");
+  const [menuOpen, setMenuOpen] = useState(false);
+  function navigate(next) {
+    if (next === "dashboard") {
+      R(null);
+      I("");
+      II("");
+      E("");
+    }
+    setView(next);
+    setMenuOpen(false);
+    window.scrollTo({ top: 0 });
+    requestAnimationFrame(() =>
+      document
+        .getElementById("workspace-content")
+        ?.focus({ preventScroll: true }),
+    );
+  }
+
   const [token, T] = useState(""),
     [user, U] = useState(null),
     [error, E] = useState(""),
@@ -675,6 +699,7 @@ function App() {
     );
     R(d);
     V(list.venues);
+    setView("overview");
   }
   async function create(e) {
     e.preventDefault();
@@ -750,552 +775,648 @@ function App() {
   }
   const me = board.members?.find((member) => member.userId === user?.userId);
   const utcRange = room ? utcDateRange(room) : null;
+  const activeView = !room && (view !== "dataset-admin" || !user?.isAdmin) ? "dashboard" : view;
+  const saveStatus = persistenceFailed
+    ? "Saving unavailable · changes are not confirmed"
+    : connection !== "connected"
+      ? "Save status unavailable"
+      : !board.roomEpoch
+        ? "Waiting for authoritative snapshot"
+        : board.roomSeq > board.committedSeq
+          ? "Saving changes…"
+          : "All displayed changes saved";
+  const pageTitle =
+    workspacePages.find(([id]) => id === activeView)?.[1] || "Your trips";
+
   return (
-    <main>
-      <a className="skipLink" href="#workspace-content">
-        Skip to workspace
-      </a>
-      <header>
-        <strong className="brand">
-          <span>T</span> TripSync <small>AI</small>
-        </strong>
-        <div className="headerActions">
-          <ThemeToggle />
-          {user && (
-            <>
-              <span>{user.displayName}</span>
-              <button className="link" onClick={logout}>
-                Sign out
-              </button>
-            </>
-          )}
-        </div>
-      </header>
-      {error && (
-        <p role="alert" className="error">
-          {error}
-        </p>
+    <div className={user ? "draftApplication" : ""}>
+      {user && (
+        <WorkspaceSidebar
+          user={user}
+          room={room}
+          view={activeView}
+          onNavigate={navigate}
+          saveStatus={saveStatus}
+          open={menuOpen}
+          onClose={() => setMenuOpen(false)}
+        />
       )}
-      {!user ? (
-        <div className="welcome" id="workspace-content" tabIndex={-1}>
-          <section>
-            <h1>
-              Good trips start
-              <br />
-              with the group.
-            </h1>
-            <p>
-              Create a shared room, invite your people, and give your ideas a
-              place to land.
-            </p>
-            <div className="route">
-              Bengaluru <span /> your next trip
-            </div>
-          </section>
-          <section className="panel">
-            <div className="tabs">
+      <main
+        className={user ? "draftMain" : ""}
+        data-view={activeView}
+        data-has-room={Boolean(room)}
+      >
+        <a className="skipLink" href="#workspace-content">
+          Skip to workspace
+        </a>
+        <header className={user ? "draftTopbar" : ""}>
+          {user && (
+            <div className="topbarContext">
               <button
-                className={mode === "login" ? "active" : ""}
-                onClick={() => M("login")}
+                className="secondary mobileMenu"
+                aria-label="Open workspace navigation"
+                aria-expanded={menuOpen}
+                onClick={() => setMenuOpen(!menuOpen)}
               >
-                Sign in
+                <Icon name="menu" />
               </button>
-              <button
-                className={mode === "register" ? "active" : ""}
-                onClick={() => M("register")}
-              >
-                Create account
-              </button>
-            </div>
-            <h2>{mode === "login" ? "Welcome back" : "Join the journey"}</h2>
-            <p>Sign in to make plans with your group.</p>
-            <form onSubmit={enter}>
-              {mode === "register" && (
-                <label>
-                  Display name
-                  <input
-                    name="name"
-                    required
-                    maxLength="80"
-                    autoComplete="name"
-                  />
-                </label>
-              )}
-              <label>
-                Email
-                <input
-                  name="email"
-                  type="email"
-                  required
-                  autoComplete="email"
-                />
-              </label>
-              <label>
-                Password
-                <input
-                  name="password"
-                  type="password"
-                  required
-                  minLength="12"
-                  maxLength="128"
-                  autoComplete={
-                    mode === "login" ? "current-password" : "new-password"
-                  }
-                />
-              </label>
-              <button className="primary">
-                {mode === "login" ? "Sign in" : "Create account"}
-              </button>
-            </form>
-          </section>
-        </div>
-      ) : !room ? (
-        <div className="workspace" id="workspace-content" tabIndex={-1}>
-          <h1>Plan it together.</h1>
-          <p>Start a room for Bengaluru or join one with an invitation code.</p>
-          <Dashboard api={api} onOpen={(id) => run(() => open(id))} />
-          <div className="forms">
-            <section className="panel">
-              <h2>Start a trip</h2>
-              <p>Choose the dates and a group budget.</p>
-              <form onSubmit={create}>
-                <label>
-                  Destination
-                  <input value="Bengaluru, India" readOnly />
-                </label>
-                <div className="row">
-                  <label>
-                    Start date
-                    <input
-                      name="start"
-                      type="date"
-                      defaultValue="2026-11-10"
-                      required
-                    />
-                  </label>
-                  <label>
-                    End date
-                    <input
-                      name="end"
-                      type="date"
-                      defaultValue="2026-11-14"
-                      required
-                    />
-                  </label>
-                </div>
-                <label>
-                  Group budget in INR (₹)
-                  <input name="budget" defaultValue="25000.00" required />
-                </label>
-                <button className="primary">Create room</button>
-              </form>
-            </section>
-            <section className="panel">
-              <h2>Join a trip</h2>
-              <p>Paste the code your trip leader shared with you.</p>
-              <form onSubmit={join}>
-                <label>
-                  Invitation code
-                  <input name="code" required />
-                </label>
-                <button className="secondary">Join room</button>
-              </form>
-            </section>
-          </div>
-        </div>
-      ) : (
-        <div className="workspace" id="workspace-content" tabIndex={-1}>
-          <button
-            className="link"
-            onClick={() => {
-              R(null);
-              I("");
-              II("");
-            }}
-          >
-            ← Back
-          </button>
-          <div className="roomHeading">
-            <div>
-              <h1>{room.destination}</h1>
-              <p>
-                {tripDate(room.startDate)} – {tripDate(room.endDate)} ·{" "}
-                {timeLabel(room)}
-              </p>
-            </div>
-            <div className="roomMeta">
-              <Badge>{room.role}</Badge>
-              <Badge
-                tone={board.trip?.status === "finalized" ? "locked" : "success"}
-              >
-                {board.trip?.status || "Loading room"}
-              </Badge>
-              <Badge>{(board.members || room.members).length} travelers</Badge>
-            </div>
-          </div>
-          <nav className="roomNav" aria-label="Trip workspace">
-            <a href="#itinerary">Itinerary</a>
-            <a href="#budget">Budget</a>
-            <a href="#votes">Voting</a>
-            <a href="#conflicts">Conflicts</a>
-            <a href="#concierge">Concierge</a>
-            <a href="#recommendations">Ideas</a>
-            <a href="#room-chat">Chat</a>
-            <a href="#travelers">Travelers</a>
-            {room.role === "leader" && (
-              <a href="#room-controls">Room controls</a>
-            )}
-            {user.isAdmin && <a href="#dataset-admin">Admin</a>}
-          </nav>
-          <div className="statusBar" role="status">
-            <span>
-              <i
-                className={
-                  "statusDot " + (connection === "connected" ? "online" : "")
-                }
-              />
-              {connection === "connected"
-                ? "Live connection"
-                : connection === "connecting"
-                  ? "Connecting to room…"
-                  : "Disconnected · reconnecting automatically"}
-            </span>
-            <span>
-              {persistenceFailed
-                ? "Saving unavailable · changes are not confirmed"
-                : connection !== "connected"
-                  ? "Save status unavailable"
-                  : !board.roomEpoch
-                    ? "Waiting for authoritative snapshot"
-                    : board.roomSeq > board.committedSeq
-                      ? "Saving changes…"
-                      : "All displayed changes saved"}
-            </span>
-            <span>{quality}</span>
-          </div>
-          {invite && (
-            <div className="invite">
-              <strong>Invite your group</strong>
-              <p>Share this code with someone you trust.</p>
-              <code>{invite}</code>
+              <div>
+                <strong>{room?.destination || "Your travel workspace"}</strong>
+                <small>
+                  {room
+                    ? `${tripDate(room.startDate)} – ${tripDate(room.endDate)} · ${timeLabel(room)}`
+                    : "TripSync AI · Private planning"}
+                </small>
+              </div>
             </div>
           )}
-          <div className="board" data-snapshot-ready={Boolean(board.roomEpoch)}>
-            <section id="itinerary">
-              <SectionTitle
-                title="Shared itinerary"
-                description="A shared plan, one day at a time."
-              >
-                <Badge>{board.items.length} activities</Badge>
-              </SectionTitle>
-              {board.trip?.status === "finalized" && (
-                <p role="status">Finalized itinerary · read only</p>
-              )}
-              {board.trip?.roomLocked && (
-                <p role="status">The trip Leader has locked board changes.</p>
-              )}
-              {board.items.length === 0 && (
-                <p className="emptyState">
-                  Your itinerary is ready for ideas. Choose a day and time, then
-                  add a sample place below.
-                </p>
-              )}
-              <BoardGrid
-                key={room.tripId}
-                board={board}
-                room={room}
-                connection={connection}
-                onSelectedMove={(item) => changeItem(item, "move")}
-                onDropMove={dropMove}
-                onRemove={(item) => changeItem(item, "remove")}
-                onLock={(item) => changeItem(item, "lock")}
-                onUnlock={(item) => changeItem(item, "unlock")}
-              />
-              <h2 id="catalog">Ideas for your trip</h2>
-              <p>
-                Sample places are fictional. New pins last one hour; times are{" "}
-                {timeLabel(room)}.
-              </p>
-              <div className="selectionBar">
-                <p>
-                  Selected slot for new activities, Concierge requests and “Move
-                  to selected time”.
-                </p>
-                <div className="row">
-                  <label>
-                    Day
-                    <input
-                      type="date"
-                      value={day}
-                      min={utcRange.startDate}
-                      max={utcRange.endDate}
-                      onChange={(e) => D(e.target.value)}
-                    />
-                  </label>
-                  <label>
-                    Start time ({timeLabel(room)})
-                    <input
-                      type="time"
-                      value={time}
-                      onChange={(e) => S(e.target.value)}
-                    />
-                  </label>
-                </div>
-              </div>
-              {venues.map((v) => (
-                <article className="place" key={v.venueId}>
-                  <div>
-                    <Badge>{v.category}</Badge>
-                    <h3>{v.name}</h3>
-                    <span>
-                      {new Intl.NumberFormat("en-IN", {
-                        style: "currency",
-                        currency: room.currency,
-                      }).format(v.pricePerPerson)}{" "}
-                      / person
-                    </span>
-                  </div>
-                  <button
-                    className="secondary"
-                    disabled={
-                      connection !== "connected" ||
-                      board.trip?.status === "finalized" ||
-                      board.trip?.roomLocked ||
-                      room.role === "viewer" ||
-                      (room.role === "planner" && !room.canPin)
+
+          <strong className="brand">
+            <span>T</span> TripSync <small>AI</small>
+          </strong>
+          <div className="headerActions">
+            {room && (
+              <>
+                <span className="topbarConnection">
+                  <i
+                    className={
+                      "statusDot " +
+                      (connection === "connected" ? "online" : "")
                     }
-                    onClick={() => pin(v)}
-                  >
-                    Add to itinerary
-                  </button>
-                </article>
-              ))}
-            </section>
-            <aside>
-              <PlanningPanel
-                key={room.tripId}
-                venues={venues}
-                room={room}
-                connection={connection}
-                api={api}
-                tripId={room.tripId}
-                board={board}
-                userId={user.userId}
-                role={room.role}
-                onRefresh={() =>
-                  socket.current?.readyState === WebSocket.OPEN &&
-                  socket.current.send(
-                    JSON.stringify({
-                      event: "trip.snapshot.request",
-                      payload: {},
-                    }),
-                  )
-                }
-              />
-              <ConciergePanel
-                key={room.tripId}
-                api={api}
-                tripId={room.tripId}
-                userId={user.userId}
-                isLeader={room.role === "leader"}
-                board={board}
-                room={room}
-                day={day}
-                time={time}
-                onResync={() =>
-                  socket.current?.readyState === WebSocket.OPEN &&
-                  socket.current.send(
-                    JSON.stringify({
-                      event: "trip.snapshot.request",
-                      payload: {},
-                    }),
-                  )
-                }
-              />
-              <section className="panel chatPanel" id="room-chat">
-                <h2>Room chat</h2>
-                {board.chat?.nextCursor && (
-                  <button className="link" onClick={olderChat}>
-                    Load older messages
-                  </button>
-                )}
-                <div className="chatHistory" aria-live="polite">
-                  {!(board.chat?.items || []).length && (
-                    <p>
-                      Share an idea with your group. Messages are saved with the
-                      room.
-                    </p>
-                  )}
-                  {Object.keys(typing)
-                    .filter((id) => id !== user.userId)
-                    .map((id) => (
-                      <p key={id}>
-                        {(board.members || room.members).find(
-                          (m) => m.userId === id,
-                        )?.displayName || "Traveler"}{" "}
-                        is typing…
-                      </p>
-                    ))}
-                  {(board.chat?.items || []).map((message) => (
-                    <div className="chatMessage" key={message.messageId}>
-                      <p>
-                        <strong>
-                          {(board.members || room.members).find(
-                            (m) => m.userId === message.userId,
-                          )?.displayName || "Traveler"}
-                        </strong>
-                        : {message.body}
-                      </p>
-                      {["👍", "❤️", "😂", "🎉"].map((emoji) => {
-                        const reaction = (message.reactions || []).find(
-                            (r) => r.emoji === emoji,
-                          ),
-                          pending = Object.values(pendingReactions).find(
-                            (r) =>
-                              r.messageId === message.messageId &&
-                              r.emoji === emoji,
-                          ),
-                          selected = pending
-                            ? pending.active
-                            : !!reaction?.userIds.includes(user.userId);
-                        const count =
-                          (reaction?.userIds.length || 0) +
-                          (pending ? (pending.active ? 1 : -1) : 0);
-                        return (
-                          <button
-                            type="button"
-                            className="link"
-                            key={emoji}
-                            aria-label={`React ${emoji}`}
-                            aria-pressed={selected}
-                            disabled={
-                              !!pending ||
-                              connection !== "connected" ||
-                              board.trip?.status === "finalized" ||
-                              !!me?.muted
-                            }
-                            onClick={() => react(message, emoji)}
-                          >
-                            {emoji} {Math.max(0, count)}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
-                <form onSubmit={sendChat}>
-                  <label>
-                    Message
-                    <input
-                      name="message"
-                      disabled={
-                        !!me?.muted || board.trip?.status === "finalized"
-                      }
-                      maxLength="2000"
-                      onChange={() => typingSignal(true)}
-                      onBlur={() => typingSignal(false)}
-                      required
-                    />
-                  </label>
-                  <button
-                    className="secondary"
-                    disabled={
-                      connection !== "connected" ||
-                      board.trip?.status === "finalized" ||
-                      !!me?.muted
-                    }
-                  >
-                    Send message
-                  </button>
-                </form>
-              </section>
-              <section className="panel travelersPanel" id="travelers">
-                <h2>Travelers</h2>
-                <p className="notice">
-                  {board.leaderConnected
-                    ? "Leader connected"
-                    : "Leader disconnected · lock and finalize actions are paused."}
-                </p>
-                {(board.members || room.members).map((m) => (
-                  <div className="member" key={m.userId}>
-                    <span className="avatar" aria-hidden="true">
+                  />
+                  {connection === "connected" ? "Connected" : "Reconnecting"}
+                </span>
+                <div
+                  className="topbarAvatars"
+                  role="group"
+                  aria-label="Trip members"
+                >
+                  {(board.members || room.members).slice(0, 3).map((m) => (
+                    <span
+                      className="avatar"
+                      title={m.displayName}
+                      key={m.userId}
+                    >
                       {m.displayName.slice(0, 2).toUpperCase()}
                     </span>
-                    <div>
-                      <strong>
-                        {m.displayName}
-                        {m.userId === user.userId ? " (you)" : ""}
-                      </strong>
-                      <small>
-                        {m.role}
-                        {m.muted ? " · muted" : ""}
-                      </small>
-                    </div>
-                    <Badge
-                      tone={
-                        board.connectedUsers?.includes(m.userId)
-                          ? "success"
-                          : "neutral"
-                      }
-                    >
-                      {board.connectedUsers?.includes(m.userId)
-                        ? "online"
-                        : "offline"}
-                    </Badge>
+                  ))}
+                </div>
+              </>
+            )}
+            <ThemeToggle />
+            {user && (
+              <>
+                <span>{user.displayName}</span>
+                <button className="link" onClick={logout}>
+                  Sign out
+                </button>
+              </>
+            )}
+          </div>
+        </header>
+        {error && (
+          <p role="alert" className="error">
+            {error}
+          </p>
+        )}
+        {!user ? (
+          <div className="welcome" id="workspace-content" tabIndex={-1}>
+            <section>
+              <h1>
+                Good trips start
+                <br />
+                with the group.
+              </h1>
+              <p>
+                Create a shared room, invite your people, and give your ideas a
+                place to land.
+              </p>
+              <div className="route">
+                Bengaluru <span /> your next trip
+              </div>
+            </section>
+            <section className="panel">
+              <div className="tabs">
+                <button
+                  className={mode === "login" ? "active" : ""}
+                  onClick={() => M("login")}
+                >
+                  Sign in
+                </button>
+                <button
+                  className={mode === "register" ? "active" : ""}
+                  onClick={() => M("register")}
+                >
+                  Create account
+                </button>
+              </div>
+              <h2>{mode === "login" ? "Welcome back" : "Join the journey"}</h2>
+              <p>Sign in to make plans with your group.</p>
+              <form onSubmit={enter}>
+                {mode === "register" && (
+                  <label>
+                    Display name
+                    <input
+                      name="name"
+                      required
+                      maxLength="80"
+                      autoComplete="name"
+                    />
+                  </label>
+                )}
+                <label>
+                  Email
+                  <input
+                    name="email"
+                    type="email"
+                    required
+                    autoComplete="email"
+                  />
+                </label>
+                <label>
+                  Password
+                  <input
+                    name="password"
+                    type="password"
+                    required
+                    minLength="12"
+                    maxLength="128"
+                    autoComplete={
+                      mode === "login" ? "current-password" : "new-password"
+                    }
+                  />
+                </label>
+                <button className="primary">
+                  {mode === "login" ? "Sign in" : "Create account"}
+                </button>
+              </form>
+            </section>
+          </div>
+        ) : !room ? (
+          <div className="workspace" id="workspace-content" tabIndex={-1}>
+            <h1>Plan it together.</h1>
+            <p>
+              Start a room for Bengaluru or join one with an invitation code.
+            </p>
+            <Dashboard api={api} onOpen={(id) => run(() => open(id))} />
+            <div className="forms">
+              <section className="panel">
+                <h2>Start a trip</h2>
+                <p>Choose the dates and a group budget.</p>
+                <form onSubmit={create}>
+                  <label>
+                    Destination
+                    <input value="Bengaluru, India" readOnly />
+                  </label>
+                  <div className="row">
+                    <label>
+                      Start date
+                      <input
+                        name="start"
+                        type="date"
+                        defaultValue="2026-11-10"
+                        required
+                      />
+                    </label>
+                    <label>
+                      End date
+                      <input
+                        name="end"
+                        type="date"
+                        defaultValue="2026-11-14"
+                        required
+                      />
+                    </label>
                   </div>
+                  <label>
+                    Group budget in INR (₹)
+                    <input name="budget" defaultValue="25000.00" required />
+                  </label>
+                  <button className="primary">Create room</button>
+                </form>
+              </section>
+              <section className="panel">
+                <h2>Join a trip</h2>
+                <p>Paste the code your trip leader shared with you.</p>
+                <form onSubmit={join}>
+                  <label>
+                    Invitation code
+                    <input name="code" required />
+                  </label>
+                  <button className="secondary">Join room</button>
+                </form>
+              </section>
+            </div>
+          </div>
+        ) : (
+          <div className="workspace" id="workspace-content" tabIndex={-1}>
+            <button
+              className="link"
+              onClick={() => {
+                R(null);
+                E("");
+                setView("overview");
+                I("");
+                II("");
+              }}
+            >
+              ← Back
+            </button>
+            <div className="roomHeading">
+              <div>
+                <h1>
+                  {activeView === "overview"
+                    ? "Plan together. Travel better."
+                    : pageTitle}
+                </h1>
+                <p>
+                  {tripDate(room.startDate)} – {tripDate(room.endDate)} ·{" "}
+                  {timeLabel(room)}
+                </p>
+              </div>
+              <div className="roomMeta">
+                <Badge>{room.role}</Badge>
+                <Badge
+                  tone={
+                    board.trip?.status === "finalized" ? "locked" : "success"
+                  }
+                >
+                  {board.trip?.status || "Loading room"}
+                </Badge>
+                <Badge>
+                  {(board.members || room.members).length} travelers
+                </Badge>
+              </div>
+            </div>
+            <div className="statusBar" role="status">
+              <span>
+                <i
+                  className={
+                    "statusDot " + (connection === "connected" ? "online" : "")
+                  }
+                />
+                {connection === "connected"
+                  ? "Live connection"
+                  : connection === "connecting"
+                    ? "Connecting to room…"
+                    : "Disconnected · reconnecting automatically"}
+              </span>
+              <span>
+                {persistenceFailed
+                  ? "Saving unavailable · changes are not confirmed"
+                  : connection !== "connected"
+                    ? "Save status unavailable"
+                    : !board.roomEpoch
+                      ? "Waiting for authoritative snapshot"
+                      : board.roomSeq > board.committedSeq
+                        ? "Saving changes…"
+                        : "All displayed changes saved"}
+              </span>
+              <span>{quality}</span>
+            </div>
+            {invite &&
+              (activeView === "room-controls" ||
+                activeView === "itinerary") && (
+                <div className="invite">
+                  <strong>Invite your group</strong>
+                  <p>Share this code with someone you trust.</p>
+                  <code>{invite}</code>
+                </div>
+              )}
+            <div className="roomPageActions">
+              {room.role === "leader" && (
+                <button
+                  className="primary"
+                  onClick={() => navigate("room-controls")}
+                >
+                  Invite travelers
+                </button>
+              )}
+            </div>
+            <div
+              className="board"
+              data-snapshot-ready={Boolean(board.roomEpoch)}
+            >
+              <TripOverview board={board} room={room} onNavigate={navigate} />
+
+              <section id="itinerary">
+                <SectionTitle
+                  title="Shared itinerary"
+                  description="A shared plan, one day at a time."
+                >
+                  <Badge>{board.items.length} activities</Badge>
+                </SectionTitle>
+                {board.trip?.status === "finalized" && (
+                  <p role="status">Finalized itinerary · read only</p>
+                )}
+                {board.trip?.roomLocked && (
+                  <p role="status">The trip Leader has locked board changes.</p>
+                )}
+                {board.items.length === 0 && (
+                  <p className="emptyState">
+                    Your itinerary is ready for ideas. Choose a day and time,
+                    then add a sample place below.
+                  </p>
+                )}
+                <BoardGrid
+                  key={room.tripId}
+                  board={board}
+                  room={room}
+                  connection={connection}
+                  onSelectedMove={(item) => changeItem(item, "move")}
+                  onDropMove={dropMove}
+                  onRemove={(item) => changeItem(item, "remove")}
+                  onLock={(item) => changeItem(item, "lock")}
+                  onUnlock={(item) => changeItem(item, "unlock")}
+                />
+                <h2 id="catalog">Ideas for your trip</h2>
+                <p>
+                  Sample places are fictional. New pins last one hour; times are{" "}
+                  {timeLabel(room)}.
+                </p>
+                <div className="selectionBar">
+                  <p>
+                    Selected slot for new activities, Concierge requests and
+                    “Move to selected time”.
+                  </p>
+                  <div className="row">
+                    <label>
+                      Day
+                      <input
+                        type="date"
+                        value={day}
+                        min={utcRange.startDate}
+                        max={utcRange.endDate}
+                        onChange={(e) => D(e.target.value)}
+                      />
+                    </label>
+                    <label>
+                      Start time ({timeLabel(room)})
+                      <input
+                        type="time"
+                        value={time}
+                        onChange={(e) => S(e.target.value)}
+                      />
+                    </label>
+                  </div>
+                </div>
+                {venues.map((v) => (
+                  <article className="place" key={v.venueId}>
+                    <div>
+                      <Badge>{v.category}</Badge>
+                      <h3>{v.name}</h3>
+                      <span>
+                        {new Intl.NumberFormat("en-IN", {
+                          style: "currency",
+                          currency: room.currency,
+                        }).format(v.pricePerPerson)}{" "}
+                        / person
+                      </span>
+                    </div>
+                    <button
+                      className="secondary"
+                      disabled={
+                        connection !== "connected" ||
+                        board.trip?.status === "finalized" ||
+                        board.trip?.roomLocked ||
+                        room.role === "viewer" ||
+                        (room.role === "planner" && !room.canPin)
+                      }
+                      onClick={() => pin(v)}
+                    >
+                      Add to itinerary
+                    </button>
+                  </article>
                 ))}
               </section>
-            </aside>
+              <aside>
+                <PlanningPanel
+                  key={room.tripId}
+                  venues={venues}
+                  room={room}
+                  connection={connection}
+                  api={api}
+                  tripId={room.tripId}
+                  board={board}
+                  userId={user.userId}
+                  role={room.role}
+                  onRefresh={() =>
+                    socket.current?.readyState === WebSocket.OPEN &&
+                    socket.current.send(
+                      JSON.stringify({
+                        event: "trip.snapshot.request",
+                        payload: {},
+                      }),
+                    )
+                  }
+                />
+                <ConciergePanel
+                  key={room.tripId}
+                  api={api}
+                  tripId={room.tripId}
+                  userId={user.userId}
+                  isLeader={room.role === "leader"}
+                  board={board}
+                  room={room}
+                  day={day}
+                  time={time}
+                  onDayChange={D}
+                  onTimeChange={S}
+                  onResync={() =>
+                    socket.current?.readyState === WebSocket.OPEN &&
+                    socket.current.send(
+                      JSON.stringify({
+                        event: "trip.snapshot.request",
+                        payload: {},
+                      }),
+                    )
+                  }
+                />
+                <section className="panel chatPanel" id="room-chat">
+                  <h2>Room chat</h2>
+                  {board.chat?.nextCursor && (
+                    <button className="link" onClick={olderChat}>
+                      Load older messages
+                    </button>
+                  )}
+                  <div className="chatHistory" aria-live="polite">
+                    {!(board.chat?.items || []).length && (
+                      <p>
+                        Share an idea with your group. Messages are saved with
+                        the room.
+                      </p>
+                    )}
+                    {Object.keys(typing)
+                      .filter((id) => id !== user.userId)
+                      .map((id) => (
+                        <p key={id}>
+                          {(board.members || room.members).find(
+                            (m) => m.userId === id,
+                          )?.displayName || "Traveler"}{" "}
+                          is typing…
+                        </p>
+                      ))}
+                    {(board.chat?.items || []).map((message) => (
+                      <div className="chatMessage" key={message.messageId}>
+                        <p>
+                          <strong>
+                            {(board.members || room.members).find(
+                              (m) => m.userId === message.userId,
+                            )?.displayName || "Traveler"}
+                          </strong>
+                          : {message.body}
+                        </p>
+                        {["👍", "❤️", "😂", "🎉"].map((emoji) => {
+                          const reaction = (message.reactions || []).find(
+                              (r) => r.emoji === emoji,
+                            ),
+                            pending = Object.values(pendingReactions).find(
+                              (r) =>
+                                r.messageId === message.messageId &&
+                                r.emoji === emoji,
+                            ),
+                            selected = pending
+                              ? pending.active
+                              : !!reaction?.userIds.includes(user.userId);
+                          const count =
+                            (reaction?.userIds.length || 0) +
+                            (pending ? (pending.active ? 1 : -1) : 0);
+                          return (
+                            <button
+                              type="button"
+                              className="link"
+                              key={emoji}
+                              aria-label={`React ${emoji}`}
+                              aria-pressed={selected}
+                              disabled={
+                                !!pending ||
+                                connection !== "connected" ||
+                                board.trip?.status === "finalized" ||
+                                !!me?.muted
+                              }
+                              onClick={() => react(message, emoji)}
+                            >
+                              {emoji} {Math.max(0, count)}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                  <form onSubmit={sendChat}>
+                    <label>
+                      Message
+                      <input
+                        name="message"
+                        disabled={
+                          !!me?.muted || board.trip?.status === "finalized"
+                        }
+                        maxLength="2000"
+                        onChange={() => typingSignal(true)}
+                        onBlur={() => typingSignal(false)}
+                        required
+                      />
+                    </label>
+                    <button
+                      className="secondary"
+                      disabled={
+                        connection !== "connected" ||
+                        board.trip?.status === "finalized" ||
+                        !!me?.muted
+                      }
+                    >
+                      Send message
+                    </button>
+                  </form>
+                </section>
+                <section className="panel travelersPanel" id="travelers">
+                  <h2>Travelers</h2>
+                  <p className="notice">
+                    {board.leaderConnected
+                      ? "Leader connected"
+                      : "Leader disconnected · lock and finalize actions are paused."}
+                  </p>
+                  {(board.members || room.members).map((m) => (
+                    <div className="member" key={m.userId}>
+                      <span className="avatar" aria-hidden="true">
+                        {m.displayName.slice(0, 2).toUpperCase()}
+                      </span>
+                      <div>
+                        <strong>
+                          {m.displayName}
+                          {m.userId === user.userId ? " (you)" : ""}
+                        </strong>
+                        <small>
+                          {m.role}
+                          {m.muted ? " · muted" : ""}
+                        </small>
+                      </div>
+                      <Badge
+                        tone={
+                          board.connectedUsers?.includes(m.userId)
+                            ? "success"
+                            : "neutral"
+                        }
+                      >
+                        {board.connectedUsers?.includes(m.userId)
+                          ? "online"
+                          : "offline"}
+                      </Badge>
+                    </div>
+                  ))}
+                </section>
+              </aside>
+            </div>
           </div>
-        </div>
-      )}
-      {user &&
-        room?.role === "leader" &&
-        board.trip?.status !== "finalized" && (
-          <ModerationControls
-            members={board.members || room.members}
-            userId={user.userId}
-            connectedUsers={board.connectedUsers || []}
-            roomLocked={!!board.trip?.roomLocked}
-            enabled={
-              connection === "connected" &&
-              board.leaderConnected &&
-              !moderationPending
-            }
-            onCommand={moderate}
-          />
         )}
-      {user &&
-        room?.role === "leader" &&
-        board.trip?.status !== "finalized" && (
-          <section className="panel inviteControls" id="invite-controls">
-            <h2>Invite controls</h2>
-            <p>Create a single-use code valid for seven days.</p>
-            <label>
-              Participant role
-              <select value={inviteRole} onChange={(e) => IR(e.target.value)}>
-                <option value="planner">Planner</option>
-                <option value="viewer">Viewer</option>
-              </select>
-            </label>
-            <button className="secondary" onClick={createInvite}>
-              Create invitation
-            </button>
-            {inviteId && (
-              <button className="link" onClick={revokeInvite}>
-                Revoke displayed invitation
+        {user &&
+          room?.role === "leader" &&
+          board.trip?.status !== "finalized" && (
+            <ModerationControls
+              members={board.members || room.members}
+              userId={user.userId}
+              connectedUsers={board.connectedUsers || []}
+              roomLocked={!!board.trip?.roomLocked}
+              enabled={
+                connection === "connected" &&
+                board.leaderConnected &&
+                !moderationPending
+              }
+              onCommand={moderate}
+            />
+          )}
+        {user &&
+          room?.role === "leader" &&
+          board.trip?.status !== "finalized" && (
+            <section className="panel inviteControls" id="invite-controls">
+              <h2>Invite controls</h2>
+              <p>Create a single-use code valid for seven days.</p>
+              <label>
+                Participant role
+                <select value={inviteRole} onChange={(e) => IR(e.target.value)}>
+                  <option value="planner">Planner</option>
+                  <option value="viewer">Viewer</option>
+                </select>
+              </label>
+              <button className="secondary" onClick={createInvite}>
+                Create invitation
               </button>
-            )}
-          </section>
+              {inviteId && (
+                <button className="link" onClick={revokeInvite}>
+                  Revoke displayed invitation
+                </button>
+              )}
+            </section>
+          )}
+        {user?.isAdmin && (
+          <DatasetAdmin key={user.userId} api={api} tripId={room?.tripId} />
         )}
-      {user?.isAdmin && (
-        <DatasetAdmin key={user.userId} api={api} tripId={room?.tripId} />
-      )}
-      <footer>
-        TripSync AI is an independent educational prototype. Sample places are
-        fictional.
-      </footer>
-    </main>
+        <footer>
+          TripSync AI is an independent educational prototype. Sample places are
+          fictional.
+        </footer>
+      </main>
+    </div>
   );
 }
 createRoot(document.getElementById("root")).render(<App />);

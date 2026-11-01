@@ -63,3 +63,5 @@ Exact weighted budgets, durable conflicts/timed elections, dashboard/group recom
 ### Frontend workspace
 
 The React/Vite room has itinerary/day navigation, budget/voting/conflict sections, Concierge, chat and traveler presence, with light/dark themes and locally bundled Inter. Admin accounts can stage immutable datasets and review an activation confirmation. Server-calculated money, role permissions, stale-version rejection and socket watermarks remain authoritative. See [design tokens](DESIGN.md) and [UI verification](docs/FRONTEND_UI_EVIDENCE.md).
+
+The authenticated workspace now follows the user's supplied working HTML draft: persistent sidebar, compact top bar, trip overview and separate connected feature pages. Actual data replaces the draft's sample values; see the draft-alignment section in [frontend evidence](docs/FRONTEND_UI_EVIDENCE.md).

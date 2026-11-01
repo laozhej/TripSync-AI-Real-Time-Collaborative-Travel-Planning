@@ -75,3 +75,5 @@ Known limits: provisional election/business defaults; synthetic-only recommendat
 ## Frontend presentation follow-up
 
 The subsequent user-requested UI improvement has its own dated incremental record in [FRONTEND_UI_EVIDENCE.md](FRONTEND_UI_EVIDENCE.md). The results above remain historical; current presentation checks are not substituted for unrun Phase 4 gates.
+
+The later user-draft alignment changes only frontend presentation/navigation; its actual commands/results and comparison captures are in FRONTEND_UI_EVIDENCE.md. Prior checks above are historical.

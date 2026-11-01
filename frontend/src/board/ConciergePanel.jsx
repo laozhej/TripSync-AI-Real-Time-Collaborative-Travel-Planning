@@ -27,6 +27,8 @@ export default function ConciergePanel({
   day,
   time,
   onResync,
+  onDayChange,
+  onTimeChange,
 }) {
   const [category, C] = useState("food"),
     [question, Q] = useState("Suggest a venue that fits our group."),
@@ -127,6 +129,26 @@ export default function ConciergePanel({
         title="AI Concierge"
         description="Grounded ideas that respect your group's constraints."
       />
+      <div className="row conciergeSlot">
+        <label>
+          Concierge day
+          <input
+            type="date"
+            value={day}
+            min={room.startDate}
+            max={room.endDate}
+            onChange={(e) => onDayChange(e.target.value)}
+          />
+        </label>
+        <label>
+          Request time ({timeLabel(room)})
+          <input
+            type="time"
+            value={time}
+            onChange={(e) => onTimeChange(e.target.value)}
+          />
+        </label>
+      </div>
       <p>
         Suggestions use the authored dataset and every attending traveler's
         constraints. Sample places are fictional.

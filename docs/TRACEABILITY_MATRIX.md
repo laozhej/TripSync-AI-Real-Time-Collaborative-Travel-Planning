@@ -97,3 +97,5 @@ See PHASE_3_EVIDENCE.md for the final 110-test backend run (including real infer
 Presentation improvements for REQ-005–010, REQ-018–025 and REQ-027 are tracked in FRONTEND_UI_EVIDENCE.md. Existing Phase 3 acceptance remains historical. No Phase 4 acceptance checkbox changes follow from UI implementation alone.
 
 Frontend follow-up implementation: `main.jsx`/BoardGrid (REQ-005–010/027), PlanningPanel/SplitEditor (REQ-018–020/023–024), Dashboard (REQ-022), DatasetAdmin (REQ-011/025) and ConciergePanel (REQ-017/021). Existing commands and actor/version semantics are preserved. Browser checks and disclosed limits are in FRONTEND_UI_EVIDENCE.md.
+
+The user-supplied working draft subsequently established the actual sidebar/page layout. `workspace/TripOverview.jsx` and revised main/CSS preserve the existing contracts while supplying separate connected screens; new and adapted browser checks are recorded in FRONTEND_UI_EVIDENCE.md.

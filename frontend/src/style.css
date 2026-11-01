@@ -1091,3 +1091,686 @@ hr {
   border-top: 1px solid var(--line);
   margin: 20px 0;
 }
+/* User-supplied working draft: persistent navigation and compact page surfaces. */
+:root {
+  --canvas: #f5f7f4;
+  --surface-soft: #eef3ef;
+  --ink: #18312e;
+  --line: #e2e9e4;
+  --accent: #17685e;
+  --brand-soft: #dceee8;
+}
+:root[data-theme="dark"] {
+  --canvas: #101b19;
+  --surface: #182522;
+  --surface-soft: #21312d;
+  --ink: #e8f1ec;
+  --muted: #a2b2aa;
+  --line: #30413b;
+  --accent: #74c6b3;
+  --brand-soft: #25453e;
+}
+.draftApplication {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 238px minmax(0, 1fr);
+}
+.draftMain {
+  max-width: none;
+  padding: 0;
+  min-width: 0;
+  margin: 0;
+  width: 100%;
+}
+.workspaceSidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow-y: auto;
+  gap: 6px;
+}
+.workspaceSidebar .brand {
+  font-size: 17px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  margin-bottom: 24px;
+  letter-spacing: -0.025em;
+}
+.workspaceSidebar .brand span {
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  margin-right: 5px;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+.workspaceSidebar .brand small {
+  font-size: 17px;
+  color: var(--accent);
+}
+.sideLabel {
+  font-size: 11px;
+  font-weight: 700;
+  margin: 6px 10px;
+  color: var(--muted);
+}
+.workspaceSidebar nav {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+.workspaceSidebar nav button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  border: 0;
+  padding: 11px 12px;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  min-height: 42px;
+  font-weight: 600;
+}
+.workspaceSidebar nav button[aria-current="page"],
+.workspaceSidebar nav button:hover {
+  background: var(--brand-soft);
+  color: var(--accent);
+  filter: none;
+}
+.workspaceIcon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: block;
+}
+.navHint {
+  display: none;
+}
+.sidebarFoot {
+  margin-top: auto;
+  border-top: 1px solid var(--line);
+  padding: 16px 8px 0;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.sidebarFoot p {
+  font-size: 11px;
+  margin: 6px 0;
+}
+.draftTopbar {
+  height: 72px;
+  min-height: 72px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  padding: 0 30px;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  gap: 12px;
+}
+.draftTopbar > .brand {
+  display: none;
+}
+.topbarContext {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.topbarContext strong {
+  font-size: 13px;
+}
+.topbarContext small {
+  display: block;
+  font-size: 11px;
+}
+.draftTopbar .headerActions {
+  gap: 12px;
+  font-size: 12px;
+}
+.draftTopbar .themeToggle {
+  font-size: 11px;
+  padding: 8px 10px;
+  min-height: 36px;
+  border-color: var(--line);
+}
+.topbarConnection {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: 30px;
+  background: var(--brand-soft);
+  color: var(--accent);
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.topbarAvatars {
+  display: flex;
+  padding-left: 7px;
+}
+.topbarAvatars .avatar {
+  width: 30px;
+  height: 30px;
+  margin-left: -7px;
+  border: 2px solid var(--surface);
+  font-size: 10px;
+  background: var(--brand-soft);
+}
+.mobileMenu,
+.sidebarScrim {
+  display: none;
+}
+.draftMain .workspace {
+  max-width: 1500px;
+  margin: auto;
+  padding: 24px 30px 36px;
+  position: relative;
+}
+.draftMain h1 {
+  font-size: 27px;
+  letter-spacing: -0.03em;
+  margin: 4px 0;
+  line-height: 1.25;
+}
+.draftMain h2 {
+  font-size: 15px;
+  letter-spacing: -0.015em;
+}
+.draftMain h3 {
+  font-size: 13px;
+}
+.draftMain .roomHeading {
+  align-items: start;
+  margin: 12px 0 16px;
+}
+.draftMain .roomHeading p {
+  font-size: 12px;
+  margin: 4px 0;
+}
+.draftMain .roomMeta {
+  gap: 6px;
+}
+.draftMain .badge {
+  font-size: 10px;
+  border-radius: 30px;
+  padding: 4px 8px;
+}
+.draftMain .panel {
+  border-radius: 16px;
+  padding: 17px;
+}
+.draftMain .sectionTitle {
+  margin-bottom: 14px;
+  gap: 10px;
+}
+.draftMain .sectionTitle p {
+  font-size: 11px;
+  margin-top: 3px;
+}
+.draftMain p {
+  font-size: 12px;
+}
+.draftMain button {
+  font-size: 12px;
+  border-radius: 10px;
+  min-height: 40px;
+}
+.draftMain .statusBar {
+  font-size: 11px;
+  padding: 8px 0;
+  margin-bottom: 12px;
+}
+.draftMain .statusBar span {
+  font-size: 11px;
+}
+.draftMain .roomPageActions {
+  display: flex;
+  justify-content: end;
+  margin: -4px 0 16px;
+}
+.draftMain .board {
+  display: block;
+  margin: 0;
+}
+.draftMain .board > aside,
+.draftMain .planning {
+  display: contents;
+}
+.draftMain .board > #itinerary,
+.draftMain .board > aside section,
+.draftMain > .inviteControls,
+.draftMain > .adminPanel {
+  display: none;
+}
+.draftMain .tripOverview {
+  display: none;
+}
+.draftMain[data-view="overview"] .tripOverview {
+  display: block;
+}
+.draftMain[data-view="itinerary"] .board > #itinerary {
+  display: block;
+}
+.draftMain[data-view="budget"] #budget,
+.draftMain[data-view="votes"] #votes,
+.draftMain[data-view="conflicts"] #conflicts,
+.draftMain[data-view="recommendations"] #recommendations,
+.draftMain[data-view="concierge"] #concierge,
+.draftMain[data-view="room-chat"] #room-chat,
+.draftMain[data-view="travelers"] #travelers,
+.draftMain[data-view="analytics"] #analytics {
+  display: block;
+  max-width: 1100px;
+}
+.draftMain[data-view="room-controls"] > .inviteControls {
+  display: block;
+  margin: 16px 30px;
+  max-width: 1100px;
+}
+.draftMain[data-view="dataset-admin"] > .adminPanel {
+  display: block;
+  margin: 28px 30px;
+  max-width: 1100px;
+}
+.draftMain[data-view="dataset-admin"] > .workspace {
+  display: none;
+}
+.draftMain .planning > [role="alert"] {
+  display: block;
+}
+.draftMain .overviewStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.statCard {
+  min-width: 0;
+}
+.statCard p {
+  font-size: 12px;
+  margin: 0;
+  color: var(--muted);
+  font-weight: 500;
+}
+.statCard > strong {
+  display: block;
+  font-size: 24px;
+  font-weight: 750;
+  letter-spacing: -0.025em;
+  margin: 5px 0;
+}
+.statCard small {
+  font-size: 11px;
+  display: block;
+}
+.overviewLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.85fr);
+  gap: 16px;
+  align-items: start;
+}
+.overviewContext {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.overviewContext .panel {
+  display: block;
+}
+.overviewContext .sectionTitle {
+  align-items: center;
+}
+.overviewContext .sectionTitle button {
+  padding: 4px 8px;
+  min-height: 32px;
+  font-size: 11px;
+}
+.overviewContext .member {
+  padding: 9px 0;
+}
+.overviewContext .member .avatar {
+  width: 30px;
+  height: 30px;
+  font-size: 10px;
+}
+.overviewContext .member strong {
+  font-size: 12px;
+}
+.overviewContext .member small {
+  font-size: 10px;
+}
+.overviewContext dl {
+  font-size: 11px;
+  gap: 8px;
+}
+.overviewContext .helpText {
+  font-size: 10px;
+}
+.snapshotTotal {
+  font-size: 25px;
+  font-weight: 750;
+  letter-spacing: -0.025em;
+}
+.overviewDays {
+  display: flex;
+  gap: 7px;
+  overflow: auto;
+  padding: 2px 2px 8px;
+  margin-bottom: 8px;
+}
+.overviewDays button {
+  flex-shrink: 0;
+  background: var(--surface-soft);
+  color: var(--muted);
+  border: 0;
+  font-size: 11px;
+  min-height: 32px;
+  padding: 7px 12px;
+  border-radius: 9px;
+}
+.overviewDays button[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.overviewActivity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  margin-top: 10px;
+}
+.overviewActivity time {
+  font-size: 11px;
+  color: var(--muted);
+  width: 48px;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.activitySymbol {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  background: var(--surface-soft);
+  border-radius: 11px;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+.overviewActivity > div {
+  flex: 1;
+  min-width: 0;
+}
+.overviewActivity h3 {
+  margin: 0 0 3px;
+  overflow-wrap: anywhere;
+}
+.overviewActivity small {
+  font-size: 11px;
+}
+.draftMain .overviewItinerary .notice {
+  font-size: 11px;
+  margin: 14px 0 0;
+}
+.attentionCard {
+  border: 1px solid var(--line);
+  background: var(--warning-bg);
+  padding: 12px;
+  border-radius: 12px;
+  margin-top: 10px;
+}
+.attentionCard h3 {
+  color: var(--warning);
+  margin: 0;
+}
+.attentionCard p {
+  font-size: 11px;
+  margin: 4px 0 10px;
+}
+.draftMain #itinerary {
+  padding: 17px;
+}
+.draftMain .gridScroll {
+  max-height: 540px;
+}
+.draftMain .dayTabs button {
+  min-height: 40px;
+}
+.draftMain #budget .budgetOverview {
+  max-width: 650px;
+}
+.draftMain #votes .voteCard {
+  max-width: 850px;
+}
+.draftMain #votes .voteOption {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 13px;
+  margin: 10px 0;
+}
+.draftMain #votes .voteOption[data-selected="true"] {
+  border-color: var(--accent);
+  background: var(--brand-soft);
+}
+.draftMain #votes .voteOption button {
+  width: auto;
+}
+.draftMain #recommendations .recommendationCard {
+  display: block;
+  max-width: 850px;
+}
+.draftMain #recommendations .recommendationCard button {
+  min-height: 36px;
+}
+.draftMain #concierge {
+  max-width: 850px;
+}
+.draftMain .conciergeSlot {
+  margin-bottom: 16px;
+}
+.draftMain footer {
+  margin: 0 30px;
+  font-size: 11px;
+  padding: 18px 0;
+}
+.draftMain > .error {
+  margin: 16px 30px;
+}
+.draftMain .invite {
+  margin: 12px 0;
+  font-size: 11px;
+}
+.draftMain .invite code {
+  font-size: 13px;
+}
+@media (max-width: 1200px) {
+  .draftApplication {
+    grid-template-columns: 210px minmax(0, 1fr);
+  }
+  .topbarAvatars {
+    display: none;
+  }
+  .draftMain .overviewStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .overviewLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .overviewContext {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .draftApplication {
+    display: block;
+  }
+  .workspaceSidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 238px;
+    z-index: 30;
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition: transform 0.2s ease-out;
+  }
+  .workspaceSidebar.isOpen {
+    transform: translateX(0);
+    visibility: visible;
+  }
+  .sidebarScrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 29;
+    background: rgb(0 0 0 / 0.4);
+    border: 0;
+    border-radius: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .mobileMenu {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border-color: var(--line);
+    min-width: 36px;
+  }
+  .draftTopbar {
+    height: auto;
+    min-height: 60px;
+    padding: 10px 14px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .draftTopbar .headerActions {
+    gap: 7px;
+  }
+  .draftTopbar .headerActions > span {
+    display: none;
+  }
+  .draftTopbar .headerActions > .topbarConnection {
+    display: none;
+  }
+  .topbarContext strong {
+    font-size: 12px;
+  }
+  .topbarContext small {
+    font-size: 10px;
+  }
+  .draftMain .workspace {
+    padding: 20px 14px 30px;
+  }
+  .draftMain h1 {
+    font-size: 23px;
+  }
+  .draftMain .roomHeading {
+    display: block;
+  }
+  .draftMain .roomMeta {
+    margin-top: 8px;
+  }
+  .draftMain .overviewStats {
+    gap: 9px;
+  }
+  .statCard > strong {
+    font-size: 20px;
+  }
+  .draftMain .overviewStats .panel {
+    padding: 13px;
+  }
+  .overviewContext {
+    grid-template-columns: 1fr;
+  }
+  .overviewActivity {
+    gap: 8px;
+    padding: 10px;
+    flex-wrap: wrap;
+  }
+  .overviewActivity time {
+    width: 40px;
+  }
+  .activitySymbol {
+    width: 30px;
+    height: 30px;
+  }
+  .overviewActivity .badge {
+    margin-left: 48px;
+  }
+  .draftMain .panel {
+    padding: 15px;
+  }
+  .draftMain[data-view="room-controls"] > .inviteControls,
+  .draftMain[data-view="dataset-admin"] > .adminPanel {
+    margin: 16px 14px;
+  }
+  .draftMain footer {
+    margin: 0 14px;
+  }
+  .draftMain .roomPageActions {
+    margin-bottom: 12px;
+  }
+  .draftMain > .error {
+    margin: 12px 14px;
+  }
+  .draftMain .sectionTitle {
+    flex-wrap: wrap;
+  }
+  .draftMain .statusBar {
+    font-size: 10px;
+  }
+  .draftMain .board > aside {
+    display: contents;
+  }
+}
+.draftMain .board > .tripOverview {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}
+.draftMain[data-view="overview"] .workspace > .link {
+  display: none;
+}
+.draftMain[data-view="overview"] .statusBar {
+  display: none;
+}
+.draftMain[data-view="overview"] .roomHeading {
+  margin: 4px 0 24px;
+  padding-right: 180px;
+}
+.draftMain[data-view="overview"] .roomMeta {
+  display: none;
+}
+.draftMain[data-view="overview"] .roomPageActions {
+  position: absolute;
+  top: 28px;
+  right: 30px;
+  margin: 0;
+}
+@media (max-width: 700px) {
+  .draftMain[data-view="overview"] .roomHeading {
+    padding-right: 0;
+    margin-bottom: 14px;
+  }
+  .draftMain[data-view="overview"] .roomPageActions {
+    position: static;
+    justify-content: start;
+    margin: 0 0 16px;
+  }
+}
