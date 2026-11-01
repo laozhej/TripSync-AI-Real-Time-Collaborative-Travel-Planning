@@ -72,3 +72,7 @@ The [2026-10-31 PRD alignment review](PRD_ALIGNMENT_REVIEW.md) distinguishes ori
 ## Indian localization follow-up
 
 Explicit user requirement: INR/paise, Asia/Kolkata IST board and an authored Indian destination. Implementation: Bengaluru fixture, dataset/API currency validation, room-derived budget/event currency, Concierge currency rendering, frontend locale/time helpers. Verification: `test_india_integration.py`, India case in frontend `time.test.js`, and the Bengaluru two-browser real-model flow. Original Phase 2 evidence stays historical; current results are recorded in INDIA_LOCALIZATION_EVIDENCE.md.
+
+### Phase 3 allocation increment (2026-11-01)
+
+REQ-020 / TASK-014: `app/budget/engine.py`, `tests/test_budget.py`: 9 passed for manual even/weighted/remainder/zero-weight fixtures, conservation and vote reservations. This increment alone does not accept the entire Phase 3 UI/election workflow. Phase 3's final acceptance record is PHASE_3_EVIDENCE.md.

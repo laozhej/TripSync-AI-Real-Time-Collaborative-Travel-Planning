@@ -61,3 +61,7 @@ The live board implements Drafting pin/move/remove and durable Leader lock/unloc
 ### Indian currency override (2026-10-31)
 
 New Indian trips use INR. Integer minor units mean paise: INR350.00 = 35000 paise; a ₹25,000.00 group budget = 2500000 paise. Ceilings and totals keep exact integer math and remainder allocation; formatting uses en-IN grouping. Legacy EUR rooms retain euro cents. No implicit currency conversion or mixing is permitted. This supersedes the earlier provisional EUR-only choice.
+
+## Phase 3 implementation — 2026-11-01
+
+`app/budget/engine.py` implements integer largest-remainder allocations and per-person maximum vote reservations. The manual fixtures and conservation checks ran with `python -m pytest backend/tests/test_budget.py -q`: 9 passed. `app/concierge/conflicts.py` detects exact interval overlaps for shared attendees and separate total/personal budget breaches; immutable fingerprint history is persisted with room transactions. This supersedes the historical Phase 2 notes above; full Phase 3 acceptance is recorded separately in PHASE_3_EVIDENCE.md.
