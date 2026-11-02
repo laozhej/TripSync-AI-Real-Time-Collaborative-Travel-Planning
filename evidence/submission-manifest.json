@@ -1,0 +1,681 @@
+{
+  "files": [
+    {
+      "path": ".env.example",
+      "sha256": "084b1a615902034803b91b10041a1c5a7042dde251394b7cfb8eee67d644f543"
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "d29459a70dfdef33ed3be0729ff09ea752c09c1a57c6a8551d40e9d26bc6757c"
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "1c10ae43fb04a0a97957b519e2e0ebbcb59f5d8fc3f2e7d84400b590451e3918"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "sha256": "2413b913849dc53715946e0cd9d3df080ea1c4e88ffccf063928dfd0649152c5"
+    },
+    {
+      "path": "DESIGN.md",
+      "sha256": "0a6bec7c2d3b30b8eab66317a9a469d18285c88185fb9c9ab7c07c9f1afe9593"
+    },
+    {
+      "path": "Document/Project Document.docx",
+      "sha256": "f390a137f9c9740bdc8d870840a07ec3df70fb890a3772c35ef2d5cd7beaf340"
+    },
+    {
+      "path": "README.md",
+      "sha256": "68ff6ffb6eda69fb6098d86ca9f5cccb2086fe3b0e911595fc1ef49afeee8f3a"
+    },
+    {
+      "path": "backend/alembic.ini",
+      "sha256": "e6610e1255594ad719247d8ead5f69cfc8c48ea9bddf6f3b63004a55b42bcb00"
+    },
+    {
+      "path": "backend/alembic/env.py",
+      "sha256": "66d49d45d3ab20661d8e022d5322dd66cef860fae3a8366d4946a11415694231"
+    },
+    {
+      "path": "backend/alembic/versions/0001_identity.py",
+      "sha256": "81555aad059fc994c7a6557758c5772128b58d262615ea5197de3ab868c4a585"
+    },
+    {
+      "path": "backend/alembic/versions/0002_datasets.py",
+      "sha256": "cbaf8fcf4dba9be8fbfb52aaab151502990295307c950d1a58b15ecdb3540471"
+    },
+    {
+      "path": "backend/alembic/versions/0003_rooms.py",
+      "sha256": "a1b810bf3529296f3174de2d831830317897cdd3d7ab4ab6a23db19036135aa9"
+    },
+    {
+      "path": "backend/alembic/versions/0004_refresh_history.py",
+      "sha256": "555704ce162d4a693a90f75f417fe9b64490abd0ef68960aa08fffbb5a7af5d2"
+    },
+    {
+      "path": "backend/alembic/versions/0005_idempotency.py",
+      "sha256": "da6a9a35ed8d351b30e3610de33482550231ec928750b8219c66fdbeeff5c390"
+    },
+    {
+      "path": "backend/alembic/versions/0006_planning_session.py",
+      "sha256": "e117233c99891ddbeb8f3b841c3b3bc92616408873a87f471bc75952769b58a4"
+    },
+    {
+      "path": "backend/alembic/versions/0007_event_sessions.py",
+      "sha256": "bf3135de988ca2f24c09140f14f4ebb46f74c6c01938c2d101494ba2c8498f93"
+    },
+    {
+      "path": "backend/alembic/versions/0008_venue_search.py",
+      "sha256": "07c958753506e2024c0a491206cd40aa7726efe65af8e1e6b4feba51d74551a3"
+    },
+    {
+      "path": "backend/alembic/versions/0009_chat.py",
+      "sha256": "79778b50ea9217fd37bb5abc61235765d5ce1eaa792176f942561c58df1a6498"
+    },
+    {
+      "path": "backend/alembic/versions/0010_concierge.py",
+      "sha256": "007c4c4740f27acbb4a737a1b04c203e4f3c9712a3e0f948d279b9aa01463196"
+    },
+    {
+      "path": "backend/alembic/versions/0011_phase3.py",
+      "sha256": "74977b71cd41069063d7dfa460f55a8ce571b069db404bc501310d2eb0dc317f"
+    },
+    {
+      "path": "backend/app/analytics/service.py",
+      "sha256": "5834c3743952182d9e290e25258a5c9b9ce30ca6c4175e97d91f5d2cd967e94a"
+    },
+    {
+      "path": "backend/app/api/auth.py",
+      "sha256": "0e2f704b73fb6baecaff0a93c6c4a8a3ac9fef99b9d5eb7d0f5dc3de3fd4bd8a"
+    },
+    {
+      "path": "backend/app/api/catalog.py",
+      "sha256": "e3f70eed80a1794f86ddb0dfcb14db5d83e2c659abb677a7a559a184d2543b70"
+    },
+    {
+      "path": "backend/app/api/concierge.py",
+      "sha256": "3257263296a12c34c92956bf6db112374a1c6b996b49c5d3a00ec393c0ceb72b"
+    },
+    {
+      "path": "backend/app/api/phase3.py",
+      "sha256": "caed1914b8b1a2c6c41d8aae11a09c14f08ed4a0fd1886328f6c46865b33da52"
+    },
+    {
+      "path": "backend/app/api/trips.py",
+      "sha256": "8e6a13294a20b365a4c838a1bee219e1efaf29a98b3c9d857fbc847a3317a020"
+    },
+    {
+      "path": "backend/app/auth/policy.py",
+      "sha256": "22b23d79ef69635f6bc3f1c9d9d92dd8dccc57a54f5432ca3f7140061080fc8d"
+    },
+    {
+      "path": "backend/app/auth/tokens.py",
+      "sha256": "df9684c875fc9daa50426dc88243f37d8cab2931effd33163727515e7a46d210"
+    },
+    {
+      "path": "backend/app/board/lifecycle.py",
+      "sha256": "f7bf03f772cfd2df85f674cdb18e7fbc167cec589afcaab72c048518bbe177f8"
+    },
+    {
+      "path": "backend/app/budget/engine.py",
+      "sha256": "bb7783289308a951048d40850d48d1f2bbd4297c733eae1ee5e4aab822df5043"
+    },
+    {
+      "path": "backend/app/budget/service.py",
+      "sha256": "9f0aa1185765a3528bdefe38f42e337264cbafe9985cffd1d5e0201a706ca809"
+    },
+    {
+      "path": "backend/app/cli.py",
+      "sha256": "6cdfef61a955f628c5e3eaa5b919ede94585b37c027eeef821c7c9aa4def0f8e"
+    },
+    {
+      "path": "backend/app/concierge/conflicts.py",
+      "sha256": "50e5c7686897dd2ec4c49ce3a6740708f72cd5c8015def21a1d3525fa3dbd0a2"
+    },
+    {
+      "path": "backend/app/concierge/constraints.py",
+      "sha256": "9b1670b978b85018dc5d3ee292437e71e11f717763b011490dfc867ab92f8da5"
+    },
+    {
+      "path": "backend/app/concierge/preferences.py",
+      "sha256": "279ee13618a26dbb53d4429d07a176990e62b79f920ae881a14edf7ea567b6ef"
+    },
+    {
+      "path": "backend/app/concierge/rag.py",
+      "sha256": "5b82938d0dbf795e3b55d513a4fc40f49a544849453c70811f49e25a31dc03ce"
+    },
+    {
+      "path": "backend/app/concierge/service.py",
+      "sha256": "731e436b0edc6dbc79f6f48d5f6c5ffc4694e3638d907fa0edbff703b91bfda2"
+    },
+    {
+      "path": "backend/app/datasets/importer.py",
+      "sha256": "6052f02aad36cdde1f8a5b052ad5cacba66f42899cdde4b96f46efab1512e35c"
+    },
+    {
+      "path": "backend/app/datasets/schema.py",
+      "sha256": "8355d23124b49655c11c4198b695d17dc53dbd0db49d202103167d3268c78ee6"
+    },
+    {
+      "path": "backend/app/main.py",
+      "sha256": "b9bcff0f4a963700e3f1d27670eca3a8307b1e211a2d881a7193b3fd9f1f6a74"
+    },
+    {
+      "path": "backend/app/realtime/gateway.py",
+      "sha256": "ec735bf9c337f8f7836e502337ddd08520505fd7dadbdfc461c8a694f0b374ec"
+    },
+    {
+      "path": "backend/app/realtime/rooms.py",
+      "sha256": "0964955024cc82b83bea158f10d1215b5520f8b8deb9d123a368fc9b9825f9ce"
+    },
+    {
+      "path": "backend/app/recommendations/engine.py",
+      "sha256": "dd291bf22ae142bf210506717ae27b91b22a051a4a03a0ea48cd2889bf5758bb"
+    },
+    {
+      "path": "backend/app/recommendations/evaluate.py",
+      "sha256": "29477e53b2251aabfcffb46f0ea4b7ca0cbb17995cf0c4474f5331ca0ab82116"
+    },
+    {
+      "path": "backend/app/recommendations/service.py",
+      "sha256": "7368217f06843cbfe75ed2dda855b26df9586e67c19d2574561b7ea1412f1d5f"
+    },
+    {
+      "path": "backend/app/rooms/actor.py",
+      "sha256": "b466b8827245b513479702f465748e17e1153d8c789e102fa0581fb90d55a3d7"
+    },
+    {
+      "path": "backend/app/rooms/moderation.py",
+      "sha256": "38f4515d4468a4ab57eed0bcac9d1b32aa5a6f0e8cf4bdf817a81163d30eed3b"
+    },
+    {
+      "path": "backend/app/transport.py",
+      "sha256": "f9d771fbbed7e46f319e4c10d4ea8355da7f6b58c2681041d622a4b61a2f7640"
+    },
+    {
+      "path": "backend/app/voting/rules.py",
+      "sha256": "b4d8495a7a641f18c8e6e354d23fd7a360f0dbd3097a0c4755726831dbef644b"
+    },
+    {
+      "path": "backend/app/voting/service.py",
+      "sha256": "a81c25986e00ef55d22b2fa66461ae5f9448e0e01f04aa3170f883db6f7f5adc"
+    },
+    {
+      "path": "backend/requirements.lock",
+      "sha256": "d10237f3b4a19cce7ad1a556f96b51540111c47f810adecfac8aec65b7b3e830"
+    },
+    {
+      "path": "backend/tests/browser_clean_setup.py",
+      "sha256": "37c1258f215504dcac0ab01e37e58440f2c011b548c0e8b56949f551fba0e2ca"
+    },
+    {
+      "path": "backend/tests/browser_draft_layout.py",
+      "sha256": "1a1efca13787a9e23f36d7808f80eb9cfbd1433875c859dcab1f4781220a7ca5"
+    },
+    {
+      "path": "backend/tests/browser_frontend_ui.py",
+      "sha256": "f7bdd58219d26595c5c6396a76ad8d285731baf68d68acdc10105e2444901877"
+    },
+    {
+      "path": "backend/tests/browser_phase1.py",
+      "sha256": "22b084615a21b4c1de3c448672c92a9d4157907fcad957eb332f5a841a20ca46"
+    },
+    {
+      "path": "backend/tests/browser_phase3.py",
+      "sha256": "52dcd6ea47ba9ebe5e1c9db82acb41de7dbc4d9d9f487b96fc7d60aa3d183c6e"
+    },
+    {
+      "path": "backend/tests/browser_server.py",
+      "sha256": "dfefcf936353added0f320c1f7f398d8286bb4d516471f2c5592234d646d15b6"
+    },
+    {
+      "path": "backend/tests/browser_ui_audit.py",
+      "sha256": "385966353bf34812b4b61671734e020244627982f21dffc6ceba86ac0161f33e"
+    },
+    {
+      "path": "backend/tests/clean_setup.py",
+      "sha256": "9908fa432ce9b724103218deaa0ab90a1ab0e386c7dc56cc9e8922f1b54578b9"
+    },
+    {
+      "path": "backend/tests/model_diagnostic.py",
+      "sha256": "2e20bb5054206dabfdbd1b2a86b505ac88df0ac9c0460a80eb33ea64ca352a36"
+    },
+    {
+      "path": "backend/tests/phase4_ai_measure.py",
+      "sha256": "2c9514cabcbad7b886e6d083c4e9c031319ffcdaffe5a9365a642bfed3c33406"
+    },
+    {
+      "path": "backend/tests/phase4_measure.py",
+      "sha256": "49bd875e31f43274ff96b4f6e53bedebbb6aea6547854c6fedc60cd49a86422b"
+    },
+    {
+      "path": "backend/tests/phase4_measure_stats.py",
+      "sha256": "b68e63768b141e25d7e546838e433fedd1f8c71c10235cf1be6e71c0725209f5"
+    },
+    {
+      "path": "backend/tests/recovery_phase2.py",
+      "sha256": "6c8b52483a7d937f031e9e4d9e92259f1c60176b4cdaf044c47c378d0da5f1fe"
+    },
+    {
+      "path": "backend/tests/recovery_server.py",
+      "sha256": "344e8a7825c5db2ee401f7298ff0a39afbd98284ec73e715791357d0068cb5bb"
+    },
+    {
+      "path": "backend/tests/test_auth_integration.py",
+      "sha256": "5738406f6ba0002cb1f88d8a68cdd94e38e87910ecfce35ca0a0908f97093025"
+    },
+    {
+      "path": "backend/tests/test_board_lifecycle.py",
+      "sha256": "f51425f8745032d1db4a7927886cb95ffadf79fc6c82ae21e5925fdbb36510bf"
+    },
+    {
+      "path": "backend/tests/test_budget.py",
+      "sha256": "1f671e09d62d1dc70a0dba4a90c8b0f05be01896ea6df7a6117481960abe53b6"
+    },
+    {
+      "path": "backend/tests/test_command_inputs.py",
+      "sha256": "99b4c09de242067b885e9e5615b4de938554dfb835bf58418e844ff2acdbdcf3"
+    },
+    {
+      "path": "backend/tests/test_concierge_integration.py",
+      "sha256": "0bfbc01ddf2bf50691fdd186fd6456a762c1ca405e00daf85c690ed6b98e5061"
+    },
+    {
+      "path": "backend/tests/test_concierge_live_integration.py",
+      "sha256": "a4ff2a45c0ca0ea134dd4bbd49d6625904cc80931fc445364d543d6d018a5690"
+    },
+    {
+      "path": "backend/tests/test_conflicts.py",
+      "sha256": "92023b1ff88d1b58af88b4a93600d22c7420825e7b31e9b83f69112177f4b615"
+    },
+    {
+      "path": "backend/tests/test_constraints.py",
+      "sha256": "03a135694280afa058a883189b438f576906894ddac89a12fb1502d1aa3699f8"
+    },
+    {
+      "path": "backend/tests/test_dataset.py",
+      "sha256": "5420885e47dc7a4c20b42087ea7c24644ad3691a6e92e9efb98e5dfb245741d9"
+    },
+    {
+      "path": "backend/tests/test_health.py",
+      "sha256": "57ffa7ad9c9e83d3bef9c7a906f6ab6868f70d8bba86706d4cd2fc48a19343c5"
+    },
+    {
+      "path": "backend/tests/test_india_integration.py",
+      "sha256": "faeb08d1286c50f05c1267060a507041010f80c0e52f8cc16a665f1e5065dd33"
+    },
+    {
+      "path": "backend/tests/test_moderation_integration.py",
+      "sha256": "e74eeba075f0ccae0f5af82cba56b36cc4415187265216731a802f90f0ad53be"
+    },
+    {
+      "path": "backend/tests/test_phase3_integration.py",
+      "sha256": "be8101fc17e5772798f1065b8013772df0466abcf23e0a2dc9d63e22c0aef6e5"
+    },
+    {
+      "path": "backend/tests/test_phase4_restore.py",
+      "sha256": "13ad66862788c1ecebea28b5b1de69a7512e7e9ee20f38780a5c82cef5bcebc6"
+    },
+    {
+      "path": "backend/tests/test_phase4_security.py",
+      "sha256": "0ae9c7317d4c4435f51303bfd906df10bba10bb258e87652541471959d8345d8"
+    },
+    {
+      "path": "backend/tests/test_policy.py",
+      "sha256": "a4eb64d85f3c33e944ecca7c6089ec1ae49f51b509ae6c787abe4b328f186055"
+    },
+    {
+      "path": "backend/tests/test_rag.py",
+      "sha256": "2ed73f2308cf831a71f3d51adbcfc9596440da78f635ded402b969c108838b2b"
+    },
+    {
+      "path": "backend/tests/test_recommendations.py",
+      "sha256": "b8af8b3ae44bbb41b2a8d214e3328704bd3419fca91dbfd025f5617f411d7ca7"
+    },
+    {
+      "path": "backend/tests/test_room_actor.py",
+      "sha256": "50b66c343b9494f2eb333f03d03635e7f2fc609c844a86232c42d5a816d9987c"
+    },
+    {
+      "path": "backend/tests/test_tokens.py",
+      "sha256": "183a871b374091dd3fa7c947b7455ea9e17dcc06984b0a6a73b08cfd49a6cb2c"
+    },
+    {
+      "path": "backend/tests/test_transport_limits.py",
+      "sha256": "b84a7fc1d6e6cd38ccfab08b2ddc02f7a6944717fcb30bf152c0ca3668b308eb"
+    },
+    {
+      "path": "backend/tests/test_voting_rules.py",
+      "sha256": "f600cc4e54c26212b2fd0b94e8a85d7003ae729feaddd9625e052adf499318a9"
+    },
+    {
+      "path": "data/destinations/bengaluru.json",
+      "sha256": "99e9adb075ab9a0938f6dbaa6424f89690143c1dcfe76484b45af48fb59194c8"
+    },
+    {
+      "path": "data/destinations/lisbon.json",
+      "sha256": "f52f4dddd18e7c3a4423e715803d91a3362f97db5d93e94224b8d1fdaa49c2f2"
+    },
+    {
+      "path": "data/interactions/phase3-evaluation.json",
+      "sha256": "2884b87a717efad584d0b93193b52890459b54eef4cf55b28e4b24356fa4d80c"
+    },
+    {
+      "path": "docs/AI_TRAVEL_CONCIERGE.md",
+      "sha256": "d00b3c78ced6fa8b9eb02ae871f85c461f2fbb55c9b5d270cf4d3028adec9986"
+    },
+    {
+      "path": "docs/API_SPECIFICATION.md",
+      "sha256": "48bd236564ab05902b45249761798a00568263bac47ead3f4513e9a52b7f986a"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "sha256": "04a7d9f461f2848bab9f1fff8cfc9b8d48692fa9e46b56517f5251e04b8d7a32"
+    },
+    {
+      "path": "docs/BUDGET_AND_VOTING.md",
+      "sha256": "b95375e205a349eb7e9bb772932ca60b2b7a40cfb0ae609a10e1fa4398c90cb6"
+    },
+    {
+      "path": "docs/DATABASE_SCHEMA.md",
+      "sha256": "5f584aeedb3d2b7de37d3a88d8309ba66890e9ef0d34e534acef00284f29969a"
+    },
+    {
+      "path": "docs/DATASET_GUIDE.md",
+      "sha256": "18c6e29a3dfd327552cfd96575446691cbe25d552520cc93e09f28b1a6b3f526"
+    },
+    {
+      "path": "docs/DECISIONS.md",
+      "sha256": "8739c99fb553522d6f000a900ab84401617599ce77d3ba894febb4e66d38f050"
+    },
+    {
+      "path": "docs/DEMO_AND_SUBMISSION.md",
+      "sha256": "67ebd492805a78f498994b945ef5ae87c4827a63e02afa1280085c138f758751"
+    },
+    {
+      "path": "docs/DEPLOYMENT_AND_OPERATIONS.md",
+      "sha256": "426ca50a7783a4ed08848d7c60bd87b489cbc009da4854ef4edeca4ebc09ebd8"
+    },
+    {
+      "path": "docs/ENVIRONMENT_SETUP.md",
+      "sha256": "0b7be5e35f501df7c412595a2c0f4613afcae86c928b1432784f9193763d0b02"
+    },
+    {
+      "path": "docs/FRONTEND_UI_EVIDENCE.md",
+      "sha256": "866b81b7166bcdc9def65b33467b82a74070815d3c51bf418e11be7ca224aa75"
+    },
+    {
+      "path": "docs/IMPLEMENTATION_PLAN.md",
+      "sha256": "7258f89875fdad7f46994edb92ca9e0c42548cb383dddd7425944c1698af1525"
+    },
+    {
+      "path": "docs/INDIA_LOCALIZATION_EVIDENCE.md",
+      "sha256": "f50ede44a202d09d0b14a19b7508ac7dd45faf7e8290ffe3d183d7d03c0e7655"
+    },
+    {
+      "path": "docs/PHASE_1_EVIDENCE.md",
+      "sha256": "c40ffd7453cb16df3a171ef4512db2528dfaebd9e685464ac3c3378b28b4c3f4"
+    },
+    {
+      "path": "docs/PHASE_2_EVIDENCE.md",
+      "sha256": "4cd610241bbbf262e0cc3c51cf1e9aa861ceef953aba65f15bafd4a2e5d4763c"
+    },
+    {
+      "path": "docs/PHASE_3_EVIDENCE.md",
+      "sha256": "575dadb4afff178331cfc6b18e00299a747bbff9c808b1f419aba5862b080b64"
+    },
+    {
+      "path": "docs/PHASE_4_EVIDENCE.md",
+      "sha256": "0eba635914c526fa940caee5eeb08e068e7e03a690d0d1b39a9ffd3f7a9613c5"
+    },
+    {
+      "path": "docs/PRD_ALIGNMENT_REVIEW.md",
+      "sha256": "f2121d8cc1a4a0f26a893dccaa51f85bd632ee05af82e9c775699754ed04887f"
+    },
+    {
+      "path": "docs/PROJECT_REQUIREMENTS.md",
+      "sha256": "6024f60861a75f89c8a0b66d2bc60a37751ff0f638b6f18bd72c073f3eabde18"
+    },
+    {
+      "path": "docs/RECOMMENDATION_ENGINE.md",
+      "sha256": "f65900d1fb598e363edf4831cbacb8ddb8dddcfd1ffb8d06fdcbad5e0ce31994"
+    },
+    {
+      "path": "docs/RETROSPECTIVE.md",
+      "sha256": "8ede9a81ed9c069f4dd0c536a1f252d2e766cb7956af0db3f16c6afcad999cd7"
+    },
+    {
+      "path": "docs/SECURITY.md",
+      "sha256": "283eb021fb226bd79013d11425479fcefe5f4922603425a18f5df9d3f32d6799"
+    },
+    {
+      "path": "docs/TASKS.md",
+      "sha256": "130fe60e144af07484c00f50af00264bbe51c5bcd55393332f4bf642fde95bbe"
+    },
+    {
+      "path": "docs/TESTING_STRATEGY.md",
+      "sha256": "e06f63caaff4600eb0268bfe3fd6662ea3992409fcd7b9efebc0e6c166e4611d"
+    },
+    {
+      "path": "docs/TO-DO_LIST.md",
+      "sha256": "e2a6e3517cfee9cb0f998935c0be8b82641a1a09b9e0286e243515f0626dce9c"
+    },
+    {
+      "path": "docs/TRACEABILITY_MATRIX.md",
+      "sha256": "9ac55cb2353854736f1bd0ab69a46da31aaaffc562149539a9f3e575b19cb638"
+    },
+    {
+      "path": "docs/WEBSOCKET_PROTOCOL.md",
+      "sha256": "1c2cbc17203c69813e228f62a2eda2979667888ec63767d796b3a2040f3f81a3"
+    },
+    {
+      "path": "evidence/contracts/openapi.json",
+      "sha256": "462fb7606faf8194120aa2c30c0175b86f904b9436d85a77c1ee8a1a01f43e92"
+    },
+    {
+      "path": "evidence/contracts/schema.json",
+      "sha256": "8a25b2ecf05248492ab4cb6df35dabbf8471b7489b80792ecf077ff534a35bd6"
+    },
+    {
+      "path": "evidence/demo/walkthrough.txt",
+      "sha256": "497fe502c1301dd81a411c46deaa556630195c75c3250a9547fe3ed720910d5e"
+    },
+    {
+      "path": "evidence/operations/restore.json",
+      "sha256": "90c995465e54e1551738d86563c1f31450886df8c7e59064bdef6556134b57bf"
+    },
+    {
+      "path": "evidence/performance/ai-samples.json",
+      "sha256": "db46fc703367210885ca23354d1b1bf3ed8a1129f6ac7394be87c057c01cf58a"
+    },
+    {
+      "path": "evidence/performance/ai-summary.json",
+      "sha256": "1e04ba9ae70d18872063e1cc273848fc4fc756bfb77520ad2de93056742d32a0"
+    },
+    {
+      "path": "evidence/performance/browser-render.json",
+      "sha256": "bf30b8fe5d5df288ee17f40f834aa3c74f9a3a44c4785c23ca9c351218bc74ab"
+    },
+    {
+      "path": "evidence/performance/environment.json",
+      "sha256": "a8dc08be56be083ead35e18e4476c2553cef26590243b2ab931609b51fa3ab97"
+    },
+    {
+      "path": "evidence/performance/model-diagnostic-before.json",
+      "sha256": "191ea0c2c4ad14aa1faae88e90fa8a34fbf5a62cea7505d6e6a5fdeb844be06b"
+    },
+    {
+      "path": "evidence/performance/model-diagnostic.json",
+      "sha256": "9e561f5a7f17ff0ccbcf44023c8ba771aec567346526103cddad76c79d101fe8"
+    },
+    {
+      "path": "evidence/performance/samples.json",
+      "sha256": "6a19dad9c43d5aeaaf450beacf41366e43facc0b83a41f97ca65b2bc8f2e69b3"
+    },
+    {
+      "path": "evidence/performance/summary.json",
+      "sha256": "1035c9920e3fb02602e1079794c04b91202317f530fbb1af7fdb400ad4c287be"
+    },
+    {
+      "path": "evidence/performance/target-results.json",
+      "sha256": "5b449278bd478887e4216826582cb06f8dcc6abb2a413fd1bbe8ce514ce5f4a6"
+    },
+    {
+      "path": "evidence/performance/unpreloaded-samples.json",
+      "sha256": "04f2f7471ec00d280841670ca8fa969e65e564f9f7d628dfd3f219470cf71ebd"
+    },
+    {
+      "path": "evidence/performance/unpreloaded-summary.json",
+      "sha256": "9d9adcc34c727181f3aa19da0d52b4fbf4cb11e1baa1b8635cd489e38c35f072"
+    },
+    {
+      "path": "evidence/security/secret-scan.json",
+      "sha256": "d1c71cba1de08c6be62936c4aefbb7510536fb8e6bae58d19a514132fa4d1086"
+    },
+    {
+      "path": "evidence/tests/backend-clean.txt",
+      "sha256": "8cb101a7fdbb59b9176b3e3a3680d4995c26c8d2cb93bf68fc7f3765676806c5"
+    },
+    {
+      "path": "evidence/tests/browser-concierge.txt",
+      "sha256": "1a2d2216e0115bc80f23c03f07f2734b6c62b03b08d22f2b821d290c33fca816"
+    },
+    {
+      "path": "evidence/tests/frontend-build.txt",
+      "sha256": "2cfaaa04e8b3a3c860fd09f2909ef9b2f612eef5b783f1843e38e55703dd7109"
+    },
+    {
+      "path": "evidence/tests/frontend-unit.txt",
+      "sha256": "4ddd736c12539aa0d26cf8e7c95ec136da7b2aa696b3fb23bf9a907ad435c1da"
+    },
+    {
+      "path": "evidence/tests/npm-clean-install.txt",
+      "sha256": "f6101b02a1a28070d5ab4400083a8b37bd1042d5689b63198d1c26f1b484f742"
+    },
+    {
+      "path": "evidence/tests/npm-install.txt",
+      "sha256": "e40c4c58fed2f1f7f6bed6aeebcc227100f04e1d78fc09232f7525c0f9acbbbe"
+    },
+    {
+      "path": "evidence/tests/npm-repair.txt",
+      "sha256": "e10fddaf1ad01baa51d5c792f8e669de076e561b1c85bd55c271d41e95a2463e"
+    },
+    {
+      "path": "evidence/tests/recommendation-evaluation.json",
+      "sha256": "2884b87a717efad584d0b93193b52890459b54eef4cf55b28e4b24356fa4d80c"
+    },
+    {
+      "path": "evidence/tests/review.txt",
+      "sha256": "cc22fa7bac0ab8e32bebfe138d3e8befeaf2583a910f364f8f732162633c043e"
+    },
+    {
+      "path": "evidence/tests/run-failures.txt",
+      "sha256": "aa6e89c839e05853aefa9bc5fb6aa1d008c9a59698d8eadbc3f9ae7ef8834acd"
+    },
+    {
+      "path": "frontend/.gitignore",
+      "sha256": "c26497fa75a5a79134ab9d11f833f8e52d19cb4552e3a00e2cce0a2a8ee23914"
+    },
+    {
+      "path": "frontend/index.html",
+      "sha256": "20bf28e4153d65b7334065d844b28720e23b5687e40970b02a43e58183aa67b0"
+    },
+    {
+      "path": "frontend/package-lock.json",
+      "sha256": "c84514dfcedaad489ebb9c298847a9212748be7fbd3bff29003e9f3fb51603bd"
+    },
+    {
+      "path": "frontend/package.json",
+      "sha256": "d206497321399b4453c494d8f62d76496fa35e1cf363b0cc181fd1a503e567af"
+    },
+    {
+      "path": "frontend/public/fonts/Inter.ttf",
+      "sha256": "29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031"
+    },
+    {
+      "path": "frontend/public/fonts/OFL.txt",
+      "sha256": "f14f2b95a38f4f20cad4d27f7710593f37534c046641be0348da7c28365f4e39"
+    },
+    {
+      "path": "frontend/src/admin/DatasetAdmin.jsx",
+      "sha256": "76ecd3c2a834a81c5e25af3cee7cf1cf6eb8918abed966c3b7800aa00b85de26"
+    },
+    {
+      "path": "frontend/src/board/BoardGrid.jsx",
+      "sha256": "756f069eeadd87126358f3b9aaf6580b2ae74f8dec266f5a1a0f131521168402"
+    },
+    {
+      "path": "frontend/src/board/ConciergePanel.jsx",
+      "sha256": "25b2b91e45f2116f579f038adc00d3f6f78428743623e02be42d40359e815ee8"
+    },
+    {
+      "path": "frontend/src/board/ModerationControls.jsx",
+      "sha256": "2963b9c0f1894cb0540a517f16a6a64ec21472b600ed90a411af3d55aedda6c7"
+    },
+    {
+      "path": "frontend/src/board/time.js",
+      "sha256": "93c094031a4646eef74c16184ad418f2eafff084083fc35c794ca7c6916bf08e"
+    },
+    {
+      "path": "frontend/src/dashboard/Dashboard.jsx",
+      "sha256": "d6947f5afa967a17d510b8f918f98b24307ccb0471dfdd11d449c7cbf4c51d42"
+    },
+    {
+      "path": "frontend/src/main.jsx",
+      "sha256": "2541c9112982626d2247fe247a13d2717097f44d5e2d7e1390eaf4259f6d2d27"
+    },
+    {
+      "path": "frontend/src/style.css",
+      "sha256": "4619bb761e3a60fdc934cb7e6cd862bd40ce4566d4abb74351868d392f43a0ae"
+    },
+    {
+      "path": "frontend/src/ui/Primitives.jsx",
+      "sha256": "2036be4100159828b10dc79562abf353522771e5840112fe26997f8631667c0a"
+    },
+    {
+      "path": "frontend/src/ui/format.js",
+      "sha256": "2e359641b68eedea25eb5ddb064bd9fba1d7dca27fc56ab5983756cbb6a4fe1f"
+    },
+    {
+      "path": "frontend/src/votes/PlanningPanel.jsx",
+      "sha256": "f7ce076e9a8175edda0de6dfd37d683d0fe714e4ec4a3dc6c970aa9a78fedda9"
+    },
+    {
+      "path": "frontend/src/votes/SplitEditor.jsx",
+      "sha256": "8111ef0300fbc4eec49c6bc7c0fdc00b338c93a874662312cacc65263406eccf"
+    },
+    {
+      "path": "frontend/src/workspace/TripOverview.jsx",
+      "sha256": "b4499444ec3e49e702a4b472b784c43ed9d7f817e145b3c024bccfd28295e9db"
+    },
+    {
+      "path": "frontend/tests/time.test.js",
+      "sha256": "0c353d394ad7ac807cce466c52f5009244db00787ece589e2b00553455a8edec"
+    },
+    {
+      "path": "frontend/vite.config.js",
+      "sha256": "75d1a27e8744267bd72e77b5b0358cbfa16f0e65cf44d1854318f5ab8202a55b"
+    },
+    {
+      "path": "http/tripsync.http",
+      "sha256": "995c01198df0bc1f45d4d4fd60ca5cda864939407c1ee736cd010955b3c0fdfb"
+    },
+    {
+      "path": "requirements.txt",
+      "sha256": "bd9424d3716762b36768a593fe1e0571630be2c875a40590b822d22cf7a6ca42"
+    },
+    {
+      "path": "scripts/package-submission.py",
+      "sha256": "f70097554a34a48fac51da12e8e37a8207aab80cab79945ebd8763750dd8059a"
+    },
+    {
+      "path": "scripts/scan-submission.py",
+      "sha256": "c31883426bb3c22a9d06688a26c2c44ba1b10596fc224caaaca83a75ebfeca33"
+    },
+    {
+      "path": "scripts/start-local-model.ps1",
+      "sha256": "f6e17ed738c9e6b71fb03246d8b54d35536f0246b905a4cc9ed3abfdb9d6976e"
+    }
+  ],
+  "excluded": "ignored files, Git internals and this self-referential manifest"
+}
