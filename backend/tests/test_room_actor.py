@@ -66,3 +66,16 @@ def test_room_audit_contains_only_safe_operational_fields(caplog):
     assert set(record)=={'event','tripId','sessionId','roomEpoch','roomSeq','committedSeq','correlationId','ts'}
     assert record['tripId']==str(room.trip_id) and record['correlationId']==str(correlation)
     assert record['committedSeq']==0
+
+
+def test_slow_subscriber_is_disconnected_without_blocking_other_clients():
+    from app.realtime.rooms import Room
+    room = Room(None, uuid4())
+    slow, healthy = asyncio.Queue(maxsize=1), asyncio.Queue(maxsize=4)
+    slow.put_nowait({'old': 'frame'})
+    room.subscribers.update((slow, healthy))
+    event = {'event': 'trip.board.update'}
+    room.publish(event)
+    assert healthy.get_nowait() == event
+    assert slow.get_nowait() is None
+    assert slow not in room.subscribers and healthy in room.subscribers

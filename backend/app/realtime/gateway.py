@@ -167,7 +167,13 @@ async def socket_room(socket: WebSocket, trip_id: UUID):
         while not sender_task.done():
             # The timeout also closes idle sockets after token expiry/revocation.
             try:
-                raw = await asyncio.wait_for(socket.receive_text(), timeout=5)
+                frame = await asyncio.wait_for(socket.receive(), timeout=5)
+                if frame['type'] == 'websocket.disconnect':
+                    break
+                if frame.get('text') is None:
+                    await socket.close(code=1003)
+                    break
+                raw = frame['text']
             except asyncio.TimeoutError:
                 if not await socket_actor(socket,trip_id,token):
                     await socket.close(code=1008)

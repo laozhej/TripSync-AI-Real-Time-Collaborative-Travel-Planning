@@ -156,3 +156,7 @@ Vote opening example: `{"commandId":"<uuid>","correlationId":"<uuid>","expectedV
 Weighted split example: `{"commandId":"<uuid>","correlationId":"<uuid>","itemId":"<uuid>","expectedPositionVersion":1,"attendeeIds":["<userUUID1>","<userUUID2>"],"splitMode":"weighted","weights":{"<userUUID1>":1,"<userUUID2>":2}}`. Even split accepts no explicit weights. Pin accepts the same optional weighted configuration, while omitted attendees with even mode freeze all currently active memberships.
 
 Catalog's optional `tripId=<uuid>` retrieves that member trip's pinned version; without it the mandatory destination/near/radius example continues to return the active version. Existing PRD mandatory create/catalog/ask examples and compatibility fields are preserved. Final analytics expose proposed and Locked totals separately; finalized sessions require them to agree. Running duration is explicitly as-of-query; finalized duration is exact ended_at minus started_at. A missing historical boundary is labeled unknown.
+# Phase 4 transport limits
+
+All HTTP request bodies are limited to 2 MiB before parsing, including chunked input; overflow returns 413 with a generic detail. API responses include `Cache-Control: no-store`, `X-Content-Type-Options: nosniff` and `Referrer-Policy: no-referrer`. The shareable local collection is `http/tripsync.http`; keep substituted tokens/invites in private client variables.
+

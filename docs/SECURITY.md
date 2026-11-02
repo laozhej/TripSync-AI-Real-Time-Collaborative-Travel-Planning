@@ -24,19 +24,9 @@ Questions/descriptions are untrusted prompt data. Only validated IDs/field refer
 
 `.env`, DB dumps, tokens, raw uploads and model caches are ignored; commit `.env.example` names with empty/safe placeholders only. Secret scans run on staged changes and full history before submission. If exposed, revoke/rotate immediately and remove from history as a separate deliberate recovery operation. Logs include event type, trip/session correlation, actor pseudonym, timing, outcome and source IDs; exclude password, token, invite code, email, full question/chat and raw model response. AI request/response logging (§10.3) means safe structured summaries/status/source IDs and hashes, not sensitive bodies.
 
-## Planned security verification
+## Security verification catalog
 
 SEC-01 forged/expired/wrong-audience JWT, refresh reuse, logout socket closure and origin/CSRF; SEC-02 complete HTTP and socket role matrix including Admin without membership; SEC-03 cross-trip ID substitution and removed users; SEC-04 stored-XSS/SQL injection, malformed/oversized input and upload attacks; SEC-05 prompt injection/citation escape; SEC-06 secret scan and safe logging. Each rejection must leave state unchanged. No passed security assessment is claimed.
-
-The code now contains Argon2id password and signed access-token primitives. These are not an authentication service: session checks, rotation/reuse handling, rate limits, transport integration and the role matrix remain unimplemented and unverified. See [evidence](PHASE_1_EVIDENCE.md).
-
-A pure shared role/capability policy has unit tests, but is not wired to HTTP or sockets. The phase 1 security acceptance remains unmet.
-
-Trip detail reads now require active membership, and login/registration reject a supplied untrusted Origin. These are partial checks and do not establish socket authorization, removal closure, or the full security matrix.
-
-First-slice tests now cover Viewer pin rejection via both transports and immediate socket closure after logout; other role combinations, token expiry timing, cross-trip object substitution and the complete matrix remain pending. See [evidence](PHASE_1_EVIDENCE.md).
-
-The 2026-10-30 role tests also cover expired credentials and an Admin without trip membership on HTTP/socket, plus invite-management denial for Planner and outsider accounts. The complete role matrix, concurrent redemption and removed-membership cases remain pending.
 
 The first-slice role and session checks are documented in [phase 1 evidence](PHASE_1_EVIDENCE.md). They do not replace the later complete security assessment. Socket token/membership validity is polled at up to five-second intervals while idle; explicit logout and detected refresh reuse close tracked sockets. Full moderation, input and prompt-injection tests remain later work.
 
@@ -45,3 +35,9 @@ The first-slice role and session checks are documented in [phase 1 evidence](PHA
 The shared room services re-read current membership/session and role on sensitive changes. Admin does not bypass trip membership or Leader permissions. Removal closes every tracked membership tab and rejects both new and cached invite redemption. Tests cover Planner/Viewer/Admin rejection, foreign-trip message/source/attendee/anchor IDs, mute enforcement, stale settings, atomic transfer, revoked sessions, invalid text and context removal during generation. Browser token refresh is exercised with a test-only short first token and refresh failure returns to sign-in. Operational logs use a field whitelist; local inference receives only bounded eligible source context, never credentials or full chat history. Model IDs/reason fields and source versions are validated independently of schema generation, with React text rendering and no arbitrary source URLs.
 
 These are actual Phase 2 checks, not the final SEC-01..06 audit. Full later-feature upload/recommendation/voting security and global limits remain TASK-021 and related features. See [evidence](PHASE_2_EVIDENCE.md).
+
+## Phase 4 transport hardening — 2026-11-02
+
+`app/transport.py` caps every HTTP body at 2 MiB before JSON parsing or route execution, including chunked bodies and misleading Content-Length. It adds no-store, nosniff and no-referrer response headers. Dataset validation retains its own limit. Oversized WebSocket text closes 1009; binary input closes 1003 rather than raising an unhandled text-frame exception. Existing 40-commands/second socket limit and bounded subscriber queues remain in force. These process-local controls do not constitute a public-internet deployment profile or comprehensive global HTTP request throttling.
+
+`test_phase4_security.py` consolidates later-feature member/outsider-Admin reads, mutation denials, body identity/foreign venue rejection, malformed JSON/envelopes, binary/oversized sockets and bad origins. Existing auth/moderation/Concierge/Phase 3 tests cover valid-object role restrictions, revocation/expiry/removal, refresh reuse, upload validation, prompt/citation boundaries and atomic failures. `test_transport_limits.py` proves exact-limit acceptance and streamed overflow rejection before route execution. Final commands, scan scope and limitations are recorded in PHASE_4_EVIDENCE.md when run.

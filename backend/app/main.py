@@ -48,6 +48,8 @@ async def lifespan(app: FastAPI):
         await app.state.engine.dispose()
 
 app = FastAPI(title="TripSync AI", lifespan=lifespan)
+from app.transport import TransportGuard
+app.add_middleware(TransportGuard)
 app.include_router(auth_router)
 app.include_router(catalog_router)
 app.include_router(trips_router)

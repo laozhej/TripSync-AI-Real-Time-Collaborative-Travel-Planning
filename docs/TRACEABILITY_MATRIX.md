@@ -99,3 +99,7 @@ Presentation improvements for REQ-005–010, REQ-018–025 and REQ-027 are track
 Frontend follow-up implementation: `main.jsx`/BoardGrid (REQ-005–010/027), PlanningPanel/SplitEditor (REQ-018–020/023–024), Dashboard (REQ-022), DatasetAdmin (REQ-011/025) and ConciergePanel (REQ-017/021). Existing commands and actor/version semantics are preserved. Browser checks and disclosed limits are in FRONTEND_UI_EVIDENCE.md.
 
 The user-supplied working draft subsequently established the actual sidebar/page layout. `workspace/TripOverview.jsx` and revised main/CSS preserve the existing contracts while supplying separate connected screens; new and adapted browser checks are recorded in FRONTEND_UI_EVIDENCE.md.
+# Phase 4 additions (2026-11-02)
+
+REQ-029/031: `app/transport.py`, `test_transport_limits.py`, `test_phase4_security.py` add pre-parser body bounds, clean frame rejection and later-feature identity/isolation consolidation. `test_room_actor.py` additionally exercises slow-subscriber eviction. REQ-027/028: `test_phase4_restore.py` adds actual logical backup/all-table digest restore and overdue-election recovery, independently checked exact INR weights. REQ-030: `phase4_measure.py` and instrumented `browser_phase1.py` collect real socket/HTTP/model and separate browser render samples. These paths are implementation coverage; final task acceptance and measured outcomes are recorded in PHASE_4_EVIDENCE.md.
+
