@@ -83,6 +83,7 @@ function App() {
     [venues, V] = useState([]),
     [invite, I] = useState(""),
     [mode, M] = useState("login");
+  const [restoringSession, setRestoringSession] = useState(true);
   const [inviteId, II] = useState(""),
     [inviteRole, IR] = useState("planner"),
     [typing, ST] = useState({}),
@@ -110,6 +111,26 @@ function App() {
       roomEpoch: "",
     }),
     boardTrip = useRef("");
+  useEffect(() => {
+    let active = true;
+    // Access tokens stay in memory. A reload restores them from the existing
+    // HttpOnly refresh cookie, never from browser storage.
+    const hasSession = document.cookie
+      .split("; ")
+      .some((cookie) => cookie.startsWith("tripsync_csrf="));
+    if (!hasSession) {
+      setRestoringSession(false);
+      return;
+    }
+    refreshSession()
+      .catch((error) => {
+        if (active) E(error.message);
+      })
+      .finally(() => {
+        if (active) setRestoringSession(false);
+      });
+    return () => { active = false; };
+  }, []);
   useEffect(() => {
     if (!room?.tripId || !token) return;
     ST({});
@@ -586,6 +607,39 @@ function App() {
       E(error.message);
     }
   }
+  function refreshSession() {
+    if (!refreshing.current) {
+      refreshing.current = (async () => {
+        const csrf = document.cookie
+          .split("; ")
+          .find((cookie) => cookie.startsWith("tripsync_csrf="))
+          ?.split("=")[1] || "";
+        const response = await fetch("/api/v1/auth/refresh", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "X-CSRF-Token": decodeURIComponent(csrf) },
+        });
+        if (!response.ok) {
+          tokenRef.current = "";
+          T("");
+          U(null);
+          M("login");
+          R(null);
+          I("");
+          II("");
+          throw Error("Your session has expired. Please sign in again.");
+        }
+        const result = await response.json();
+        tokenRef.current = result.accessToken;
+        T(result.accessToken);
+        U(result.user);
+        return result.accessToken;
+      })().finally(() => {
+        refreshing.current = null;
+      });
+    }
+    return refreshing.current;
+  }
   async function api(url, options = {}, access = tokenRef.current) {
     const send = (key) => {
       const csrf =
@@ -608,37 +662,7 @@ function App() {
     };
     let r = await send(access);
     if (r.status === 401 && access) {
-      if (!refreshing.current) {
-        refreshing.current = (async () => {
-          const csrf =
-            document.cookie
-              .split("; ")
-              .find((x) => x.startsWith("tripsync_csrf="))
-              ?.split("=")[1] || "";
-          const rr = await fetch("/api/v1/auth/refresh", {
-            method: "POST",
-            credentials: "same-origin",
-            headers: { "X-CSRF-Token": decodeURIComponent(csrf) },
-          });
-          if (!rr.ok) {
-            tokenRef.current = "";
-            T("");
-            U(null);
-            M("login");
-            R(null);
-            I("");
-            II("");
-            throw Error("Your session has expired. Please sign in again.");
-          }
-          const result = await rr.json();
-          tokenRef.current = result.accessToken;
-          T(result.accessToken);
-          return result.accessToken;
-        })().finally(() => {
-          refreshing.current = null;
-        });
-      }
-      r = await send(await refreshing.current);
+      r = await send(await refreshSession());
     }
     if (!r.ok) {
       const d = await r.json().catch(() => ({}));
@@ -879,7 +903,9 @@ function App() {
             {error}
           </p>
         )}
-        {!user ? (
+        {restoringSession ? (
+          <p role="status">Restoring your session…</p>
+        ) : !user ? (
           <div className="welcome" id="workspace-content" tabIndex={-1}>
             <section>
               <h1>

@@ -112,3 +112,16 @@ Latest unit/build checks: 8 unit tests passed; Vite build succeeded with 34 modu
 Final draft-layout regression results: both existing browser programs, the adapted three-role frontend regression and the new draft-layout browser test passed. The three-role flow verified Viewer restrictions/chat, explicit stale move reconciliation, overlap and personal budget correction, actual no-turnout cancellation, keyboard skip focus, themes and responsive widths; all tested page audits reported zero violations/incomplete checks. The test's last selector correction made the budget-conflict card heading exact (it otherwise also matched the page section heading). No backend behavior was changed to satisfy a test.
 
 Final visual review confirms the draft's sidebar/header/overview composition on real snapshot data. Mobile page focus now preserves scroll position so the page title remains visible under the sticky header. A non-Admin account cannot remain on an Admin view inherited from a prior session. Latest build: 34 modules, JS 293.22 kB / 89.01 kB gzip; CSS 24.90 kB / 5.83 kB gzip. Design detector only flagged the explicitly requested Inter font twice. No Phase 4/security/performance/certification claim follows from these UI checks.
+# Reload authentication fix — 2026-11-02
+
+User report: reloading returned to login. A real Chrome reproduction (`backend/tests/browser_session_restore.py`) failed before the fix because the authenticated dashboard did not return after reload. Root cause: startup initialized the in-memory token/user to empty, and refresh was only attempted after a 401 with a nonempty access token. Existing refresh cookies were never used at startup; earlier setup wording overstated that behavior.
+
+`frontend/src/main.jsx` now performs startup refresh and shows a restoring status until completion. The same deduplicated helper handles normal 401 refresh/retry and restores user/token from the server; access tokens remain in memory. No backend/security policy, dependency or room business rule changed. Reload returns a valid account to its dashboard, with existing rooms available through rejoin; it does not persist transient room-page UI state.
+
+Actual commands/results (from repository root):
+
+- `BROWSER_API_PORT=8012`, `BROWSER_WEB_PORT=5182`; `.venv/Scripts/python backend/tests/browser_clean_setup.py backend/tests/browser_session_restore.py`: PASS for anonymous startup, an injected first-request 401 followed by real refresh/retry and room creation, two authenticated reloads with exactly one cookie rotation each and no login-form flash, logout/reload and server-revoked-session reload. No page errors; disposable database removed. The first narrower regression also passed before the 401-retry case was added.
+- `npm run test:unit --prefix frontend`: 8 passed, no skips.
+- `npm run build --prefix frontend`: succeeded, 34 modules; JavaScript 293.53 kB / 89.05 kB gzip; CSS 24.90 kB / 5.83 kB gzip.
+- `git diff --check`: passed. Backend application files/contracts are unchanged, so the backend suite was not rerun for this frontend fix. Earlier Phase 4 timing/target limitations remain historical and are not remeasured here.
+
