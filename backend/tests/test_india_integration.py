@@ -27,7 +27,7 @@ def test_indian_room_budget_events_and_grounded_currency(client,group):
         assert update['payload']['budgetSummary']['currency']=='INR'
         assert configure(client,group,ceilings={'food':50000}).status_code==200
         async def generate(request):
-            data={'status':'answer','candidateIds':['v_1'],'reasonRefs':[{'sourceId':'v_1','fields':['pricePerPerson']}]}
+            data={'sourceId':'v_1'}
             return httpx.Response(200,json={'message':{'content':json.dumps(data)}})
         original=app.state.model_client
         fake=httpx.AsyncClient(transport=httpx.MockTransport(generate),base_url='http://127.0.0.1:11434')
