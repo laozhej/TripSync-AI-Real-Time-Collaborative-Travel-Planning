@@ -1,0 +1,11 @@
+{
+  "total_duration": 1980381200,
+  "load_duration": 7511100,
+  "prompt_eval_count": 250,
+  "prompt_eval_duration": 688063000,
+  "eval_count": 10,
+  "eval_duration": 1262874000,
+  "elapsedMs": 2053.7027999998827,
+  "status": "grounded",
+  "diagnosticOnlyDeadlineSeconds": 60
+}

@@ -1,0 +1,117 @@
+{
+  "startedUtc": "2026-11-02T05:03:58.178463+00:00",
+  "finishedUtc": "2026-11-02T05:09:36.155647+00:00",
+  "os": "Windows-11-10.0.26300-SP0",
+  "python": "3.13.1",
+  "clock": "one-process perf_counter; loopback; socket aggregate apply, excludes browser paint",
+  "clients": 10,
+  "distinctUsers": 5,
+  "rooms": 2,
+  "warmupSeconds": 1.336322100000075,
+  "mutations": {
+    "n": 1000,
+    "p50Ms": 8.41370000000552,
+    "p95Ms": 19.830900000101792,
+    "maxMs": 85.61340000005657
+  },
+  "interClientSpread": {
+    "n": 1000,
+    "p50Ms": 0.6746000000248387,
+    "p95Ms": 1.2934000000086598,
+    "maxMs": 4.9731000000292624
+  },
+  "joinSnapshot": {
+    "n": 12,
+    "p50Ms": 22.038699999939126,
+    "p95Ms": 70.94949999998335,
+    "maxMs": 70.94949999998335
+  },
+  "conflictDispatchToNotification": {
+    "n": 20,
+    "p50Ms": 107.19790000007379,
+    "p95Ms": 126.71780000005128,
+    "maxMs": 127.77029999995193
+  },
+  "staleRaces": 20,
+  "api": {
+    "analytics": {
+      "n": 200,
+      "p50Ms": 37.98119999999017,
+      "p95Ms": 61.23200000001816,
+      "maxMs": 106.31230000001324
+    },
+    "budgets": {
+      "n": 200,
+      "p50Ms": 20.499500000028092,
+      "p95Ms": 40.04720000000361,
+      "maxMs": 65.71039999994355
+    },
+    "conflicts": {
+      "n": 200,
+      "p50Ms": 20.78500000004624,
+      "p95Ms": 36.55960000003233,
+      "maxMs": 49.035900000035326
+    },
+    "planning": {
+      "n": 200,
+      "p50Ms": 20.233200000006946,
+      "p95Ms": 30.433099999982005,
+      "maxMs": 48.836499999993066
+    },
+    "recommendations": {
+      "n": 200,
+      "p50Ms": 18.16550000000916,
+      "p95Ms": 33.2204000000047,
+      "maxMs": 98.78809999997884
+    }
+  },
+  "httpFailures": 0,
+  "model": {
+    "models": [
+      {
+        "name": "qwen2.5:1.5b",
+        "model": "qwen2.5:1.5b",
+        "modified_at": "2026-10-31T11:54:56.9119717+05:30",
+        "size": 986061892,
+        "digest": "65ec06548149b04c096a120e4a6da9d4017ea809c91734ea5631e89f96ddc57b",
+        "details": {
+          "parent_model": "",
+          "format": "gguf",
+          "family": "qwen2",
+          "families": [
+            "qwen2"
+          ],
+          "parameter_size": "1.5B",
+          "quantization_level": "Q4_K_M",
+          "context_length": 32768,
+          "embedding_length": 1536,
+          "runner": "ggml"
+        },
+        "capabilities": [
+          "completion",
+          "tools"
+        ]
+      }
+    ]
+  },
+  "ai": {
+    "cold": {
+      "grounded_fallback": {
+        "n": 1,
+        "p50Ms": 2557.704600000079,
+        "p95Ms": 2557.704600000079,
+        "maxMs": 2557.704600000079
+      }
+    },
+    "unpreloadedRetries": {
+      "grounded_fallback": {
+        "n": 100,
+        "p50Ms": 2546.786500000053,
+        "p95Ms": 2573.707499999955,
+        "maxMs": 2683.0873999999767
+      }
+    }
+  },
+  "datasetSha256": "99e9adb075ab9a0938f6dbaa6424f89690143c1dcfe76484b45af48fb59194c8",
+  "profileNote": "Initial script did not complete a preload after cold timeout. These 100 retries are not warm-model evidence."
+}

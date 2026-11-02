@@ -1,0 +1,2 @@
+Two browser sessions: grid drag/drop, real Concierge/citations, chat, expired-token refresh, reconnect, moderation and revoked-session sign-in succeeded; join to snapshot 574.2 ms
+Disposable browser database removed

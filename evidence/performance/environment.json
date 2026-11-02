@@ -1,0 +1,15 @@
+{
+  "cpu": "Intel(R) Core(TM) i7-10875H CPU @ 2.30GHz",
+  "physicalCores": 8,
+  "logicalProcessors": 16,
+  "ramBytes": 34164142080,
+  "gpus": [
+    "Intel(R) UHD Graphics",
+    "NVIDIA GeForce RTX 2070 Super"
+  ],
+  "node": "v24.13.0",
+  "npm": "9.9.4",
+  "pgDump": "pg_dump (PostgreSQL) 18.1",
+  "network": "Single Windows host; loopback HTTP/WebSocket; no LAN/NTP one-way clock claim",
+  "background": "Existing local desktop/dev processes; isolated restore tests, npm dependency checks and Chrome UI verification overlapped portions of the run; no recommendation training during measured load"
+}

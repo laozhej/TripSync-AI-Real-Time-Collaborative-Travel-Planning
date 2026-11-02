@@ -1,0 +1,11 @@
+Sanitized failure history, curated from actual tool output on 2026-11-02.
+
+1. Initial live-model integration failed with local inference ConnectError while Ollama was stopped.
+2. First load attempt completed 1000 moves / 1000 reads / 20 races / 20 conflicts, then aborted at unavailable model service. It did not produce model-success evidence.
+3. After runtime start, unpreloaded retry profile yielded 101 grounded_fallback responses. These retries are not warm inference evidence.
+4. Baseline completed preload profile still yielded one cold and 100 warm fallbacks. Separate old-schema diagnostic: grounded after 10193.48 ms, 53 generated tokens, diagnostic-only deadline 60 s.
+5. Compact-schema unit reproduction: 1 failed / 8 passed before implementation; compact source-ID output was initially rejected by the old validator. After implementation: 9 passed.
+6. Frontend npm ci against a running checkout failed EPERM on Windows native Rollup/esbuild modules. Dependencies were restored with npm install --ignore-scripts in frontend; isolated npm ci then succeeded, and frontend unit/build passed.
+7. Full-suite wrapper timed out at 180 s, and later at 300 s. Auth module independently passed 4 tests in 19.84 s; security module passed 3 tests in 23.62 s. Final full fresh-environment run passed all 116 in 173.45 s. Precise intermittent scheduling/stall cause is unestablished; no tests disabled.
+8. A browser model request overlapped final AI measurement and returned grounded fallback. The same profile retained one warm fallback among 100 requests. Independent final browser replay passed real model/citation/refresh/reconnect/moderation checks.
+9. Strict maximum sync target missed in 1/1000 socket moves and 1/2 final rendered browser move observations. Cold inference and rendered-AI P95 remain unaccepted. These are not erased by passing unit/functional tests.

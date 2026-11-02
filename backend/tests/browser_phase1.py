@@ -1,5 +1,6 @@
 """Opt-in two-browser smoke test. Uses disposable PostgreSQL and removes its own records."""
 import asyncio
+import json
 import os
 import re
 import secrets
@@ -56,7 +57,29 @@ try:
         for context in contexts:
             context.add_init_script("""(() => {
                 const Native = window.WebSocket; window.__testSockets = [];
-                function TrackingSocket(...args) { const socket = new Native(...args); window.__testSockets.push(socket); return socket; }
+                window.__paintSamples = []; window.__moveDispatches = {};
+                function TrackingSocket(...args) {
+                    const socket = new Native(...args); window.__testSockets.push(socket);
+                    const send = socket.send.bind(socket);
+                    socket.send = data => {
+                        try { const m=JSON.parse(data); if(m.event==='trip.board.move')
+                            window.__moveDispatches[m.payload.commandId]=performance.timeOrigin+performance.now(); } catch {}
+                        return send(data);
+                    };
+                    socket.addEventListener('message', event => {
+                        const m=JSON.parse(event.data);
+                        if(m.event!=='trip.board.update' || m.payload.operation!=='move') return;
+                        const expected=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit'}).format(new Date(m.payload.item.startTime));
+                        const began=performance.now();
+                        function painted() {
+                            if([...document.querySelectorAll('.gridCard')].some(c=>c.textContent.includes(expected+' IST'))) {
+                                requestAnimationFrame(()=>window.__paintSamples.push({commandId:m.payload.commandId,paintEpochMs:performance.timeOrigin+performance.now()}));
+                            } else if(performance.now()-began<5000) requestAnimationFrame(painted);
+                        }
+                        requestAnimationFrame(painted);
+                    });
+                    return socket;
+                }
                 TrackingSocket.prototype = Native.prototype; Object.setPrototypeOf(TrackingSocket, Native);
                 window.WebSocket = TrackingSocket;
             })()""")
@@ -129,6 +152,18 @@ try:
             expect(page.locator('.gridCard').first).to_contain_text('2026-11-11 14:00 IST')
             page.get_by_text('All displayed changes saved').wait_for()
         expect(leader.get_by_role('region',name='Scrollable itinerary grid')).to_be_visible()
+        planner.wait_for_timeout(100)
+        dispatches = planner.evaluate('window.__moveDispatches')
+        paints = [page.evaluate('window.__paintSamples') for page in pages]
+        render_samples = []
+        for command, dispatched in dispatches.items():
+            matches = [[s['paintEpochMs'] for s in values if s['commandId']==command] for values in paints]
+            assert all(matches), 'Both browsers must paint each accepted move'
+            render_samples.append(max(max(values) for values in matches)-dispatched)
+        output = Path('evidence/performance')
+        output.mkdir(parents=True, exist_ok=True)
+        (output/'browser-render.json').write_text(json.dumps({'method':'same-host Chromium performance.timeOrigin + performance.now; matching DOM then next animation frame; two contexts; no LAN calibration',
+            'joinToSnapshotMs':snapshot_ms,'moveToBothPaintMs':render_samples},indent=2),encoding='utf-8')
         if os.environ.get('UI_AXE_PATH'):
             audit(leader,'final-region-room-light')
             leader.set_viewport_size({'width':1440,'height':1000})
@@ -146,8 +181,14 @@ try:
         leader.get_by_label('Group category ceiling (INR/person)').fill('500.00')
         leader.get_by_role('button',name='Save group ceiling',exact=True).click()
         expect(leader.get_by_role('button',name='Save group ceiling',exact=True)).to_be_enabled()
+        ai_started = time.perf_counter()
         leader.get_by_role('button',name='Ask Concierge',exact=True).click()
         expect(leader.locator('.concierge [role=status] strong')).to_have_text('grounded',timeout=15000)
+        leader.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))')
+        record = json.loads((output/'browser-render.json').read_text(encoding='utf-8'))
+        record['aiClickToRenderedMs'] = (time.perf_counter()-ai_started)*1000
+        record['aiTimingNote'] = 'One real grounded UI answer; includes Playwright click/assertion overhead and two animation frames; not an AI P95 distribution'
+        (output/'browser-render.json').write_text(json.dumps(record,indent=2),encoding='utf-8')
         leader.get_by_role('button',name='venue:v_1@1',exact=True).click()
         expect(leader.get_by_text('venue:v_1@1 · Synthetic authored source',exact=True)).to_be_visible()
         leader.get_by_role('button',name='Room controls',exact=True).click()

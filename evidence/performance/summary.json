@@ -1,0 +1,116 @@
+{
+  "startedUtc": "2026-11-02T05:11:02.134025+00:00",
+  "finishedUtc": "2026-11-02T05:16:54.835048+00:00",
+  "os": "Windows-11-10.0.26300-SP0",
+  "python": "3.13.1",
+  "clock": "one-process perf_counter; loopback; socket aggregate apply, excludes browser paint",
+  "clients": 10,
+  "distinctUsers": 5,
+  "rooms": 2,
+  "warmupSeconds": 1.3164286999999604,
+  "mutations": {
+    "n": 1000,
+    "p50Ms": 10.321100000055594,
+    "p95Ms": 25.172999999995227,
+    "maxMs": 144.22510000008515
+  },
+  "interClientSpread": {
+    "n": 1000,
+    "p50Ms": 0.8827999999994063,
+    "p95Ms": 1.7224000000624073,
+    "maxMs": 12.348499999916385
+  },
+  "joinSnapshot": {
+    "n": 12,
+    "p50Ms": 34.34419999985039,
+    "p95Ms": 129.61949999998978,
+    "maxMs": 129.61949999998978
+  },
+  "conflictDispatchToNotification": {
+    "n": 20,
+    "p50Ms": 110.28790000000299,
+    "p95Ms": 133.23910000008254,
+    "maxMs": 137.954499999978
+  },
+  "staleRaces": 20,
+  "api": {
+    "analytics": {
+      "n": 200,
+      "p50Ms": 48.067200000105004,
+      "p95Ms": 78.99159999988115,
+      "maxMs": 135.87869999992108
+    },
+    "budgets": {
+      "n": 200,
+      "p50Ms": 27.11859999999433,
+      "p95Ms": 49.032000000124754,
+      "maxMs": 80.00919999994949
+    },
+    "conflicts": {
+      "n": 200,
+      "p50Ms": 26.193700000021636,
+      "p95Ms": 51.660699999956705,
+      "maxMs": 79.2993000000024
+    },
+    "planning": {
+      "n": 200,
+      "p50Ms": 25.258899999926143,
+      "p95Ms": 45.81770000004326,
+      "maxMs": 105.39119999998547
+    },
+    "recommendations": {
+      "n": 200,
+      "p50Ms": 23.21210000013707,
+      "p95Ms": 51.031699999839475,
+      "maxMs": 185.94039999993583
+    }
+  },
+  "httpFailures": 0,
+  "model": {
+    "models": [
+      {
+        "name": "qwen2.5:1.5b",
+        "model": "qwen2.5:1.5b",
+        "modified_at": "2026-10-31T11:54:56.9119717+05:30",
+        "size": 986061892,
+        "digest": "65ec06548149b04c096a120e4a6da9d4017ea809c91734ea5631e89f96ddc57b",
+        "details": {
+          "parent_model": "",
+          "format": "gguf",
+          "family": "qwen2",
+          "families": [
+            "qwen2"
+          ],
+          "parameter_size": "1.5B",
+          "quantization_level": "Q4_K_M",
+          "context_length": 32768,
+          "embedding_length": 1536,
+          "runner": "ggml"
+        },
+        "capabilities": [
+          "completion",
+          "tools"
+        ]
+      }
+    ]
+  },
+  "ai": {
+    "cold": {
+      "grounded_fallback": {
+        "n": 1,
+        "p50Ms": 2596.171300000151,
+        "p95Ms": 2596.171300000151,
+        "maxMs": 2596.171300000151
+      }
+    },
+    "warm": {
+      "grounded_fallback": {
+        "n": 100,
+        "p50Ms": 2553.3640999999534,
+        "p95Ms": 2575.6264999999985,
+        "maxMs": 2602.9259999997976
+      }
+    }
+  },
+  "datasetSha256": "99e9adb075ab9a0938f6dbaa6424f89690143c1dcfe76484b45af48fb59194c8"
+}

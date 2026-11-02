@@ -1,0 +1,10 @@
+{
+  "method": "same-host Chromium performance.timeOrigin + performance.now; matching DOM then next animation frame; two contexts; no LAN calibration",
+  "joinToSnapshotMs": 574.2218000000321,
+  "moveToBothPaintMs": [
+    133.300048828125,
+    63.89990234375
+  ],
+  "aiClickToRenderedMs": 3197.323000000324,
+  "aiTimingNote": "One real grounded UI answer; includes Playwright click/assertion overhead and two animation frames; not an AI P95 distribution"
+}

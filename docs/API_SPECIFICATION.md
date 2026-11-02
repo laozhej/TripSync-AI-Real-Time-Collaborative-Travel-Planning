@@ -1,10 +1,10 @@
 # REST specification
 
-API v1 design, PRD §7.3. Implementation notes and the Phase 3 contract below identify live routes; remaining inventory entries are planned. Base `/api/v1`; JSON UTF-8, unknown fields rejected. Authentication derives actor from JWT `sub`; a body `userId` is rejected, never trusted. Membership/capabilities are read server-side. See [security](SECURITY.md) and [socket schemas](WEBSOCKET_PROTOCOL.md).
+Implemented API v1, PRD §7.3. Base `/api/v1`; JSON UTF-8, unknown fields rejected. Authentication derives actor from JWT `sub`; a body `userId` is rejected, never trusted. Membership/capabilities are read server-side. The running `/openapi.json` and `/docs` expose actual request/response schemas. See [security](SECURITY.md) and [socket schemas](WEBSOCKET_PROTOCOL.md).
 
 ## Common rules
 
-Bearer access JWT for authenticated HTTP. Same-origin refresh and WebSocket access cookies described in SECURITY. All member routes return 404 for an inaccessible trip; 403 for a forbidden capability within a visible trip. Admin routes require account Admin. `X-Correlation-ID` is accepted only as bounded UUID or replaced; response returns it. Mutations accept UUID `Idempotency-Key` (required for create/join/ask); same actor/key/body returns saved result; mismatched body 409. Retain committed keys for 24 h, provisional. Room commands also carry `commandId` and expected versions, using the same service as sockets.
+Bearer access JWT for authenticated HTTP. Same-origin refresh and WebSocket access cookies are described in SECURITY. Member routes return 404 for an inaccessible trip; role-forbidden commands generally return 403, with domain-specific 409 conflicts. Admin routes require account Admin. Room commands carry bounded UUID `correlationId` in JSON; no general X-Correlation-ID middleware is implemented. UUID `Idempotency-Key` is required for create/join/ask; same actor/key/body returns the saved result and mismatched body returns 409. The provisional 24-hour create/join replay policy does not yet have automated deletion. Other room commands carry `commandId` and expected versions, using the same services as sockets.
 
 Lists: `limit` 1..100 default 25, opaque `cursor`; response `{items:[],nextCursor:null}`; venues retain `{destination,venues:[],nextCursor}`. Cursors use stable `(createdAt,id)` or `(score,id)` plus filter/model version; invalid/expired cursor 422. ISO dates and offset-bearing datetimes; integer minor-unit amounts except mandatory-example compatibility fields noted below. Max normal body 64 KiB; text length limits apply after Unicode normalization. No raw HTML accepted.
 
@@ -24,25 +24,18 @@ Error shape:
 | POST `/auth/login` | Public, rate limited | email,password → 200 accessToken,expiresIn,user; sets cookies |
 | POST `/auth/refresh` | Refresh cookie + origin/CSRF | no body → rotated cookies + accessToken |
 | POST `/auth/logout` | Auth/refresh session | no body → 204, revoke session family, clear cookies |
-| GET/PATCH `/me` | Auth | read or `{displayName,preferences}` → user; preferences validates dietary tags and ceilings |
-| GET `/me/trips` | Auth | status/history filters → paged joined trips with membership role and canRejoin |
-| GET `/me/preferences` | Auth | → declared and derived profile, sampleCount, asOf |
+| GET `/me/dashboard` | Auth | joined trip history/rejoin, declared diets and derived categories/per-currency observed ranges |
 | POST `/trips` | Any Auth | mandatory example below → 201 trip |
 | GET `/trips/{id}` | Member | → trip settings, role, member summaries and current versions |
-| PATCH `/trips/{id}` | Leader | `{expectedStateVersion,settings?,status?,totalBudget?,categoryCeilingsMinor?}` → trip; finalization validates unresolved work |
+| POST `/trips/{id}/constraints` | Self or connected Leader | versioned self preferences or group category ceilings |
+| POST `/trips/{id}/finalize` | Connected Leader | command IDs and expectedStateVersion; requires resolved conflicts/votes and Locked items |
 | POST `/trips/{id}/invites` | Leader | `{role,maxUses,expiresAt}` → 201 inviteCode,inviteUrl; code shown once |
 | DELETE `/trips/{id}/invites/{inviteId}` | Leader | → 204 revoked |
 | POST `/trips/join` | Auth | `{inviteCode}` → 200 tripId,role; repeated member join idempotent |
-| GET `/trips/{id}/members` | Member | → paged membership list |
-| PATCH `/trips/{id}/members/{memberId}` | Leader or self constraints only | `{expectedStateVersion,role?,canPin?,muted?,status?,constraints?}` → membership; self cannot set role/status; Leader may explicitly restore removed membership subject to capacity |
-| DELETE `/trips/{id}/members/{memberId}` | Leader, or self leave | → 204; Leader must transfer first; removal revokes sockets |
-| POST `/trips/{id}/leadership` | Leader | `{nextLeaderUserId,expectedStateVersion}` → 200 new Leader; atomic swap |
-| GET `/trips/{id}/board` | Member | → full snapshot as in socket protocol |
+| POST `/trips/{id}/moderation` | Connected Leader | command IDs, expectedStateVersion, action mute/unmute/remove/lockRoom/unlockRoom/transfer and optional targetUserId |
+| GET `/trips/{id}/planning` | Member | → full actor-authorized snapshot including members/board/budgets/chat/votes/conflicts |
 | POST `/trips/{id}/items` | Planner canPin/Leader | `{venueId,dayIndex,startTime,endTime,attendeeIds,splitMode,weights?}` → 201 item,roomSeq,durable=false |
-| PATCH `/trips/{id}/items/{itemId}` | Planner canPin/Leader | `{expectedPositionVersion,dayIndex?,startTime?,endTime?,attendeeIds?,weights?}` → applied item,seq,durability |
-| DELETE `/trips/{id}/items/{itemId}` | Planner canPin/Leader, Drafting | body `{expectedPositionVersion}` → 200 tombstone,seq,durability |
-| POST `/trips/{id}/items/{itemId}/lock` | Leader | `{expectedPositionVersion}` → 200 Locked item,durable=true |
-| POST `/trips/{id}/items/{itemId}/unlock` | Leader | `{expectedPositionVersion,reason}` → 200 Drafting item,durable=true |
+| POST `/trips/{id}/items/split` | Planner canPin/Leader | versioned attendee/even-or-weighted split edit; common command IDs |
 | POST `/trips/{id}/votes` | Leader | `{commandId,correlationId,expectedVersions:{itemUUID:version},durationSeconds?}` → 200 durable vote/affectedItems/budgetSummary |
 | POST `/trips/{id}/votes/cast` | Eligible Planner/Leader | `{commandId,correlationId,voteId,choiceVenueId,expectedBallotVersion}` → 200 durable vote; server actor |
 | GET `/trips/{id}/votes/{voteId}` | Member | → vote with counts/deadline/status/result |
@@ -51,9 +44,10 @@ Error shape:
 | GET `/trips/{id}/chat` | Member | before cursor → chat with reactions; committed only |
 | POST `/trips/{id}/chat` | Unmuted member | `{body}` → 201 durable message; socket equivalent preferred |
 | GET `/destinations/{destination}/venues` | Auth | near/radius/category/cursor → mandatory catalog response |
-| GET `/destinations/{destination}/venues/{venueId}` | Auth | datasetVersion query → full authored venue with citation ID |
+| GET `/trips/{id}/ai/sources/{citation}` | Member | canonical citation → authored source from the trip's immutable version |
 | POST `/trips/{id}/ai/ask` | Member | constrained request below → 200 answer/status/sources |
 | GET `/trips/{id}/recommendations` | Member | → top five exploratory items,modelVersion,hybridReady,generatedAt,interactionWatermark |
+| POST `/trips/{id}/recommendations/train` | Admin with membership | off-loop training and atomic artifact promotion |
 | POST `/trips/{id}/interactions` | Member | `{venueId,kind:"view"|"like",eventId}` → 201; pin/lock server-derived |
 | GET `/trips/{id}/analytics` | Member | → sessionId,throughSeq,duration/peak/AI/conflict metrics,finalBudgets |
 | POST `/admin/datasets` | Admin | UTF-8 JSON body ≤2 MiB → 201 staging datasetId/version or 422 bounded field paths |
@@ -61,9 +55,9 @@ Error shape:
 | GET `/admin/datasets` | Admin | → versions,validation status |
 | GET `/health/live`, `/health/ready`, `/health/gateway` | Private host probe | → status; ready 503 if DB/schema/actors unhealthy; no credentials |
 
-Room locking is PATCH settings `roomLocked`; mute/remove/transfer use routes above. Conflict resolution occurs by a successful item/budget edit or vote application and emits a resolved record; there is no “mark resolved” bypass. REST write responses include the same event identifiers as socket broadcasts so clients deduplicate.
+Room locking/mute/remove/transfer use the shared moderation command. Move/remove/lock/unlock are native WebSocket commands (`trip.board.move/remove/lock/unlock`), not additional REST routes. Conflict resolution occurs by a successful item/budget edit or vote application; there is no “mark resolved” bypass. Responses carry command/version identifiers for reconciliation.
 
-Membership PATCH accepts only viewer/planner roles; Leader changes use the atomic leadership endpoint. Restoring `status:active` is a Leader-only readmission with an audit event, not automatic redemption of an old invite. Member constraints contain dietaryTags, categoryCeilingsMinor and optional totalCeilingMinor; weights are per item. Dates/times, UUIDs, enums, integer money and version fields follow the schema and dataset guides; missing required fields return 422. List filters never bypass membership checks.
+Invites select viewer/planner roles; transfer atomically swaps Leader/Planner. Explicit readmission of removed members and a generic account/profile edit endpoint remain unimplemented extensions. Member constraints contain dietaryTags, categoryCeilingsMinor and optional totalCeilingMinor; weights are per item. Missing required fields return 422. List filters never bypass membership checks.
 
 ## Mandatory examples and mappings
 
@@ -156,7 +150,7 @@ Vote opening example: `{"commandId":"<uuid>","correlationId":"<uuid>","expectedV
 Weighted split example: `{"commandId":"<uuid>","correlationId":"<uuid>","itemId":"<uuid>","expectedPositionVersion":1,"attendeeIds":["<userUUID1>","<userUUID2>"],"splitMode":"weighted","weights":{"<userUUID1>":1,"<userUUID2>":2}}`. Even split accepts no explicit weights. Pin accepts the same optional weighted configuration, while omitted attendees with even mode freeze all currently active memberships.
 
 Catalog's optional `tripId=<uuid>` retrieves that member trip's pinned version; without it the mandatory destination/near/radius example continues to return the active version. Existing PRD mandatory create/catalog/ask examples and compatibility fields are preserved. Final analytics expose proposed and Locked totals separately; finalized sessions require them to agree. Running duration is explicitly as-of-query; finalized duration is exact ended_at minus started_at. A missing historical boundary is labeled unknown.
-# Phase 4 transport limits
+## Phase 4 transport limits
 
 All HTTP request bodies are limited to 2 MiB before parsing, including chunked input; overflow returns 413 with a generic detail. API responses include `Cache-Control: no-store`, `X-Content-Type-Options: nosniff` and `Referrer-Policy: no-referrer`. The shareable local collection is `http/tripsync.http`; keep substituted tokens/invites in private client variables.
 

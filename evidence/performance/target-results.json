@@ -1,0 +1,19 @@
+{
+  "httpPooled": {
+    "n": 1000,
+    "p50Ms": 28.452299999798925,
+    "p95Ms": 63.58670000008715,
+    "maxMs": 185.94039999993583
+  },
+  "boardOver100Ms": 1,
+  "boardMaxTargetMet": false,
+  "fanoutConservativeDispatchToAllUpperBoundMs": 144.22510000008515,
+  "conflictsWithin1SecondFraction": 1.0,
+  "warmAllResponsesIncludingFallback": {
+    "n": 100,
+    "p50Ms": 1472.136700000192,
+    "p95Ms": 1599.713100000372,
+    "maxMs": 2544.4635000003473
+  },
+  "warmGroundedFraction": 0.99
+}

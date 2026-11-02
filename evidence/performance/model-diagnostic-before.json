@@ -1,0 +1,12 @@
+{
+  "total_duration": 10079124100,
+  "load_duration": 10513600,
+  "prompt_eval_count": 682,
+  "prompt_eval_duration": 2707996000,
+  "eval_count": 53,
+  "eval_duration": 7325736000,
+  "elapsedMs": 10193.475799999987,
+  "status": "grounded",
+  "diagnosticOnlyDeadlineSeconds": 60,
+  "note": "Pre-optimization diagnostic captured in tool output; not application latency or a relaxed application deadline"
+}

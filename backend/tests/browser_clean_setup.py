@@ -75,7 +75,7 @@ async def main():
                     time.sleep(.25)
             else:
                 raise RuntimeError('Test server did not become ready')
-        result=subprocess.run([sys.executable, sys.argv[1] if len(sys.argv)>1 else 'backend/tests/browser_phase1.py'], cwd=ROOT, env=env, capture_output=True,text=True,timeout=150)
+        result=subprocess.run([sys.executable, sys.argv[1] if len(sys.argv)>1 else 'backend/tests/browser_phase1.py'], cwd=ROOT, env=env, capture_output=True,text=True,timeout=int(os.getenv('BROWSER_TEST_TIMEOUT','150')))
         if result.returncode:
             diagnostic=(result.stdout+'\n'+result.stderr).split('Aria snapshot:')[0]
             for secret in (env['DATABASE_URL'],env['JWT_SIGNING_KEY']):diagnostic=diagnostic.replace(secret,'[REDACTED]')

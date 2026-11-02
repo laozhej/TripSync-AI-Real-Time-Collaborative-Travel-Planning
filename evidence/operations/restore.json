@@ -1,0 +1,126 @@
+{
+  "tables": {
+    "ai_questions": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "alembic_version": {
+      "rows": 1,
+      "sha256": "082b76b4173c144d2cb77ee5a8cedc9202fc608c8915721541ecf8de31e779df"
+    },
+    "auth_sessions": {
+      "rows": 4,
+      "sha256": "0dfe44de9e60c4506d3ea2fea69f46c5fb2c6e431d537a6aeedd83f852620ef9"
+    },
+    "ballots": {
+      "rows": 1,
+      "sha256": "10793133179013d24b4fc37c12943e7485c20fc4f8077cf6168a72b5cf42ed33"
+    },
+    "chat_messages": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "conflict_changes": {
+      "rows": 1,
+      "sha256": "4eb58c13e6beba0fae79edd143afaed7c5e32fc1d3c3d8931ef1ba48132f4fe4"
+    },
+    "conflicts": {
+      "rows": 1,
+      "sha256": "5471069a3c9f955efa2155e75ad1f88d33cc5c9b030f76782ffee33458fd389e"
+    },
+    "datasets": {
+      "rows": 4,
+      "sha256": "f29399dd2f2cd2575764aedc4bb6ac18580ea6aa587cd4e2634a10ab99d4bd43"
+    },
+    "http_idempotency": {
+      "rows": 4,
+      "sha256": "8ee9c53181e8533508f5dda791e1232125e22041c627bacb759411d9646c2d3b"
+    },
+    "interactions": {
+      "rows": 2,
+      "sha256": "1fd4d5003d5f01391913f70971204c2274d31efb58cc729a7a5b6a550102badd"
+    },
+    "invites": {
+      "rows": 3,
+      "sha256": "7dd0e59582be615cf882e8372c59a0728732a6646fda7ce4506d1d0c3135c52b"
+    },
+    "item_attendees": {
+      "rows": 4,
+      "sha256": "cd676b1944330d404e0f250e31a6a278e361247c884836290e01df91233ca3c3"
+    },
+    "itinerary_items": {
+      "rows": 2,
+      "sha256": "10d5254691add436a2a4e261efe28aeb8f84bb80bd0c64fcb952a9cfa6acfd2f"
+    },
+    "memberships": {
+      "rows": 4,
+      "sha256": "9c9feb7c090e7f466041d6fd6c1c883fbc6dd275f9a43e273f3b3c8dc8f22cd3"
+    },
+    "model_artifacts": {
+      "rows": 2,
+      "sha256": "e56c2043d04b2f80650a5a0a1a1d76b2dc919603d01735d0cf2fa6d92fb77b04"
+    },
+    "presence_ledger": {
+      "rows": 4,
+      "sha256": "4337b11e910e5f38a799f1c9fbc66bec21619ddeffdaf16075cc9f16f3206fb8"
+    },
+    "reactions": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "refresh_tokens": {
+      "rows": 4,
+      "sha256": "bd4d390d70f75c95ccae4195c6e0692b2698e8f3b5e7ae40464783c6cb4b772b"
+    },
+    "room_events": {
+      "rows": 4,
+      "sha256": "cfe4624cfc92f072fde03e7c3bae187b894bc1b068593c485f6dd52296dc2a1c"
+    },
+    "room_snapshots": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "session_boundaries": {
+      "rows": 1,
+      "sha256": "c756e5b88aafc472cc44daf1b6268f29c58a810598abf355b7fc692ed0df141d"
+    },
+    "transit_metadata": {
+      "rows": 4,
+      "sha256": "0b77780b8ce524657de100eb2e4fab26b1276994223cece3302e595a96001c58"
+    },
+    "trips": {
+      "rows": 2,
+      "sha256": "cb89ff7337ac4b281ab9fc77b24c1c82fc6480c9ee228db45fe490490eaa5a55"
+    },
+    "users": {
+      "rows": 4,
+      "sha256": "832f61aefce98da5750b80a7303ac86070f1283d20276ddf6fc4c68fb3bb36fc"
+    },
+    "venue_dietary_tags": {
+      "rows": 28,
+      "sha256": "23ebb83b9210d14858fd538ecb830f765dc2204acb15a4d14dce1e0195ec333d"
+    },
+    "venue_metadata": {
+      "rows": 24,
+      "sha256": "d1f17de90100b3758ab11cfa40d2fc42392de80117d3c69d15ace43459313e2f"
+    },
+    "votes": {
+      "rows": 1,
+      "sha256": "7d7cc61c5cd68179edb43477efc9002521c7b25ebbc7f96c28e0851e06cb6351"
+    },
+    "weather_metadata": {
+      "rows": 4,
+      "sha256": "12eebddde164bf3ad02b32e546a36339b8dc5bdc427169ee5f4c58d7212c622a"
+    }
+  },
+  "allTableDigestsEqual": true,
+  "archiveSha256": "27075740833af12533d3fde860b3f7121397893ae56547660e014c77aec905f9",
+  "newEpoch": true,
+  "overdueVoteResolutions": 1,
+  "lockedMinor": 40000,
+  "independentWeightedAmounts": [
+    13333,
+    26667
+  ],
+  "repeatedTickNoDuplicate": true
+}

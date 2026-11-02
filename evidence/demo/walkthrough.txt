@@ -1,0 +1,36 @@
+Curated console transcript from actual 2026-11-02 tool runs.
+No raw HTTP headers, tokens, invitation codes, questions or database contents.
+
+Command: python backend/tests/browser_clean_setup.py backend/tests/browser_phase3.py
+Phase 3 Chrome: two participants, weighted split, system vote/ballots/deadline/winner, analytics, hybrid refresh, dashboard rejoin/history, Admin invalid/valid staging/activation, finalization; no page errors; 390px overflow check passed
+Disposable browser database removed
+
+Command: python backend/tests/browser_clean_setup.py backend/tests/browser_frontend_ui.py
+Frontend UI Chrome: Viewer restrictions/chat; stale move reconciliation; overlap and personal budget conflict resolution; real no-turnout cancellation; keyboard skip link; light/dark accessibility and responsive widths passed; no page errors
+Disposable browser database removed
+
+Command: python backend/tests/browser_clean_setup.py
+Two browser sessions: grid drag/drop, real Concierge/citations, chat, expired-token refresh, reconnect, moderation and revoked-session sign-in succeeded; join to snapshot 574.2 ms
+Disposable browser database removed
+
+Command: python backend/tests/browser_clean_setup.py backend/tests/phase4_measure.py
+PASS: 10 sockets / 5 distinct planners / 2 rooms; 1000 moves, 1000 HTTP reads, 20 stale races, 20 conflicts, aggregate/reconnect equality
+Raw distributions: evidence/performance/samples.json and summary.json
+This baseline's model requests all fell back; final optimized model distribution is ai-samples.json / ai-summary.json.
+
+Command: python backend/tests/recovery_phase2.py
+PASS: actual process kills discard only volatile pins; durable board/chat/reactions/leadership/budgets/session restore with new epochs
+PASS: PostgreSQL connection outage freezes the batch and mutations; restart restores committed watermark 5
+Disposable recovery database removed
+
+Command: fresh Python environment / backend/tests/clean_setup.py -vv -o faulthandler_timeout=30, RUN_LIVE_MODEL=1
+migration succeeded
+dataset import succeeded
+Indian dataset import succeeded
+tests: ================= 116 passed, 1 warning in 173.45s (0:02:53) ==================
+Disposable verification database removed
+
+Important: maximum socket sync 144.23 ms and rendered move 133.30 ms exceed 100 ms.
+Warm optimized HTTP model: 99 grounded / 1 fallback, P95 1599.71 ms.
+Cold model: fallback; one rendered AI observation including automation overhead: 3197.32 ms.
+See docs/PHASE_4_EVIDENCE.md for failures, hardware, scope and methodology.

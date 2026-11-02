@@ -1,0 +1,5 @@
+migration succeeded
+dataset import succeeded
+Indian dataset import succeeded
+tests: ================= 116 passed, 1 warning in 173.45s (0:02:53) ==================
+Disposable verification database removed

@@ -1,0 +1,57 @@
+{
+  "completedUtc": "2026-11-02T05:25:46.587876+00:00",
+  "runtime": {
+    "version": "0.40.13"
+  },
+  "loadedModel": {
+    "models": [
+      {
+        "name": "qwen2.5:1.5b",
+        "model": "qwen2.5:1.5b",
+        "size": 1169382440,
+        "digest": "65ec06548149b04c096a120e4a6da9d4017ea809c91734ea5631e89f96ddc57b",
+        "details": {
+          "parent_model": "",
+          "format": "gguf",
+          "family": "qwen2",
+          "families": [
+            "qwen2"
+          ],
+          "parameter_size": "1.5B",
+          "quantization_level": "Q4_K_M"
+        },
+        "expires_at": "2026-11-02T11:00:46.5075024+05:30",
+        "size_vram": 1169382440,
+        "context_length": 4096,
+        "runner": "llamacpp"
+      }
+    ]
+  },
+  "method": "HTTP dispatch to complete grounded JSON; unique idempotency keys; one unloaded cold request, disclosed completed preload, 100 repeated warm requests; excludes browser paint",
+  "preloadMs": 4142.2545000000355,
+  "failures": 0,
+  "distributions": {
+    "cold": {
+      "grounded_fallback": {
+        "n": 1,
+        "p50Ms": 2641.8564999999035,
+        "p95Ms": 2641.8564999999035,
+        "maxMs": 2641.8564999999035
+      }
+    },
+    "warm": {
+      "grounded": {
+        "n": 99,
+        "p50Ms": 1472.136700000192,
+        "p95Ms": 1599.713100000372,
+        "maxMs": 2421.786500000053
+      },
+      "grounded_fallback": {
+        "n": 1,
+        "p50Ms": 2544.4635000003473,
+        "p95Ms": 2544.4635000003473,
+        "maxMs": 2544.4635000003473
+      }
+    }
+  }
+}

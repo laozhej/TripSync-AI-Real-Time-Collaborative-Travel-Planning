@@ -26,7 +26,7 @@ created = False
 
 def run(label, args, env):
     try:
-        result = subprocess.run(args, cwd=ROOT, env=env, text=True, capture_output=True, timeout=180)
+        result = subprocess.run(args, cwd=ROOT, env=env, text=True, capture_output=True, timeout=300)
     except subprocess.TimeoutExpired as exc:
         diagnostic=(exc.stdout or b'').decode(errors='replace') if isinstance(exc.stdout,bytes) else (exc.stdout or '')
         for secret in (env.get('DATABASE_URL'),env.get('TEST_DATABASE_URL'),config.get('JWT_SIGNING_KEY')):

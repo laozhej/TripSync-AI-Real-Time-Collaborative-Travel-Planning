@@ -56,3 +56,22 @@ def test_binary_oversized_and_malformed_socket_input(client, group):
     with pytest.raises(WebSocketDisconnect):
         with client.websocket_connect(url, headers=group['headers'](0) | {'origin': 'https://evil.invalid'}):
             pass
+
+
+def test_socket_burst_limit_closes_without_mutation(client, group, monkeypatch):
+    from types import SimpleNamespace
+    from app.realtime import gateway
+    # Freeze only this adapter's clock alias, not asyncio/auth's global clock.
+    # Real PostgreSQL revalidation can take >1 second for 41 frames on CI.
+    monkeypatch.setattr(gateway, 'time', SimpleNamespace(monotonic=lambda: 123.0))
+    root = '/api/v1/trips/'+group['trip']
+    h = group['headers'](1)
+    before = client.get(root+'/planning', headers=h).json()['roomSeq']
+    with client.websocket_connect('/ws/v1/trips/'+group['trip'], headers=h | {'origin': 'http://testserver'}) as peer:
+        receive_event(peer)
+        for _ in range(41):
+            peer.send_text('null')
+        with pytest.raises(WebSocketDisconnect) as exc:
+            while True: peer.receive_json()
+        assert exc.value.code == 1008
+    assert client.get(root+'/planning', headers=h).json()['roomSeq'] == before

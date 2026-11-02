@@ -1,0 +1,9 @@
+npm ERR! code ENOENT
+npm ERR! syscall open
+npm ERR! path D:\projects\Airbnb/package.json
+npm ERR! errno -4058
+npm ERR! enoent ENOENT: no such file or directory, open 'D:\projects\Airbnb\package.json'
+npm ERR! enoent This is related to npm not being able to find a file.
+npm ERR! enoent 
+
+npm ERR! A complete log of this run can be found in: C:\Users\ravad\AppData\Local\npm-cache\_logs\2026-11-02T05_11_55_760Z-debug-0.log
