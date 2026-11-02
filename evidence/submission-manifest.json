@@ -229,6 +229,10 @@
       "sha256": "dfefcf936353added0f320c1f7f398d8286bb4d516471f2c5592234d646d15b6"
     },
     {
+      "path": "backend/tests/browser_session_restore.py",
+      "sha256": "684a9dd9a7ee76a6e7c90e55ab803e6e7fd981596373b9042aad463a0c6d01b0"
+    },
+    {
       "path": "backend/tests/browser_ui_audit.py",
       "sha256": "385966353bf34812b4b61671734e020244627982f21dffc6ceba86ac0161f33e"
     },
@@ -402,7 +406,7 @@
     },
     {
       "path": "docs/FRONTEND_UI_EVIDENCE.md",
-      "sha256": "866b81b7166bcdc9def65b33467b82a74070815d3c51bf418e11be7ca224aa75"
+      "sha256": "0180a69c0d2fc67daf1e1e4c55f92183bc9abbc003b827b21b7b23433d3fdd05"
     },
     {
       "path": "docs/IMPLEMENTATION_PLAN.md",
@@ -446,11 +450,11 @@
     },
     {
       "path": "docs/SECURITY.md",
-      "sha256": "283eb021fb226bd79013d11425479fcefe5f4922603425a18f5df9d3f32d6799"
+      "sha256": "555144eaf86df19a2293088fbc9eb8ee30e285bcdb67af65389ae346d0429d73"
     },
     {
       "path": "docs/TASKS.md",
-      "sha256": "130fe60e144af07484c00f50af00264bbe51c5bcd55393332f4bf642fde95bbe"
+      "sha256": "2b09d5e9a359ebfb705f4277b74fff7e745c3aa84554d168a70ebe920b61a361"
     },
     {
       "path": "docs/TESTING_STRATEGY.md",
@@ -462,7 +466,7 @@
     },
     {
       "path": "docs/TRACEABILITY_MATRIX.md",
-      "sha256": "9ac55cb2353854736f1bd0ab69a46da31aaaffc562149539a9f3e575b19cb638"
+      "sha256": "570443f6516fbd3c0adaa1094f2b46e97015391eab1ebcd54cacb4bc4da53f7a"
     },
     {
       "path": "docs/WEBSOCKET_PROTOCOL.md",
@@ -530,7 +534,7 @@
     },
     {
       "path": "evidence/security/secret-scan.json",
-      "sha256": "d1c71cba1de08c6be62936c4aefbb7510536fb8e6bae58d19a514132fa4d1086"
+      "sha256": "8ce30c52d54dd67b75da16780a56d1915b4a6c3eb0ac1b39a5895eab5570aa99"
     },
     {
       "path": "evidence/tests/backend-clean.txt",
@@ -622,7 +626,7 @@
     },
     {
       "path": "frontend/src/main.jsx",
-      "sha256": "2541c9112982626d2247fe247a13d2717097f44d5e2d7e1390eaf4259f6d2d27"
+      "sha256": "f56d4c9b47ca36a3aa9a53709307dd0144c712aea6a5c8233f1809ee653c53ef"
     },
     {
       "path": "frontend/src/style.css",

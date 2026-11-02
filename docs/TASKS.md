@@ -51,7 +51,6 @@ TASK-014–020 are accepted with real PostgreSQL and two-context Chrome evidence
 ## Phase 3 frontend presentation follow-up
 
 User-requested presentation work is recorded in FRONTEND_UI_EVIDENCE.md with actual browser/build/accessibility checks. This follow-up does not check off TASK-021–025 or claim full project accessibility/security/performance acceptance.
-# Reload follow-up — 2026-11-02
+## Reload follow-up — 2026-11-02
 
 Accepted bug fix under AUTH-01/E2E-01, REQ-002/022/029: valid refresh-cookie sessions restore at page startup instead of returning to sign-in. Real Chrome reproduction failed before the change, then passed anonymous startup, repeated reload/no-flash/single-rotation, normal 401 retry, logout and revoked-session checks. Frontend unit tests 8 passed and build succeeded. Evidence: FRONTEND_UI_EVIDENCE.md; implementation: frontend/src/main.jsx; regression: backend/tests/browser_session_restore.py. Phase completion/KPI statuses above are unchanged.
-

@@ -105,7 +105,6 @@ REQ-029/031: `app/transport.py`, `test_transport_limits.py`, `test_phase4_securi
 
 TASK-021–025 accepted for delivered hardening/evidence artifacts: final 116 backend tests passed with real DB/model, 8 frontend tests/build and Chrome walkthroughs passed; clean installs, restore digests, extracted physical/OpenAPI contracts, limited history-secret scan and submission manifest/ZIP were produced. REQ-017/021 additionally uses compact allowlisted source-ID generation with unchanged filters/citations; optimized warm HTTP sample produced 99/100 grounded answers, P95 1.60 s. REQ-030 remains a measured partial performance result: strict maximum sync missed; cold generation falls back; full rendered-AI P95, exact one-way fan-out and 50-distinct-planner capacity are not established. No requirement is silently removed or marked KPI-passed by these task checkboxes.
 
-# Reload follow-up — 2026-11-02
+## Reload follow-up — 2026-11-02
 
 REQ-002/022/029 → frontend/src/main.jsx startup refresh/shared in-flight refresh helper → backend/tests/browser_session_restore.py real Chrome red/green regression (reload/no login flash/single rotation, 401 retry, logout/revoked sessions) → FRONTEND_UI_EVIDENCE.md. This corrects authentication restoration without browser-stored access tokens or backend policy changes; current frontend unit/build checks pass.
-
