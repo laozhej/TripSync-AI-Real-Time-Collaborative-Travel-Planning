@@ -1,0 +1,69 @@
+### Local-only collection. Supply tokens/invite in your client's private environment.
+@base = http://127.0.0.1:8000
+
+GET {{base}}/api/v1/health/ready
+
+### Register (choose a unique synthetic address)
+POST {{base}}/api/v1/auth/register
+Content-Type: application/json
+
+{"email":"reviewer@example.invalid","password":"replace with private test password","displayName":"Reviewer"}
+
+### Login; keep accessToken in memory/private client variables
+POST {{base}}/api/v1/auth/login
+Content-Type: application/json
+
+{"email":"reviewer@example.invalid","password":"replace with private test password"}
+
+### Create; generate a fresh UUID for each logical command
+POST {{base}}/api/v1/trips
+Authorization: Bearer {{accessToken}}
+Idempotency-Key: {{commandId}}
+Content-Type: application/json
+
+{"destination":"Bengaluru, India","startDate":"2026-11-10","endDate":"2026-11-14","totalBudget":"10000.00","currency":"INR","maxParticipants":8}
+
+### Join using a second account token
+POST {{base}}/api/v1/trips/join
+Authorization: Bearer {{participantToken}}
+Idempotency-Key: {{commandId}}
+Content-Type: application/json
+
+{"inviteCode":"{{inviteCode}}"}
+
+### Mandatory catalog example
+GET {{base}}/api/v1/destinations/Bengaluru%2C%20India/venues?near=12.9716,77.5946&radiusKm=2
+Authorization: Bearer {{accessToken}}
+
+### Save group ceiling while Leader is connected by WebSocket
+POST {{base}}/api/v1/trips/{{tripId}}/constraints
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{"commandId":"{{commandId}}","correlationId":"{{correlationId}}","expectedStateVersion":{{stateVersion}},"categoryCeilingsMinor":{"food":50000}}
+
+### Mandatory Concierge example; request ceiling only tightens saved ceiling
+POST {{base}}/api/v1/trips/{{tripId}}/ai/ask
+Authorization: Bearer {{accessToken}}
+Idempotency-Key: {{commandId}}
+Content-Type: application/json
+
+{"question":"Suggest synthetic food near our activity","category":"food","startTime":"2026-11-10T06:30:00Z","endTime":"2026-11-10T07:30:00Z","ceilingMinor":50000}
+
+### Admin-only read; ordinary Leader/Planner must receive 403
+GET {{base}}/api/v1/admin/datasets
+Authorization: Bearer {{accessToken}}
+
+### Admin stages a validated local JSON payload; set datasetJson privately
+POST {{base}}/api/v1/admin/datasets
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{{datasetJson}}
+
+### Full authoritative snapshot / analytics
+GET {{base}}/api/v1/trips/{{tripId}}/planning
+Authorization: Bearer {{accessToken}}
+
+GET {{base}}/api/v1/trips/{{tripId}}/analytics
+Authorization: Bearer {{accessToken}}

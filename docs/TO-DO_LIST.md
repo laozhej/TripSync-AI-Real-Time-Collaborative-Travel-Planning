@@ -1,6 +1,6 @@
 # TripSync AI — Master Implementation To-Do List
 
-**Status:** Phases 1–3 accepted; Phase 4 pending (updated 2026-11-01)
+**Status:** Phases 1–4 implementation/evidence tasks complete (2026-11-02). Strict maximum sync and cold/model/render limitations remain explicit in PHASE_4_EVIDENCE.md; all-target performance acceptance is not implied.
 
 **Architecture Track:** Track A (FastAPI + Native WebSockets + PostgreSQL + SQLAlchemy async/asyncpg + Pytest + React)  
 **Primary References:** [TASKS.md](TASKS.md) | [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | [PROJECT_REQUIREMENTS.md](PROJECT_REQUIREMENTS.md) | [ARCHITECTURE.md](ARCHITECTURE.md) | [DECISIONS.md](DECISIONS.md)
@@ -14,7 +14,7 @@
 | **Phase 1 (Week 1)** | Foundation & First Thin Slice | TASK-001 – TASK-007 | P0 | Complete for first-slice acceptance; see [evidence](PHASE_1_EVIDENCE.md) |
 | **Phase 2 (Week 2)** | Board State Machine, Presence & AI Concierge | TASK-008 – TASK-013 | P0 / P1 | Accepted for the Week 2 checkpoint; see [evidence](PHASE_2_EVIDENCE.md) |
 | **Phase 3 (Week 3)** | Exact Budgets, Contested Voting & Personalization | TASK-014 – TASK-020 | P0 / P1 | Complete; see [evidence](PHASE_3_EVIDENCE.md) |
-| **Phase 4 (Week 4)** | Hardening, Performance Benchmarking & Evidence | TASK-021 – TASK-025 | P0 | Pending |
+| **Phase 4 (Week 4)** | Hardening, Performance Benchmarking & Evidence | TASK-021 – TASK-025 | P0 | Complete for hardening/evidence delivery; target misses remain explicit |
 
 **Accepted tasks:** 20 of 25. **Next:** TASK-021, end-to-end and security consolidation. Phase 4 performance, recovery and submission gates remain unverified.
 
@@ -185,14 +185,14 @@
 ## Phase 4: Hardening, Performance Benchmarking & Evidence (Week 4)
 > **Milestone Objective:** End-to-end integration, performance profiling, failure recovery validation, repeatable demo, and submission evidence packaging.
 
-- [ ] **TASK-021: End-to-End Test Suite & Security Consolidation**
+- [x] **TASK-021: End-to-End Test Suite & Security Consolidation**
   - **Priority:** P0 | **Week:** W4 | **Depends on:** TASK-013, TASK-016, TASK-018, TASK-019, TASK-020
   - **Requirements:** REQ-003, REQ-029, REQ-031
   - **Planned Files:** `backend/tests/`, `frontend/tests/`, `http/`
   - **Acceptance:** Complete security verification matrix (token expiry, refresh reuse, 4 roles across HTTP/WS, cross-tenant isolation, stored XSS, SQL injection, prompt injection defense, secret leak scanning).
   - **Verification:** `SEC-01` through `SEC-06`, `E2E-01`
 
-- [ ] **TASK-022: Performance Benchmarking & Real Model Measurements**
+- [x] **TASK-022: Performance Benchmarking & Real Model Measurements**
   - **Priority:** P0 | **Week:** W4 | **Depends on:** TASK-011, TASK-021
   - **Requirements:** REQ-030, REQ-031
   - **Planned Files:** `backend/tests/load/`, `evidence/performance/`
@@ -205,21 +205,21 @@
     - Conflict detection (≤1 s in ≥95% cases).
   - **Verification:** `PERF-01`, `PERF-02`, `PERF-03`
 
-- [ ] **TASK-023: Disaster Recovery, Database Outages & Backup/Restore Drills**
+- [x] **TASK-023: Disaster Recovery, Database Outages & Backup/Restore Drills**
   - **Priority:** P0 | **Week:** W4 | **Depends on:** TASK-011, TASK-021
   - **Requirements:** REQ-027, REQ-028
   - **Planned Files:** `evidence/operations/`, `docs/DEPLOYMENT_AND_OPERATIONS.md`
   - **Acceptance:** Verify system recovery across failure modes: crash before batch commit, crash during election, database connectivity loss, and PostgreSQL logical backup/restore with budget and analytics reconciliation.
   - **Verification:** `OPS-01`, `OPS-02`
 
-- [ ] **TASK-024: Repeatable Demonstration Script Execution**
+- [x] **TASK-024: Repeatable Demonstration Script Execution**
   - **Priority:** P0 | **Week:** W4 | **Depends on:** TASK-022, TASK-023
   - **Requirements:** REQ-026, REQ-032
   - **Planned Files:** `README.md`, `evidence/demo/`
   - **Acceptance:** Execute the full 10-step demonstration workflow from `DEMO_AND_SUBMISSION.md` (concurrent edits, stale write rejection, reconnect, chat, grounded AI, conflict resolution, vote, exact split, dataset update) from a clean environment.
   - **Verification:** `E2E-01`, `EV-DOC`
 
-- [ ] **TASK-025: Final Submission Package, Retrospective & Documentation Review**
+- [x] **TASK-025: Final Submission Package, Retrospective & Documentation Review**
   - **Priority:** P0 | **Week:** W4 | **Depends on:** TASK-024
   - **Requirements:** REQ-001, REQ-031, REQ-032
   - **Planned Files:** `docs/DEMO_AND_SUBMISSION.md`, `evidence/`

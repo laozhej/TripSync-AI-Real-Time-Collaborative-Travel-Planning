@@ -61,3 +61,7 @@ TASK-014–020 now function end-to-end: exact budgets/conflicts/elections, dashb
 The user authorized an in-scope UI improvement across the accepted Phase 3 features: shared workspace/navigation, theme tokens, itinerary/day controls, budget/vote/conflict cards, dashboard/recommendations and confirmed Admin dataset activation. Increment-by-increment changes and actual tests are in FRONTEND_UI_EVIDENCE.md. Backend application behavior and contracts are unchanged. Phase 4 gates remain open.
 
 Frontend draft alignment: the user supplied a working HTML layout and requested it as the visual target. The connected sidebar/page/overview implementation and actual regression results are recorded in FRONTEND_UI_EVIDENCE.md; no phase acceptance checkbox changes.
+
+## Week 4 evidence — 2026-11-02
+
+TASK-021–025 deliver transport hardening/security consolidation, repeatable 10-socket/two-room and actual model/browser measurements, real backup/restore/overdue recovery, clean setup/contracts and submission tools. PHASE_4_EVIDENCE.md records the final 116-test real-DB/model run, 8 frontend tests, browser flows, raw distributions and failures. Maximum sync exceeded 100 ms, cold inference falls back, and rendered-AI P95/50-distinct-user capacity remain unestablished. Completion of hardening/evidence work is not certification that every KPI passed. RETROSPECTIVE.md records operational/model/harness limits and next work.
