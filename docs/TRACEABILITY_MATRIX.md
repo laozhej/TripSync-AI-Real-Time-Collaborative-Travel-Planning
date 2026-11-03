@@ -1,5 +1,7 @@
 # Traceability matrix
 
+The [README FAQ](../README.md#faq) explains fictional sample prices and provides an inconsistency-report example for REQ-011/017/032 (PRD §§4.1–4.2,5.3,6.2,12–13), under TASK-024. Dataset provenance, version pinning and application behavior are unchanged.
+
 Requirements trace with partial implementation and verification; current evidence and remaining gaps are documented below. Source [PRD](../Document/Project%20Document.docx); each requirement is defined in [requirements](PROJECT_REQUIREMENTS.md). Modules resolve to planned paths in [architecture](ARCHITECTURE.md); test IDs in [testing strategy](TESTING_STRATEGY.md); evidence IDs in [submission](DEMO_AND_SUBMISSION.md).
 
 | Requirement | PRD sections | Module | Tasks | Planned tests | Submission evidence |

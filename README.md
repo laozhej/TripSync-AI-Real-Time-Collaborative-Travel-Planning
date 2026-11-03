@@ -24,6 +24,14 @@ Private/local use by one operator, one engineer, four-week baseline. No booking,
 
 Weeks: 1 foundation + thin slice; 2 board and Concierge; 3 voting/personalization/analytics/Admin; 4 hardening/measurements/demo. High risks are Week 3 breadth, local model P95 <3 s, synchronization timing, batched durability and synthetic recommendation evaluation. Reduce dataset/model complexity before correctness, security, tests or documentation. See the decision log for voting eligibility/ties, room locking, Leader absence, money/time defaults and crash-loss limits needing review.
 
+## FAQ
+
+### Are the displayed prices real, and how do I report an inconsistency?
+
+Prices, venue details, transit and weather in the sample datasets are fictional, project-authored demonstration data, not live quotes or booking offers; the current Bengaluru sample uses INR, while existing trips keep their original currency and dataset version. See the [current Indian sample](docs/DATASET_GUIDE.md#current-indian-sample) and [dataset version rules](docs/DATASET_GUIDE.md#phase-3-admin-ingestion).
+
+If a displayed price, budget calculation or Concierge citation disagrees with its sample data, [open an issue using the issue form](https://github.com/ravadakaran/TripSync-AI-Real-Time-Collaborative-Travel-Planning/issues/new). Include the destination/currency, venue name or source ID, dataset version if known, page, steps, expected and actual amounts, and relevant attendee/split settings. For example: “In a new Bengaluru/INR trip, add Synthetic City Museum for one attendee with an even split: the catalog shows ₹200.00 but the itinerary shows ₹20,000.00.” This is an example report, not a known defect; add your own browser/version and sanitized screenshot, omitting credentials, invitation codes and personal data.
+
 ## Documentation index
 
 | Document | Primary subject |
