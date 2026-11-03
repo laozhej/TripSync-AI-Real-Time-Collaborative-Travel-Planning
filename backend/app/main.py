@@ -2,12 +2,14 @@
 from contextlib import asynccontextmanager
 import asyncio
 import os
+from pathlib import Path
 from urllib.parse import urlsplit
 import httpx
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 from app.api.auth import router as auth_router
@@ -82,3 +84,8 @@ async def gateway_health():
     if not app.state.rooms.task or app.state.rooms.task.done() or any(room.frozen for room in app.state.rooms.rooms.values()):
         raise HTTPException(status_code=503, detail="Room service unavailable")
     return {"status": "ok"}
+
+
+frontend_dist = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+if (frontend_dist / "index.html").is_file():
+    app.mount("/", StaticFiles(directory=frontend_dist, html=True), name="frontend")
