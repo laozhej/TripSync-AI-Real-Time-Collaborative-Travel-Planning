@@ -26,7 +26,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "68ff6ffb6eda69fb6098d86ca9f5cccb2086fe3b0e911595fc1ef49afeee8f3a"
+      "sha256": "a811e8a498695bed29ea220421352ad8f6d31c158990d2ee4a4fad93994fe6be"
     },
     {
       "path": "backend/alembic.ini",
@@ -81,6 +81,10 @@
       "sha256": "74977b71cd41069063d7dfa460f55a8ce571b069db404bc501310d2eb0dc317f"
     },
     {
+      "path": "backend/alembic/versions/0012_personal_activities.py",
+      "sha256": "850b6d1f5faeea06f981d60e141a74aacbc188355cef57e9a0a6ec1150945b3d"
+    },
+    {
       "path": "backend/app/analytics/service.py",
       "sha256": "5834c3743952182d9e290e25258a5c9b9ce30ca6c4175e97d91f5d2cd967e94a"
     },
@@ -90,7 +94,7 @@
     },
     {
       "path": "backend/app/api/catalog.py",
-      "sha256": "e3f70eed80a1794f86ddb0dfcb14db5d83e2c659abb677a7a559a184d2543b70"
+      "sha256": "bdc1ba3833c3819464495b9e4ccd3de79e0ace0cfafbbb27e6f98d734eec2188"
     },
     {
       "path": "backend/app/api/concierge.py",
@@ -114,7 +118,7 @@
     },
     {
       "path": "backend/app/board/lifecycle.py",
-      "sha256": "f7bf03f772cfd2df85f674cdb18e7fbc167cec589afcaab72c048518bbe177f8"
+      "sha256": "9c71a01d2d0625edff3f6eb95f3366d2d475ee86acca3c65646ab21e7cf70989"
     },
     {
       "path": "backend/app/budget/engine.py",
@@ -158,15 +162,15 @@
     },
     {
       "path": "backend/app/main.py",
-      "sha256": "b9bcff0f4a963700e3f1d27670eca3a8307b1e211a2d881a7193b3fd9f1f6a74"
+      "sha256": "bf426959d8482129546569bb14b5e50fbe4a2da08b79fd6ef9c66b7eec50d4e0"
     },
     {
       "path": "backend/app/realtime/gateway.py",
-      "sha256": "ec735bf9c337f8f7836e502337ddd08520505fd7dadbdfc461c8a694f0b374ec"
+      "sha256": "1e4dfaf16aad2edb12ee178f43dd7790e9a8b57c5746a45bcb484297b56eacdb"
     },
     {
       "path": "backend/app/realtime/rooms.py",
-      "sha256": "0964955024cc82b83bea158f10d1215b5520f8b8deb9d123a368fc9b9825f9ce"
+      "sha256": "01dd2d41a16c518720911d9e6b1951caf91ee418fb94948308df7aed1050c364"
     },
     {
       "path": "backend/app/recommendations/engine.py",
@@ -198,7 +202,7 @@
     },
     {
       "path": "backend/app/voting/service.py",
-      "sha256": "a81c25986e00ef55d22b2fa66461ae5f9448e0e01f04aa3170f883db6f7f5adc"
+      "sha256": "b882949aa2c470fae8f53d0f12077e3b87f68f6ff8166a57c4fa503bb5de2741"
     },
     {
       "path": "backend/requirements.lock",
@@ -206,7 +210,7 @@
     },
     {
       "path": "backend/tests/browser_clean_setup.py",
-      "sha256": "37c1258f215504dcac0ab01e37e58440f2c011b548c0e8b56949f551fba0e2ca"
+      "sha256": "05aeced0df9a40bd24501a4b362f851c1a1b1fdd6aaa4b964454388d65be1a64"
     },
     {
       "path": "backend/tests/browser_draft_layout.py",
@@ -233,12 +237,16 @@
       "sha256": "684a9dd9a7ee76a6e7c90e55ab803e6e7fd981596373b9042aad463a0c6d01b0"
     },
     {
+      "path": "backend/tests/browser_side_quests.py",
+      "sha256": "38c00f2fcccf3baff555d81c21c941a05314eccb15b5d1f76a2b751465dffc1c"
+    },
+    {
       "path": "backend/tests/browser_ui_audit.py",
       "sha256": "385966353bf34812b4b61671734e020244627982f21dffc6ceba86ac0161f33e"
     },
     {
       "path": "backend/tests/clean_setup.py",
-      "sha256": "9908fa432ce9b724103218deaa0ab90a1ab0e386c7dc56cc9e8922f1b54578b9"
+      "sha256": "de8ce70b11c5b4de063dc771eaaa63c0aefbfa897b582f6d7d4e7164672c2e23"
     },
     {
       "path": "backend/tests/model_diagnostic.py",
@@ -278,7 +286,7 @@
     },
     {
       "path": "backend/tests/test_command_inputs.py",
-      "sha256": "99b4c09de242067b885e9e5615b4de938554dfb835bf58418e844ff2acdbdcf3"
+      "sha256": "fcd2cca3dc096b99913497ea5188e14d6f5d248911d22df9f4b5f0652732efe9"
     },
     {
       "path": "backend/tests/test_concierge_integration.py",
@@ -341,6 +349,10 @@
       "sha256": "50b66c343b9494f2eb333f03d03635e7f2fc609c844a86232c42d5a816d9987c"
     },
     {
+      "path": "backend/tests/test_side_quests.py",
+      "sha256": "4ef007d87a48cd1c8a5435811a45024a4b4dc6cec43b203116f4a72c185674a7"
+    },
+    {
       "path": "backend/tests/test_tokens.py",
       "sha256": "183a871b374091dd3fa7c947b7455ea9e17dcc06984b0a6a73b08cfd49a6cb2c"
     },
@@ -357,6 +369,10 @@
       "sha256": "99e9adb075ab9a0938f6dbaa6424f89690143c1dcfe76484b45af48fb59194c8"
     },
     {
+      "path": "data/destinations/goa.json",
+      "sha256": "f6d4dfaac8976e5abdaa6ced7c53d50fb234ccf5a03dff170f24d4d57bfd1635"
+    },
+    {
       "path": "data/destinations/lisbon.json",
       "sha256": "f52f4dddd18e7c3a4423e715803d91a3362f97db5d93e94224b8d1fdaa49c2f2"
     },
@@ -370,11 +386,11 @@
     },
     {
       "path": "docs/API_SPECIFICATION.md",
-      "sha256": "48bd236564ab05902b45249761798a00568263bac47ead3f4513e9a52b7f986a"
+      "sha256": "960d4ee45b6c6a2b39bbdba68d8f290aee292b48541448513721dfd93da6e537"
     },
     {
       "path": "docs/ARCHITECTURE.md",
-      "sha256": "04a7d9f461f2848bab9f1fff8cfc9b8d48692fa9e46b56517f5251e04b8d7a32"
+      "sha256": "555143148e7f7978f4c3f720d64527a0d50ef49b39afae7dc421bc2cafcfd602"
     },
     {
       "path": "docs/BUDGET_AND_VOTING.md",
@@ -382,7 +398,7 @@
     },
     {
       "path": "docs/DATABASE_SCHEMA.md",
-      "sha256": "5f584aeedb3d2b7de37d3a88d8309ba66890e9ef0d34e534acef00284f29969a"
+      "sha256": "c1c9a37ef909c1f8f05476ff8635a4b682a15f24d4ad16bebd1ed05c2324a6dd"
     },
     {
       "path": "docs/DATASET_GUIDE.md",
@@ -390,11 +406,11 @@
     },
     {
       "path": "docs/DECISIONS.md",
-      "sha256": "8739c99fb553522d6f000a900ab84401617599ce77d3ba894febb4e66d38f050"
+      "sha256": "8b9a9efa6d5ecda0c8d7e0562bdbf4b2de5ea81a9290fdeb7c3fd35abaca4c77"
     },
     {
       "path": "docs/DEMO_AND_SUBMISSION.md",
-      "sha256": "67ebd492805a78f498994b945ef5ae87c4827a63e02afa1280085c138f758751"
+      "sha256": "55da3454d3c52a3cba44546668ddeb15c0cf270ee8bd7fb2992523d1d9874057"
     },
     {
       "path": "docs/DEPLOYMENT_AND_OPERATIONS.md",
@@ -402,7 +418,7 @@
     },
     {
       "path": "docs/ENVIRONMENT_SETUP.md",
-      "sha256": "0b7be5e35f501df7c412595a2c0f4613afcae86c928b1432784f9193763d0b02"
+      "sha256": "9077855fb897ad3c217cb00a084d02279c934a46a359b89b03bc5801be26e55e"
     },
     {
       "path": "docs/FRONTEND_UI_EVIDENCE.md",
@@ -410,7 +426,7 @@
     },
     {
       "path": "docs/IMPLEMENTATION_PLAN.md",
-      "sha256": "7258f89875fdad7f46994edb92ca9e0c42548cb383dddd7425944c1698af1525"
+      "sha256": "99c2e3736acbec389d8e996f2135e390b203fd4e7de2dabf2c680327b51b3d30"
     },
     {
       "path": "docs/INDIA_LOCALIZATION_EVIDENCE.md",
@@ -434,11 +450,11 @@
     },
     {
       "path": "docs/PRD_ALIGNMENT_REVIEW.md",
-      "sha256": "f2121d8cc1a4a0f26a893dccaa51f85bd632ee05af82e9c775699754ed04887f"
+      "sha256": "5ee14704dae87e3d402514d4bbab8cc593dde69ce454ce45cfb65862a23b5760"
     },
     {
       "path": "docs/PROJECT_REQUIREMENTS.md",
-      "sha256": "6024f60861a75f89c8a0b66d2bc60a37751ff0f638b6f18bd72c073f3eabde18"
+      "sha256": "671e794f26c914248530b2e30eadbb99ce3906073c4556c89e1fd6329dddbfc6"
     },
     {
       "path": "docs/RECOMMENDATION_ENGINE.md",
@@ -446,15 +462,19 @@
     },
     {
       "path": "docs/RETROSPECTIVE.md",
-      "sha256": "8ede9a81ed9c069f4dd0c536a1f252d2e766cb7956af0db3f16c6afcad999cd7"
+      "sha256": "01bd5d07d152311970d1382db4808146a096ebc6046a898a8aec0ddc1c546b37"
     },
     {
       "path": "docs/SECURITY.md",
       "sha256": "555144eaf86df19a2293088fbc9eb8ee30e285bcdb67af65389ae346d0429d73"
     },
     {
+      "path": "docs/SUBMISSION_READINESS.md",
+      "sha256": "6ab1130bead2d09c30b9bf8102f351efde94e7c4564f35c7ddd5821532ee9b87"
+    },
+    {
       "path": "docs/TASKS.md",
-      "sha256": "2b09d5e9a359ebfb705f4277b74fff7e745c3aa84554d168a70ebe920b61a361"
+      "sha256": "7d7121a528f36800fe3c691e6d3aaaab503c92fd695a3f8bf9a9bd074f2bf391"
     },
     {
       "path": "docs/TESTING_STRATEGY.md",
@@ -466,19 +486,19 @@
     },
     {
       "path": "docs/TRACEABILITY_MATRIX.md",
-      "sha256": "570443f6516fbd3c0adaa1094f2b46e97015391eab1ebcd54cacb4bc4da53f7a"
+      "sha256": "8953bba13ea7cd7177be26bbe1ea025797697e7e3490ab44e72e8d4617db7951"
     },
     {
       "path": "docs/WEBSOCKET_PROTOCOL.md",
-      "sha256": "1c2cbc17203c69813e228f62a2eda2979667888ec63767d796b3a2040f3f81a3"
+      "sha256": "ea61d63ad4a4d052735c39c8619449cd1b866b3693a6f8bdec5a02bf3374dfb7"
     },
     {
       "path": "evidence/contracts/openapi.json",
-      "sha256": "462fb7606faf8194120aa2c30c0175b86f904b9436d85a77c1ee8a1a01f43e92"
+      "sha256": "d29a276ec38a786a234f34cebb1ba2ab806b164380c2ac442cfa5dcae0fc2fcc"
     },
     {
       "path": "evidence/contracts/schema.json",
-      "sha256": "8a25b2ecf05248492ab4cb6df35dabbf8471b7489b80792ecf077ff534a35bd6"
+      "sha256": "945123460520274ff15c73ee0f078aade1aa7a95c33ae39f4fe1b652f0066731"
     },
     {
       "path": "evidence/demo/walkthrough.txt",
@@ -487,6 +507,10 @@
     {
       "path": "evidence/operations/restore.json",
       "sha256": "90c995465e54e1551738d86563c1f31450886df8c7e59064bdef6556134b57bf"
+    },
+    {
+      "path": "evidence/operations/submission-followup-restore.json",
+      "sha256": "dc559f1ed73ee19c55f8913596c19ba59e3cccc779575c07526093903267dea1"
     },
     {
       "path": "evidence/performance/ai-samples.json",
@@ -534,7 +558,7 @@
     },
     {
       "path": "evidence/security/secret-scan.json",
-      "sha256": "8ce30c52d54dd67b75da16780a56d1915b4a6c3eb0ac1b39a5895eab5570aa99"
+      "sha256": "f9e22954c03bc6507fe1786a2abab70a6ec5e4feebed68d56bd41629d0069449"
     },
     {
       "path": "evidence/tests/backend-clean.txt",
@@ -577,6 +601,18 @@
       "sha256": "aa6e89c839e05853aefa9bc5fb6aa1d008c9a59698d8eadbc3f9ae7ef8834acd"
     },
     {
+      "path": "evidence/tests/submission-followup-backend.txt",
+      "sha256": "6439ab132e3cf6da3023d57391bf233e4b13f27746bc29b0925d5ba552915320"
+    },
+    {
+      "path": "evidence/tests/submission-followup-browser.txt",
+      "sha256": "cac6af0c71bdbb819cc57f4f68c91f4f20a9922d1f741d85688d8ab9357b62e5"
+    },
+    {
+      "path": "evidence/tests/submission-followup-frontend.txt",
+      "sha256": "dfd4998a19b46f512b3f60127f05a3332d0e3291aee3f8cdd90e36f20290b6ad"
+    },
+    {
       "path": "frontend/.gitignore",
       "sha256": "c26497fa75a5a79134ab9d11f833f8e52d19cb4552e3a00e2cce0a2a8ee23914"
     },
@@ -606,11 +642,11 @@
     },
     {
       "path": "frontend/src/board/BoardGrid.jsx",
-      "sha256": "756f069eeadd87126358f3b9aaf6580b2ae74f8dec266f5a1a0f131521168402"
+      "sha256": "d8f02562ecadfbb6bbc06e26673c507b0b30a8ff630914f36a3bdc41763cbd4e"
     },
     {
       "path": "frontend/src/board/ConciergePanel.jsx",
-      "sha256": "25b2b91e45f2116f579f038adc00d3f6f78428743623e02be42d40359e815ee8"
+      "sha256": "f7521723e7119f1c2604d9b0c2b2110022235096794ef13918f2fd42883fa2ff"
     },
     {
       "path": "frontend/src/board/ModerationControls.jsx",
@@ -626,7 +662,7 @@
     },
     {
       "path": "frontend/src/main.jsx",
-      "sha256": "f56d4c9b47ca36a3aa9a53709307dd0144c712aea6a5c8233f1809ee653c53ef"
+      "sha256": "1085a163849e7a6d191d17cc3f1d5aa18319f2244e6540e44237dfb58bb2e8db"
     },
     {
       "path": "frontend/src/style.css",
@@ -642,7 +678,7 @@
     },
     {
       "path": "frontend/src/votes/PlanningPanel.jsx",
-      "sha256": "f7ce076e9a8175edda0de6dfd37d683d0fe714e4ec4a3dc6c970aa9a78fedda9"
+      "sha256": "d8bb20ac11b57c5213375edbad170f3df0b21a9429627499780d56f502c7e9f0"
     },
     {
       "path": "frontend/src/votes/SplitEditor.jsx",
@@ -650,7 +686,7 @@
     },
     {
       "path": "frontend/src/workspace/TripOverview.jsx",
-      "sha256": "b4499444ec3e49e702a4b472b784c43ed9d7f817e145b3c024bccfd28295e9db"
+      "sha256": "d29a68ce5993192b8a43fdddb80783958338ab387bf2dbc0eb31bd5f8e9d3190"
     },
     {
       "path": "frontend/tests/time.test.js",
@@ -679,6 +715,10 @@
     {
       "path": "scripts/start-local-model.ps1",
       "sha256": "f6e17ed738c9e6b71fb03246d8b54d35536f0246b905a4cc9ed3abfdb9d6976e"
+    },
+    {
+      "path": "side quest's.md",
+      "sha256": "ffc73ad5a0e1869ceca1686fdbebb87b9d19fc2d6dba64dc6a71dd4c1b2b94aa"
     }
   ],
   "excluded": "ignored files, Git internals and this self-referential manifest"
