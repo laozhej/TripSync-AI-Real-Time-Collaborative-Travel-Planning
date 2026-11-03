@@ -4,6 +4,8 @@ Submission guide, PRD §§12–15. The application and automated walkthroughs ar
 
 ## Repeatable demonstration
 
+For a first room-creation/join/pin check, start with the [two-browser walkthrough](TWO_BROWSER_WALKTHROUGH.md), then continue with the complete sequence below.
+
 Prerequisites: verified setup, authored Bengaluru destination, synthetic Leader/Planner/Viewer and Admin accounts, a second browser/session, the local model running, and a clean isolated trip. Use only synthetic data/accounts and no actual payments. The reusable disposable-browser scripts are the recorded executable walkthrough; model-related scripts should run sequentially.
 
 1. Register/login; Leader creates room with budget/dates/capacity and invites Planner and Viewer. Show trip-scoped roles and Admin upload authorization.

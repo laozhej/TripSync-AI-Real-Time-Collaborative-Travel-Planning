@@ -1,5 +1,7 @@
 # Traceability matrix
 
+The [two-browser walkthrough](TWO_BROWSER_WALKTHROUGH.md) explains the newcomer room-create/join/shared-pin check for REQ-004/005/008 (PRD §§5.1,6.1) under TASK-024 / REQ-032. Its steps are checked against the current UI and authored dataset; it records expected behavior, not a new browser run or performance result.
+
 Requirements trace with partial implementation and verification; current evidence and remaining gaps are documented below. Source [PRD](../Document/Project%20Document.docx); each requirement is defined in [requirements](PROJECT_REQUIREMENTS.md). Modules resolve to planned paths in [architecture](ARCHITECTURE.md); test IDs in [testing strategy](TESTING_STRATEGY.md); evidence IDs in [submission](DEMO_AND_SUBMISSION.md).
 
 | Requirement | PRD sections | Module | Tasks | Planned tests | Submission evidence |
