@@ -118,3 +118,5 @@ REQ-002/022/029 → frontend/src/main.jsx startup refresh/shared in-flight refre
 ## PRD §12.1 submission follow-up
 
 REQ-032 maps to the eight artifacts in SUBMISSION_READINESS.md. Current schema and OpenAPI exports reflect migration 0012. The REST operation inventory matches the generated contract. Socket command examples validate against the implementation models. SQ-001–003 additionally have Chrome evidence in backend/tests/browser_side_quests.py and evidence/tests/submission-followup-browser.txt.
+
+REQ-006 and REQ-030 move timing were rechecked after grouping grid items by slot and shortening maintenance work for uncontested rooms. See [current synchronization evidence](SYNC_PERFORMANCE_EVIDENCE.md) for measured maxima, same-version races and test scope.

@@ -190,13 +190,23 @@ async def tick(room):
         if room.frozen:return
         for vote in list(room.votes):
             if vote['status']=='open' and datetime.fromisoformat(vote['closesAt'])<=datetime.now(timezone.utc):await resolve_locked(room,vote)
+        groups = {}
+        for item in room.items.values():
+            if item['lifecycleStage'] == 'drafting' and item['venueId'] is not None:
+                groups.setdefault(slot_key([item]), []).append(item)
+        contests = {
+            key: options for key, options in groups.items()
+            if len(options) > 1 and len({item['venueId'] for item in options}) == len(options)
+        }
+        if not contests:
+            return
         async with room.manager.engine.connect() as conn:
-            trip=(await conn.execute(text('SELECT room_locked,status FROM trips WHERE id=:trip'),{'trip':room.trip_id})).mappings().one()
-        if trip['room_locked'] or trip['status']=='finalized':return
-        groups={}
-        for i in room.items.values():
-            if i['lifecycleStage']=='drafting' and i['venueId'] is not None:groups.setdefault(slot_key([i]),[]).append(i)
-        async with room.manager.engine.connect() as conn:
-            opened=set((await conn.execute(text('SELECT slot_key FROM votes WHERE trip_id=:trip'),{'trip':room.trip_id})).scalars())
-        for key,options in groups.items():
-            if key not in opened and len(options)>1 and len({i['venueId'] for i in options})==len(options):await open_locked(room,options=options)
+            trip = (await conn.execute(text('SELECT room_locked,status FROM trips WHERE id=:trip'),
+                {'trip': room.trip_id})).mappings().one()
+            if trip['room_locked'] or trip['status'] == 'finalized':
+                return
+            opened = set((await conn.execute(text('SELECT slot_key FROM votes WHERE trip_id=:trip'),
+                {'trip': room.trip_id})).scalars())
+        for key, options in contests.items():
+            if key not in opened:
+                await open_locked(room, options=options)

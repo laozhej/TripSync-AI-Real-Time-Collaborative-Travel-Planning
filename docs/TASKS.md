@@ -69,3 +69,7 @@ ADR-022 records destination selection, the separate-trip shortcut and personal a
 - [x] Full backend verification with real model, frontend tests/build and side quest Chrome walkthrough.
 
 Acceptance evidence and limits are recorded in SUBMISSION_READINESS.md. The final full run passed 117 tests with no skips. The historical phase records keep their original results.
+
+## Canvas synchronization follow-up
+
+- [x] Verify REQ-006 and REQ-030 for the local move profile. The updated maximum was 27.69 ms across ten sockets and 96.40 ms across two Chrome contexts. All 20 measured browser races converged within 36.00 ms. Baseline, commands and scope are in [synchronization evidence](SYNC_PERFORMANCE_EVIDENCE.md).

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "../ui/Primitives.jsx";
 import { money, tripDate } from "../ui/format.js";
 import {
@@ -30,6 +30,23 @@ export default function BoardGrid({
   }));
   const visibleDays =
     selected === null ? days : days.filter((day) => day.date === selected);
+  const timezone = room.timezone;
+  const itemsBySlot = useMemo(() => {
+    const slots = new Map();
+    for (const item of board.items) {
+      const slot = displayTime(item.startTime, { timezone }).slice(0, 13);
+      if (!slots.has(slot)) slots.set(slot, []);
+      slots.get(slot).push(item);
+    }
+    for (const items of slots.values()) {
+      items.sort(
+        (a, b) =>
+          a.startTime.localeCompare(b.startTime) ||
+          a.itemId.localeCompare(b.itemId),
+      );
+    }
+    return slots;
+  }, [board.items, timezone]);
   // Keep the full 24-hour canvas, but open around actual activities rather than midnight.
   useEffect(() => {
     const hours = board.items
@@ -166,21 +183,9 @@ export default function BoardGrid({
                     }}
                     onDrop={(event) => drop(event, day, hour)}
                   >
-                    {board.items
-                      .filter(
-                        (item) =>
-                          displayTime(item.startTime, room).slice(0, 10) ===
-                            day.date &&
-                          Number(
-                            displayTime(item.startTime, room).slice(11, 13),
-                          ) === hour,
-                      )
-                      .sort(
-                        (a, b) =>
-                          a.startTime.localeCompare(b.startTime) ||
-                          a.itemId.localeCompare(b.itemId),
-                      )
-                      .map((item) => (
+                    {(itemsBySlot.get(
+                      `${day.date} ${String(hour).padStart(2, "0")}`,
+                    ) || []).map((item) => (
                         <article
                           className="place gridCard"
                           key={item.itemId}

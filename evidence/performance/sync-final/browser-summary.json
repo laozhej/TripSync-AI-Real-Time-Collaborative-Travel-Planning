@@ -1,0 +1,34 @@
+{
+  "chrome": "156.0.8078.79",
+  "contexts": 2,
+  "warmupMoves": 20,
+  "moves": 200,
+  "concurrentRaces": 20,
+  "method": "same-host performance.timeOrigin+performance.now from socket send to both DOM updates and two animation frames; 25ms inter-move pacing",
+  "received": {
+    "n": 200,
+    "p50Ms": 5.89990234375,
+    "p95Ms": 25.7001953125,
+    "maxMs": 31.7998046875
+  },
+  "dom": {
+    "n": 200,
+    "p50Ms": 17.60009765625,
+    "p95Ms": 42.800048828125,
+    "maxMs": 62.39990234375
+  },
+  "frames": {
+    "n": 200,
+    "p50Ms": 21.89990234375,
+    "p95Ms": 59.900146484375,
+    "maxMs": 96.39990234375
+  },
+  "raceFrames": {
+    "n": 20,
+    "p50Ms": 33.2001953125,
+    "p95Ms": 35.500244140625,
+    "maxMs": 36.000244140625
+  },
+  "racesOver100Ms": 0,
+  "over100Ms": 0
+}

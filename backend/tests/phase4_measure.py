@@ -18,7 +18,7 @@ from websockets.asyncio.client import connect
 from phase4_measure_stats import distribution
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT/'evidence'/'performance'
+OUT = ROOT/os.getenv('MEASUREMENT_OUTPUT', 'evidence/performance')
 
 
 async def main():
@@ -100,7 +100,7 @@ async def main():
             for index in indices: del pending[(key, index)]
             if measure:
                 times = [r[0] for r in results]
-                samples.append({'room': room_index, 'event': event, 'allAppliedMs': (max(times)-t)*1000,
+                samples.append({'commandId': key, 'room': room_index, 'event': event, 'allAppliedMs': (max(times)-t)*1000,
                     'spreadMs': (max(times)-min(times))*1000})
             return results[0][1]['item']
 
@@ -168,35 +168,40 @@ async def main():
                 assert snapshot['items'] == authoritative['items'] and snapshot['budgets'] == authoritative['budgets']
                 joins.append((time.perf_counter()-t)*1000)
         print('PASS: 10 sockets / 5 distinct planners / 2 rooms; 1000 moves, 1000 HTTP reads, 20 stale races, 20 conflicts, aggregate/reconnect equality')
-        model_url = os.getenv('CONCIERGE_MODEL_URL', 'http://127.0.0.1:11434')
-        model = os.getenv('CONCIERGE_MODEL', 'qwen2.5:1.5b')
-        state = (await client.get('/api/v1/trips/'+rooms[0]+'/planning', headers=headers(0))).json()
-        configured = await client.post('/api/v1/trips/'+rooms[0]+'/constraints', headers=headers(0), json={
-            'commandId': str(uuid4()), 'correlationId': str(uuid4()), 'expectedStateVersion': state['stateVersion'],
-            'categoryCeilingsMinor': {'food': 50000}})
-        assert configured.status_code == 200
-        async with httpx.AsyncClient(base_url=model_url, timeout=60, trust_env=False) as inference:
-            tags = (await inference.get('/api/tags')).json()
-            # Explicit unload gives a genuine cold application request, not preload timing.
-            (await inference.post('/api/generate', json={'model': model, 'keep_alive': 0})).raise_for_status()
-            for n in range(101):
-                if n == 1:
-                    # A deadline-cancelled cold request may cancel model loading.
-                    # Warm samples require a disclosed completed preload first.
-                    warm = await inference.post('/api/chat', json={'model': model, 'messages': [],
-                        'stream': False, 'keep_alive': '5m'})
-                    warm.raise_for_status()
-                t = time.perf_counter()
-                r = await client.post('/api/v1/trips/'+rooms[0]+'/ai/ask', headers=headers(0) | {'Idempotency-Key': str(uuid4())}, json={
-                    'question': 'Find synthetic vegetarian food', 'category': 'food', 'ceilingMinor': 50000,
-                    'startTime': '2026-11-10T06:30:00Z', 'endTime': '2026-11-10T07:30:00Z'})
-                ai.append({'profile': 'cold' if n == 0 else 'warm', 'ms': (time.perf_counter()-t)*1000,
-                    'httpStatus': r.status_code, 'status': r.json().get('status')})
-                assert r.status_code == 200
-                if r.json().get('suggestedVenueId'):
-                    for citation in r.json()['sourceEvents']:
-                        source = await client.get('/api/v1/trips/'+rooms[0]+'/ai/sources/'+citation, headers=headers(0))
-                        assert source.status_code == 200 and source.json()['pricePerPersonMinor'] <= 50000
+        tags = {}
+        if os.getenv('MEASURE_BOARD_ONLY') != '1':
+            model_url = os.getenv('CONCIERGE_MODEL_URL', 'http://127.0.0.1:11434')
+            model = os.getenv('CONCIERGE_MODEL', 'qwen2.5:1.5b')
+            state = (await client.get('/api/v1/trips/'+rooms[0]+'/planning', headers=headers(0))).json()
+            configured = await client.post('/api/v1/trips/'+rooms[0]+'/constraints', headers=headers(0), json={
+                'commandId': str(uuid4()), 'correlationId': str(uuid4()), 'expectedStateVersion': state['stateVersion'],
+                'categoryCeilingsMinor': {'food': 50000}})
+            assert configured.status_code == 200
+            async with httpx.AsyncClient(base_url=model_url, timeout=60, trust_env=False) as inference:
+                tags = (await inference.get('/api/tags')).json()
+                # Explicit unload gives a genuine cold application request, not preload timing.
+                (await inference.post('/api/generate', json={'model': model, 'keep_alive': 0})).raise_for_status()
+                for n in range(101):
+                    if n == 1:
+                        # A deadline-cancelled cold request may cancel model loading.
+                        # Warm samples require a disclosed completed preload first.
+                        warm = await inference.post('/api/chat', json={'model': model, 'messages': [],
+                            'stream': False, 'keep_alive': '5m'})
+                        warm.raise_for_status()
+                    t = time.perf_counter()
+                    r = await client.post('/api/v1/trips/'+rooms[0]+'/ai/ask', headers=headers(0) | {'Idempotency-Key': str(uuid4())}, json={
+                        'question': 'Find synthetic vegetarian food', 'category': 'food', 'ceilingMinor': 50000,
+                        'startTime': '2026-11-10T06:30:00Z', 'endTime': '2026-11-10T07:30:00Z'})
+                    ai.append({'profile': 'cold' if n == 0 else 'warm', 'ms': (time.perf_counter()-t)*1000,
+                        'httpStatus': r.status_code, 'status': r.json().get('status')})
+                    assert r.status_code == 200
+                    if r.json().get('suggestedVenueId'):
+                        for citation in r.json()['sourceEvents']:
+                            source = await client.get('/api/v1/trips/'+rooms[0]+'/ai/sources/'+citation, headers=headers(0))
+                            assert source.status_code == 200 and source.json()['pricePerPersonMinor'] <= 50000
+        if os.getenv('BROWSER_SERVER') == 'sync_profile_server:app':
+            profile = (await client.get('/__test/sync-profile')).json()
+            (OUT/'server-profile.json').write_text(json.dumps(profile, indent=2), encoding='utf-8')
         for task in tasks: task.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
     summary = {'startedUtc': started, 'finishedUtc': datetime.now(timezone.utc).isoformat(),

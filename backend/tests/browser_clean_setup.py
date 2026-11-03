@@ -59,7 +59,7 @@ async def main():
                         [sys.executable, '-m', 'app.cli', 'import-dataset', 'data/destinations/goa.json']):
             subprocess.run(command, cwd=ROOT, env=env, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
-        processes.append(subprocess.Popen([sys.executable, '-m', 'uvicorn', 'browser_server:app', '--app-dir', 'backend/tests',
+        processes.append(subprocess.Popen([sys.executable, '-m', 'uvicorn', os.getenv('BROWSER_SERVER', 'browser_server:app'), '--app-dir', 'backend/tests',
             '--host', '127.0.0.1', '--port', str(api_port), '--workers', '1'], cwd=ROOT, env=env,
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=flags))
         processes.append(subprocess.Popen(['node', 'node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', str(web_port), '--strictPort'],

@@ -37,3 +37,7 @@ Run scripts/scan-submission.py followed by scripts/package-submission.py. The re
 The scan checks configured long secret values and selected credential signatures in current files and reachable history. Its scope and limitations are in evidence/security/secret-scan.json. Packaging is followed by verifying every manifest checksum against the archive and worktree.
 
 The development database needs migration 0012 and the Goa import to expose the new destination. Verification uses disposable databases. Historical performance limits include a missed strict maximum sync target, cold-model fallback, and unestablished rendered-AI P95 and 50-distinct-planner capacity. The prior measured results remain in PHASE_4_EVIDENCE.md. Provisional business defaults remain labeled in DECISIONS.md.
+
+## Canvas synchronization follow-up
+
+The updated local move profiles passed the 100 ms threshold. The maximum across 1,000 socket moves was 27.69 ms. Across two Chrome contexts, 200 moves peaked at 96.40 ms and the winning updates in 20 concurrent races peaked at 36.00 ms. [Synchronization evidence](SYNC_PERFORMANCE_EVIDENCE.md) records the baseline, commands and scope.

@@ -82,3 +82,7 @@ Phase 4 update (2026-11-02): hardening, security consolidation, measured multi-r
 ## Side quests
 
 SQ-001 extends REQ-004 with active-dataset destination choice, defaulting to Bengaluru. SQ-002 uses separate room creation to plan a different destination. SQ-003 extends REQ-005 with personal activities alongside manual catalog pins. REQ-011 grounding rules apply to all Concierge sources. See ADR-022.
+
+## Canvas synchronization follow-up
+
+REQ-006 and REQ-030 passed the 100 ms move threshold in the follow-up local socket and Chrome profiles, including same-version contention. The original Phase 4 misses and broader measurement limits remain recorded. See [synchronization evidence](SYNC_PERFORMANCE_EVIDENCE.md).
