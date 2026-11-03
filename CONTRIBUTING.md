@@ -1,6 +1,14 @@
 # Contributing
 
-This is a solo educational build, currently documentation only. PRD §§11.2–13 require incremental working commits, reproducible setup and honest evidence. No remote repository or commit history is claimed as created by this documentation request.
+TripSync AI is a collaborative trip planner built as an educational project.
+
+1. Follow the [local setup guide](docs/ENVIRONMENT_SETUP.md). Run `./scripts/setup-local.ps1` from the repository root in PowerShell after configuring PostgreSQL and `.env`.
+2. Run the [backend checks](docs/ENVIRONMENT_SETUP.md#verification-and-current-limits). From `frontend`, run `npm run test:unit` and `npm run build`.
+3. Open a pull request with the related issue or task, a summary of the change, and the checks you ran. Include screenshots for visible changes.
+
+Use [Discussions](https://github.com/ravadakaran/TripSync-AI-Real-Time-Collaborative-Travel-Planning/discussions) for questions and [Issues](https://github.com/ravadakaran/TripSync-AI-Real-Time-Collaborative-Travel-Planning/issues) for bugs and feature requests.
+
+The maintainer watches Issues, checks the queue daily at 7 p.m. IST, and aims to reply within 24 hours with a next step or a request for missing details.
 
 Start with one TASK-ID from [the backlog](docs/TASKS.md), read its REQ IDs and original PRD sections, then inspect [decisions](docs/DECISIONS.md). Keep changes small enough to test and explain in one commit. Suggested branches `feature/task-008-board-cas`; commit messages `feat(board): reject stale moves (TASK-008, REQ-006)`. No extra engineer/reviewer is required; do a deliberate self-review before merging a working increment.
 

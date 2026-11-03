@@ -1,5 +1,12 @@
 # TripSync AI — Real-Time Collaborative Travel Planning
 
+TripSync AI helps groups plan trips together, edit a shared itinerary, and vote on what to do.
+
+Install with PowerShell after [configuring prerequisites](docs/ENVIRONMENT_SETUP.md): `./scripts/setup-local.ps1` · [Try the hosted demo](https://tripsync-ai-real-time-collaborative.onrender.com/)
+
+![TripSync AI itinerary board demo](docs/media/tripsync-demo.gif)
+
+
 Independent educational prototype, broader project title “Airbnb Real-Time AI Trip Planning & Collaboration Platform.” No Airbnb affiliation, account access or integration is implied. Source: [PRD](Document/Project%20Document.docx), v1.0 September 2026, especially §§4,8–15.
 
 **Current status: Phases 1–4 implementation/evidence tasks are complete.** The shared board, local grounded Concierge, chat/presence, voting, exact budgets, conflicts, dashboard/recommendations, analytics and Admin ingestion have acceptance evidence. [Phase 4 evidence](docs/PHASE_4_EVIDENCE.md) records security/recovery/setup checks, final tests and measured limitations: strict maximum sync missed, cold inference falls back, and rendered-AI P95/50-planner capacity are unestablished. Frontend design checks remain in [frontend evidence](docs/FRONTEND_UI_EVIDENCE.md).
