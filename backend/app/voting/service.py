@@ -195,7 +195,7 @@ async def tick(room):
         if trip['room_locked'] or trip['status']=='finalized':return
         groups={}
         for i in room.items.values():
-            if i['lifecycleStage']=='drafting':groups.setdefault(slot_key([i]),[]).append(i)
+            if i['lifecycleStage']=='drafting' and i['venueId'] is not None:groups.setdefault(slot_key([i]),[]).append(i)
         async with room.manager.engine.connect() as conn:
             opened=set((await conn.execute(text('SELECT slot_key FROM votes WHERE trip_id=:trip'),{'trip':room.trip_id})).scalars())
         for key,options in groups.items():

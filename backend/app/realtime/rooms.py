@@ -88,13 +88,13 @@ class Room:
                 await conn.execute(text("UPDATE trips SET room_epoch=:epoch,room_seq=committed_seq WHERE id=:id"),
                                    {"epoch":UUID(self.epoch), "id":self.trip_id})
                 rows = (await conn.execute(text("""SELECT i.id,i.venue_id,i.day_index,i.starts_at,i.ends_at,
-                    i.lifecycle_stage,i.position_version,i.price_snapshot_minor,i.split_mode,v.name,
+                    i.lifecycle_stage,i.position_version,i.price_snapshot_minor,i.split_mode,COALESCE(i.personal_name,v.name) AS name,
                     (SELECT jsonb_object_agg(a.user_id::text,a.weight) FROM item_attendees a WHERE a.item_id=i.id) AS weights,
                     ARRAY(SELECT a.user_id FROM item_attendees a WHERE a.item_id=i.id ORDER BY a.user_id) AS attendees FROM itinerary_items i
-                    JOIN venue_metadata v ON v.id=i.venue_id AND v.dataset_id=i.dataset_id
+                    LEFT JOIN venue_metadata v ON v.id=i.venue_id AND v.dataset_id=i.dataset_id
                     WHERE i.trip_id=:id AND i.removed_at IS NULL ORDER BY i.id"""), {"id":self.trip_id})).mappings().all()
                 for row in rows:
-                    item = {"itemId":str(row['id']),"venueId":str(row['venue_id']),"name":row['name'],
+                    item = {"itemId":str(row['id']),"venueId":str(row['venue_id']) if row['venue_id'] else None,"name":row['name'],
                             "dayIndex":row['day_index'],"startTime":row['starts_at'].isoformat(),
                             "endTime":row['ends_at'].isoformat(),"lifecycleStage":row['lifecycle_stage'],
                             "positionVersion":row['position_version'],"pricePerPersonMinor":row['price_snapshot_minor'],
@@ -358,7 +358,7 @@ class Room:
 
     async def pin(self, actor, command):
         await self.load()
-        data = command.model_dump(mode='json')
+        data = command.model_dump(mode='json', exclude={'personalActivity'} if command.personalActivity is None else set())
         fingerprint = hashlib.sha256(json.dumps(data,sort_keys=True).encode()).hexdigest()
         key = str(command.commandId)
         async with self.lock:
@@ -389,8 +389,12 @@ class Room:
                 membership = Membership(Role(trip['role']), can_pin=trip['can_pin'])
                 if trip['room_locked'] or trip['status']=='finalized' or not permitted(Capability.PIN, is_admin=False, membership=membership):
                     raise RoomError("FORBIDDEN")
-                venue = (await conn.execute(text("SELECT id,name,price_per_person_minor FROM venue_metadata WHERE id=:id AND dataset_id=:dataset"),
-                    {"id":command.venueId,"dataset":trip['dataset_id']})).mappings().first()
+                if command.personalActivity is not None:
+                    venue = {"id": None, "name": command.personalActivity.name,
+                             "price_per_person_minor": command.personalActivity.pricePerPersonMinor}
+                else:
+                    venue = (await conn.execute(text("SELECT id,name,price_per_person_minor FROM venue_metadata WHERE id=:id AND dataset_id=:dataset"),
+                        {"id":command.venueId,"dataset":trip['dataset_id']})).mappings().first()
                 if not venue:
                     raise RoomError("INVALID_VENUE")
                 if command.startTime.utcoffset() is None or command.endTime.utcoffset() is None:
@@ -419,7 +423,7 @@ class Room:
             except ValueError:raise RoomError('INVALID_WEIGHTS') from None
             self.seq += 1
             item_id, event_id = uuid4(), uuid4()
-            item = {"itemId":str(item_id),"venueId":str(venue['id']),"name":venue['name'],"dayIndex":command.dayIndex,
+            item = {"itemId":str(item_id),"venueId":str(venue['id']) if venue['id'] else None,"name":venue['name'],"dayIndex":command.dayIndex,
                     "startTime":command.startTime.astimezone(timezone.utc).isoformat(),
                     "endTime":command.endTime.astimezone(timezone.utc).isoformat(),"lifecycleStage":"drafting","positionVersion":1,
                     "pricePerPersonMinor":venue['price_per_person_minor'],"attendeeIds":sorted(str(uid) for uid in attendees),"splitMode":command.splitMode,"weights":weights}
@@ -521,7 +525,7 @@ class Room:
                              session=trip['planning_session_id'], actor=actor['user_id'],
                              payload=json.dumps(payload | {'commandHash':fingerprint, 'reason':getattr(command,'reason',None)})))
                     if operation=='lock':
-                        await conn.execute(text("INSERT INTO interactions(id,user_id,trip_id,venue_id,dataset_id,kind,event_id) SELECT :id,:uid,trip_id,venue_id,dataset_id,'lock',:event FROM itinerary_items WHERE id=:item AND trip_id=:trip ON CONFLICT(event_id) DO NOTHING"),
+                        await conn.execute(text("INSERT INTO interactions(id,user_id,trip_id,venue_id,dataset_id,kind,event_id) SELECT :id,:uid,trip_id,venue_id,dataset_id,'lock',:event FROM itinerary_items WHERE id=:item AND trip_id=:trip AND venue_id IS NOT NULL ON CONFLICT(event_id) DO NOTHING"),
                             {'id':uuid4(),'uid':actor['user_id'],'event':event_id,'item':command.itemId,'trip':self.trip_id})
                 self.seq = self.committed = next_seq
                 self.items[str(command.itemId)] = item
@@ -580,11 +584,12 @@ class Room:
                     raise RuntimeError('durable item version mismatch')
             else:
                 await conn.execute(text("""INSERT INTO itinerary_items (id,trip_id,venue_id,dataset_id,day_index,
-                starts_at,ends_at,lifecycle_stage,pinned_by_user_id,position_version,price_snapshot_minor,split_mode)
-                VALUES (:id,:trip,:venue,:dataset,:day,:start,:end,'drafting',:actor,1,:price,:split)"""),
+                starts_at,ends_at,lifecycle_stage,pinned_by_user_id,position_version,price_snapshot_minor,split_mode,personal_name)
+                VALUES (:id,:trip,:venue,:dataset,:day,:start,:end,'drafting',:actor,1,:price,:split,:personal_name)"""),
                 dict(id=entry['item_id'],trip=self.trip_id,venue=entry['venue'],dataset=entry['dataset'],day=item['dayIndex'],
                      start=datetime.fromisoformat(item['startTime']),end=datetime.fromisoformat(item['endTime']),
-                     actor=entry['actor'],price=entry['price'],split=item.get('splitMode','even')))
+                     actor=entry['actor'],price=entry['price'],split=item.get('splitMode','even'),
+                     personal_name=item['name'] if entry['venue'] is None else None))
                 for uid in entry['attendees']:
                     await conn.execute(text("INSERT INTO item_attendees (item_id,user_id,weight) VALUES (:item,:uid,:weight)"),
                                    {"item":entry['item_id'],"uid":uid,"weight":item.get("weights",{}).get(str(uid),1)})
@@ -595,7 +600,7 @@ class Room:
         from app.voting.service import sync_conflicts
         await sync_conflicts(conn,self)
         for entry in self.pending:
-            if entry.get('operation') is None:
+            if entry.get('operation') is None and entry['venue'] is not None:
                 await conn.execute(text("INSERT INTO interactions(id,user_id,trip_id,venue_id,dataset_id,kind,event_id) VALUES(:id,:uid,:trip,:venue,:dataset,'pin',:event) ON CONFLICT(event_id) DO NOTHING"),
                     {'id':uuid4(),'uid':entry['actor'],'trip':self.trip_id,'venue':entry['venue'],'dataset':entry['dataset'],'event':entry['event']})
         return target

@@ -57,6 +57,8 @@ def _vote_items(items, expected_versions, stage):
         raise BoardInvalid('every option requires an expected version')
     first=items[0]
     slot=(first['dayIndex'],first['startTime'],first['endTime'],set(first.get('attendeeIds',[])))
+    if any(item['venueId'] is None for item in items):
+        raise BoardInvalid('votes require catalog venues')
     if len({item['venueId'] for item in items})!=len(items):
         raise BoardInvalid('candidate venues must be distinct')
     for item in items:

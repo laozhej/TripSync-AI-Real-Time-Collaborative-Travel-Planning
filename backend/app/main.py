@@ -72,7 +72,7 @@ async def ready():
             revision = (await connection.execute(text("SELECT version_num FROM alembic_version"))).scalar_one_or_none()
     except Exception:
         raise HTTPException(status_code=503, detail="Database or schema unavailable") from None
-    if not app.state.rooms.recovered or revision != "0011_phase3" or not app.state.rooms.task or app.state.rooms.task.done() or any(room.frozen for room in app.state.rooms.rooms.values()):
+    if not app.state.rooms.recovered or revision != "0012_personal_activities" or not app.state.rooms.task or app.state.rooms.task.done() or any(room.frozen for room in app.state.rooms.rooms.values()):
         raise HTTPException(status_code=503, detail="Schema or room service not ready")
     return {"status": "ok"}
 

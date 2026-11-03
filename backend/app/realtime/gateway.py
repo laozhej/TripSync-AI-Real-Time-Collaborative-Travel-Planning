@@ -23,11 +23,18 @@ from app.concierge.preferences import ConstraintsUpdate, update_constraints
 router = APIRouter()
 
 
+class PersonalActivity(BaseModel):
+    model_config = ConfigDict(extra='forbid', str_strip_whitespace=True)
+    name: str = Field(min_length=1, max_length=120, pattern=r"^[^\x00-\x1f\x7f]+$")
+    pricePerPersonMinor: StrictInt = Field(ge=0, le=10**12)
+
+
 class Pin(BaseModel):
     model_config = ConfigDict(extra='forbid')
     commandId: UUID
     correlationId: UUID
-    venueId: UUID
+    venueId: UUID | None = None
+    personalActivity: PersonalActivity | None = None
     dayIndex: int = Field(ge=0, le=365)
     startTime: datetime
     endTime: datetime
@@ -37,6 +44,8 @@ class Pin(BaseModel):
 
     @model_validator(mode='after')
     def valid_split(self):
+        if (self.venueId is None) == (self.personalActivity is None):
+            raise ValueError("provide one venue or personal activity")
         if self.splitMode=='weighted' and (not self.attendeeIds or set(self.weights)!=set(self.attendeeIds) or sum(self.weights.values())<=0):raise ValueError('weighted split requires attendees and positive weights')
         if self.splitMode=='even' and self.weights:raise ValueError('even split does not accept weights')
         return self

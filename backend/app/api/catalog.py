@@ -11,6 +11,16 @@ from app.api.auth import authenticated
 router = APIRouter(prefix="/api/v1/destinations", tags=["catalog"])
 
 
+@router.get("")
+async def destinations(request: Request, actor=Depends(authenticated)):
+    async with request.app.state.engine.connect() as conn:
+        rows = (await conn.execute(text("""
+            SELECT destination, currency, timezone FROM datasets
+            WHERE status = 'active' ORDER BY destination
+        """))).mappings().all()
+    return {"destinations": [dict(row) for row in rows]}
+
+
 def distance_km(a, b, c, d):
     phi1, phi2 = math.radians(a), math.radians(c)
     delta_phi, delta_lng = phi2-phi1, math.radians(d-b)

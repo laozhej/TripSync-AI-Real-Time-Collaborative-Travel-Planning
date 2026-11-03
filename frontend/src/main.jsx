@@ -83,6 +83,9 @@ function App() {
     [venues, V] = useState([]),
     [invite, I] = useState(""),
     [mode, M] = useState("login");
+  const [destinations, setDestinations] = useState([]);
+  const [destination, setDestination] = useState("Bengaluru, India");
+  const selectedDestination = destinations.find((entry) => entry.destination === destination);
   const [restoringSession, setRestoringSession] = useState(true);
   const [inviteId, II] = useState(""),
     [inviteRole, IR] = useState("planner"),
@@ -131,6 +134,17 @@ function App() {
       });
     return () => { active = false; };
   }, []);
+  useEffect(() => {
+    if (!user || room) return;
+    let active = true;
+    setDestinations([]);
+    api("/api/v1/destinations").then(({ destinations: entries }) => {
+      if (active) setDestinations(entries);
+    }).catch((error) => {
+      if (active) E(error.message);
+    });
+    return () => { active = false; };
+  }, [user, room]);
   useEffect(() => {
     if (!room?.tripId || !token) return;
     ST({});
@@ -446,7 +460,7 @@ function App() {
       }),
     );
   }
-  function pin(venue) {
+  function pin(source) {
     if (socket.current?.readyState !== WebSocket.OPEN) {
       E("The room is disconnected.");
       return;
@@ -459,7 +473,7 @@ function App() {
           payload: {
             commandId: crypto.randomUUID(),
             correlationId: crypto.randomUUID(),
-            venueId: venue.venueId,
+            ...source,
             ...times,
             attendeeIds: [],
             splitMode: "even",
@@ -728,16 +742,17 @@ function App() {
   async function create(e) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
+    if (!selectedDestination) return;
     await run(async () => {
       const d = await api("/api/v1/trips", {
         method: "POST",
         headers: { "Idempotency-Key": crypto.randomUUID() },
         body: JSON.stringify({
-          destination: "Bengaluru, India",
+          destination: selectedDestination.destination,
           startDate: f.get("start"),
           endDate: f.get("end"),
           totalBudget: f.get("budget"),
-          currency: "INR",
+          currency: selectedDestination.currency,
           maxParticipants: 8,
         }),
       });
@@ -918,7 +933,7 @@ function App() {
                 place to land.
               </p>
               <div className="route">
-                Bengaluru <span /> your next trip
+                Plan <span /> your next trip
               </div>
             </section>
             <section className="panel">
@@ -982,17 +997,22 @@ function App() {
           <div className="workspace" id="workspace-content" tabIndex={-1}>
             <h1>Plan it together.</h1>
             <p>
-              Start a room for Bengaluru or join one with an invitation code.
+              Choose a destination for a new room or join one with an invitation code.
             </p>
             <Dashboard api={api} onOpen={(id) => run(() => open(id))} />
             <div className="forms">
               <section className="panel">
                 <h2>Start a trip</h2>
                 <p>Choose the dates and a group budget.</p>
-                <form onSubmit={create}>
+                <form id="start-trip" onSubmit={create}>
                   <label>
                     Destination
-                    <input value="Bengaluru, India" readOnly />
+                    <select aria-label="Destination" value={selectedDestination?.destination || ""} onChange={(event) => setDestination(event.target.value)} required>
+                      {!selectedDestination && <option value="">Choose a destination</option>}
+                      {destinations.map((entry) => (
+                        <option key={entry.destination} value={entry.destination}>{entry.destination}</option>
+                      ))}
+                    </select>
                   </label>
                   <div className="row">
                     <label>
@@ -1015,10 +1035,10 @@ function App() {
                     </label>
                   </div>
                   <label>
-                    Group budget in INR (₹)
+                    Group budget {selectedDestination && `in ${selectedDestination.currency}`}
                     <input name="budget" defaultValue="25000.00" required />
                   </label>
-                  <button className="primary">Create room</button>
+                  <button className="primary" disabled={!selectedDestination}>Create room</button>
                 </form>
               </section>
               <section className="panel">
@@ -1048,6 +1068,15 @@ function App() {
             >
               ← Back
             </button>
+            <a className="link" href="#start-trip" onClick={() => {
+              R(null);
+              E("");
+              I("");
+              II("");
+              setView("overview");
+            }}>
+              Start a separate trip
+            </a>
             <div className="roomHeading">
               <div>
                 <h1>
@@ -1186,6 +1215,32 @@ function App() {
                     </label>
                   </div>
                 </div>
+                <form className="place" onSubmit={(event) => {
+                  event.preventDefault();
+                  const fields = new FormData(event.currentTarget);
+                  const [whole, fraction = ""] = fields.get("price").split(".");
+                  const pricePerPersonMinor = Number(whole + fraction.padEnd(2, "0"));
+                  if (pricePerPersonMinor > 10 ** 12) {
+                    E("Enter a smaller personal activity cost.");
+                    return;
+                  }
+                  pin({ personalActivity: { name: fields.get("name"), pricePerPersonMinor } });
+                }}>
+                  <label>
+                    Personal activity name
+                    <input name="name" required maxLength={120} />
+                  </label>
+                  <label>
+                    Cost per person ({room.currency})
+                    <input name="price" inputMode="decimal" pattern="[0-9]+([.][0-9]{1,2})?"
+                      defaultValue="0" required />
+                  </label>
+                  <button className="secondary" disabled={
+                    connection !== "connected" || board.trip?.status === "finalized" ||
+                    board.trip?.roomLocked || room.role === "viewer" ||
+                    (room.role === "planner" && !room.canPin)
+                  }>Add personal activity</button>
+                </form>
                 {venues.map((v) => (
                   <article className="place" key={v.venueId}>
                     <div>
@@ -1208,7 +1263,7 @@ function App() {
                         room.role === "viewer" ||
                         (room.role === "planner" && !room.canPin)
                       }
-                      onClick={() => pin(v)}
+                      onClick={() => pin({ venueId: v.venueId })}
                     >
                       Add to itinerary
                     </button>

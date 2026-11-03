@@ -248,6 +248,7 @@ export default function TripOverview({ board, room, onNavigate }) {
               <div>
                 <h3>{item.name}</h3>
                 <small>
+                  {item.venueId === null && "Personal activity · "}
                   {money(item.pricePerPersonMinor, room.currency)} / person ·{" "}
                   {item.attendeeIds.length} attending
                 </small>

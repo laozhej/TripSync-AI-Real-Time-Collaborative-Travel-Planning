@@ -76,6 +76,7 @@ export default function PlanningPanel({
     correlationId: crypto.randomUUID(),
   });
   const drafting = board.items.filter((i) => i.lifecycleStage === "drafting");
+  const venueCandidates = drafting.filter((item) => item.venueId);
   const budget = board.budgets;
   const conflicts = board.conflicts || [];
   function conflictCard(c) {
@@ -367,7 +368,7 @@ export default function PlanningPanel({
                 send("votes", {
                   ...command(),
                   expectedVersions: Object.fromEntries(
-                    drafting
+                    venueCandidates
                       .filter((i) => ids.includes(i.itemId))
                       .map((i) => [i.itemId, i.positionVersion]),
                   ),
@@ -376,10 +377,10 @@ export default function PlanningPanel({
               }}
             >
               <p>
-                Select two or more drafting candidates sharing a time and
+                Select two or more drafting venues sharing a time and
                 attendees. Identical slots also open automatically.
               </p>
-              {drafting.map((i) => (
+              {venueCandidates.map((i) => (
                 <label key={i.itemId}>
                   <input
                     type="checkbox"
@@ -404,7 +405,7 @@ export default function PlanningPanel({
               </label>
               <button
                 disabled={
-                  !writable || drafting.length < 2 || !board.leaderConnected
+                  !writable || venueCandidates.length < 2 || !board.leaderConnected
                 }
               >
                 Open vote

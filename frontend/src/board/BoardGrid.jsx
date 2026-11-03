@@ -203,6 +203,7 @@ export default function BoardGrid({
                               {item.lifecycleStage}
                             </Badge>
                             <h3>{item.name}</h3>
+                            {item.venueId === null && <span>Personal activity</span>}
                             <small>
                               {displayTime(item.startTime, room)}{" "}
                               {timeLabel(room)} –{" "}

@@ -55,7 +55,8 @@ async def main():
             await conn.execute(text(f'CREATE DATABASE "{name}"'))
             created = True
         for command in ([sys.executable, '-m', 'alembic', '-c', 'backend/alembic.ini', 'upgrade', 'head'],
-                        [sys.executable, '-m', 'app.cli', 'import-dataset', 'data/destinations/bengaluru.json']):
+                        [sys.executable, '-m', 'app.cli', 'import-dataset', 'data/destinations/bengaluru.json'],
+                        [sys.executable, '-m', 'app.cli', 'import-dataset', 'data/destinations/goa.json']):
             subprocess.run(command, cwd=ROOT, env=env, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
         processes.append(subprocess.Popen([sys.executable, '-m', 'uvicorn', 'browser_server:app', '--app-dir', 'backend/tests',

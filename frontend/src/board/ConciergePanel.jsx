@@ -247,7 +247,7 @@ export default function ConciergePanel({
             Near a planned item
             <select value={anchor} onChange={(e) => A(e.target.value)}>
               <option value="">No anchor</option>
-              {board.items.map((item) => (
+              {board.items.filter((item) => item.venueId).map((item) => (
                 <option key={item.itemId} value={item.itemId}>
                   {item.name}
                 </option>
