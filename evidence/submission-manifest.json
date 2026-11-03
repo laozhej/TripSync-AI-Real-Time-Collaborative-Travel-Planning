@@ -202,7 +202,7 @@
     },
     {
       "path": "backend/app/voting/service.py",
-      "sha256": "b882949aa2c470fae8f53d0f12077e3b87f68f6ff8166a57c4fa503bb5de2741"
+      "sha256": "50098705775e2bee3dc254b8b95bd79262e9d65ea5bad8fac2cfee5158ab789e"
     },
     {
       "path": "backend/requirements.lock",
@@ -210,7 +210,7 @@
     },
     {
       "path": "backend/tests/browser_clean_setup.py",
-      "sha256": "05aeced0df9a40bd24501a4b362f851c1a1b1fdd6aaa4b964454388d65be1a64"
+      "sha256": "a1459976ab344a01349b360bec1c17660712648a6c9e677e7a2fd96c76f6e314"
     },
     {
       "path": "backend/tests/browser_draft_layout.py",
@@ -241,6 +241,10 @@
       "sha256": "38c00f2fcccf3baff555d81c21c941a05314eccb15b5d1f76a2b751465dffc1c"
     },
     {
+      "path": "backend/tests/browser_sync_measure.py",
+      "sha256": "aba0412dd379b0200a861370da766a6692efa6fefd0f7f805c0cd094b2b15cbf"
+    },
+    {
       "path": "backend/tests/browser_ui_audit.py",
       "sha256": "385966353bf34812b4b61671734e020244627982f21dffc6ceba86ac0161f33e"
     },
@@ -258,7 +262,7 @@
     },
     {
       "path": "backend/tests/phase4_measure.py",
-      "sha256": "49bd875e31f43274ff96b4f6e53bedebbb6aea6547854c6fedc60cd49a86422b"
+      "sha256": "17a927672fd50a7fb36964a0747204ee0468d72bc61f61b453540cd2df804c57"
     },
     {
       "path": "backend/tests/phase4_measure_stats.py",
@@ -271,6 +275,10 @@
     {
       "path": "backend/tests/recovery_server.py",
       "sha256": "344e8a7825c5db2ee401f7298ff0a39afbd98284ec73e715791357d0068cb5bb"
+    },
+    {
+      "path": "backend/tests/sync_profile_server.py",
+      "sha256": "7c09b8090604dcab7779cda10c3eea4d6b51f0feb3d1e466bb44ac414d4fe6c1"
     },
     {
       "path": "backend/tests/test_auth_integration.py",
@@ -454,7 +462,7 @@
     },
     {
       "path": "docs/PROJECT_REQUIREMENTS.md",
-      "sha256": "671e794f26c914248530b2e30eadbb99ce3906073c4556c89e1fd6329dddbfc6"
+      "sha256": "8924fc8eee0ed337084d896d8480c5072f24add4d1ccbe8c92d3d04206a5cd9c"
     },
     {
       "path": "docs/RECOMMENDATION_ENGINE.md",
@@ -470,11 +478,15 @@
     },
     {
       "path": "docs/SUBMISSION_READINESS.md",
-      "sha256": "6ab1130bead2d09c30b9bf8102f351efde94e7c4564f35c7ddd5821532ee9b87"
+      "sha256": "5b72eabc32b6bcf59202ff9b7f66c294e0a6506dd857d2191359748091cf8254"
+    },
+    {
+      "path": "docs/SYNC_PERFORMANCE_EVIDENCE.md",
+      "sha256": "e08fbcd5c18ca204fb5abce5206f74fdf4c947ef56c821454930cc76dcf89568"
     },
     {
       "path": "docs/TASKS.md",
-      "sha256": "7d7121a528f36800fe3c691e6d3aaaab503c92fd695a3f8bf9a9bd074f2bf391"
+      "sha256": "1424845e187cd37f2ae126b8e5ac73b1528c148168ff98f85e350dbeb4434ee1"
     },
     {
       "path": "docs/TESTING_STRATEGY.md",
@@ -486,7 +498,7 @@
     },
     {
       "path": "docs/TRACEABILITY_MATRIX.md",
-      "sha256": "8953bba13ea7cd7177be26bbe1ea025797697e7e3490ab44e72e8d4617db7951"
+      "sha256": "78d5b87986441d11efd995fca66ace6747ed8117dc5daa18e53019c3de80cf9c"
     },
     {
       "path": "docs/WEBSOCKET_PROTOCOL.md",
@@ -545,6 +557,54 @@
       "sha256": "1035c9920e3fb02602e1079794c04b91202317f530fbb1af7fdb400ad4c287be"
     },
     {
+      "path": "evidence/performance/sync-after/browser-samples.json",
+      "sha256": "b096e58b754f8c8ffef006f1256fb381bfc31719320e86918cab688e3c5ecef0"
+    },
+    {
+      "path": "evidence/performance/sync-after/browser-summary.json",
+      "sha256": "5cea16ae828166b4432abf3c8dfee5516bf39a5bf3837cae60b146bdfcb72f6d"
+    },
+    {
+      "path": "evidence/performance/sync-baseline/browser-samples.json",
+      "sha256": "8ab2bf713b55084c5e06ab1285e31888ff5ddff7f6137bbce603b51894436609"
+    },
+    {
+      "path": "evidence/performance/sync-baseline/browser-summary.json",
+      "sha256": "421c8980c93004689778273f888b185ffeb1853bd422614833d6965c4a7f78d1"
+    },
+    {
+      "path": "evidence/performance/sync-baseline/samples.json",
+      "sha256": "7e93626c75d79c364638c0565ffd308da2927d9c218ebcba2b38f8d382b9c8fb"
+    },
+    {
+      "path": "evidence/performance/sync-baseline/server-profile.json",
+      "sha256": "7d52f0bf6e384ed9bee3a555d7f4554d247e01b5b2e175cee40d6838bdc74551"
+    },
+    {
+      "path": "evidence/performance/sync-baseline/summary.json",
+      "sha256": "26453352208ba86764e65e682346f5253f8a82fe9adfed92b15100ad88ed4651"
+    },
+    {
+      "path": "evidence/performance/sync-final/browser-samples.json",
+      "sha256": "758018cc86c9e34f1e7a1a6680ffeb23fe99294cab7cde1da8620507a5800cee"
+    },
+    {
+      "path": "evidence/performance/sync-final/browser-summary.json",
+      "sha256": "4736fae9d5ad78d1ac56a79364d80e6413e168fd89cd8c8e487a979e275de2dd"
+    },
+    {
+      "path": "evidence/performance/sync-final/samples.json",
+      "sha256": "2bbc76d8b2abafac9b0c8370cec78904064ad405674a29548d397bef37115f05"
+    },
+    {
+      "path": "evidence/performance/sync-final/server-profile.json",
+      "sha256": "43469241d17f2c56cb2651daca44db53c93d091d910c12b177ff472c94d27a5a"
+    },
+    {
+      "path": "evidence/performance/sync-final/summary.json",
+      "sha256": "142b9b9c5cae6ebe90957f06c8b22dbaa71c2e5ebd6629be705d24739d02a597"
+    },
+    {
       "path": "evidence/performance/target-results.json",
       "sha256": "5b449278bd478887e4216826582cb06f8dcc6abb2a413fd1bbe8ce514ce5f4a6"
     },
@@ -558,7 +618,7 @@
     },
     {
       "path": "evidence/security/secret-scan.json",
-      "sha256": "f9e22954c03bc6507fe1786a2abab70a6ec5e4feebed68d56bd41629d0069449"
+      "sha256": "813c29f17d65eb448c515bf2e5d59e47fe5d234b877771e91f253e6f8c29d0e7"
     },
     {
       "path": "evidence/tests/backend-clean.txt",
@@ -613,6 +673,10 @@
       "sha256": "dfd4998a19b46f512b3f60127f05a3332d0e3291aee3f8cdd90e36f20290b6ad"
     },
     {
+      "path": "evidence/tests/sync-followup-backend.txt",
+      "sha256": "0b12802e2508bfd149d7edce38e5ea57b5299e3dcef7e9f174cb3981b0e83aba"
+    },
+    {
       "path": "frontend/.gitignore",
       "sha256": "c26497fa75a5a79134ab9d11f833f8e52d19cb4552e3a00e2cce0a2a8ee23914"
     },
@@ -642,7 +706,7 @@
     },
     {
       "path": "frontend/src/board/BoardGrid.jsx",
-      "sha256": "d8f02562ecadfbb6bbc06e26673c507b0b30a8ff630914f36a3bdc41763cbd4e"
+      "sha256": "7a88314ff3cbc1fb41768fcc5cf5d28400584a04487a89ecce03c85cce676eaa"
     },
     {
       "path": "frontend/src/board/ConciergePanel.jsx",
@@ -674,7 +738,7 @@
     },
     {
       "path": "frontend/src/ui/format.js",
-      "sha256": "2e359641b68eedea25eb5ddb064bd9fba1d7dca27fc56ab5983756cbb6a4fe1f"
+      "sha256": "af1d6946f8fe11be04abff29eebfe1ca96055b6c8768a9264b93cf90df56eb10"
     },
     {
       "path": "frontend/src/votes/PlanningPanel.jsx",
