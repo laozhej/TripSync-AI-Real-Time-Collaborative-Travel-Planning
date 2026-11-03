@@ -1,6 +1,6 @@
 # TripSync AI requirements
 
-Status: requirements baseline with partial application implementation; actual coverage is recorded in TRACEABILITY_MATRIX.md and PHASE_1_EVIDENCE.md through PHASE_3_EVIDENCE.md. Source: [original PRD](../Document/Project%20Document.docx), v1.0, September 2026. Section references below refer to that document. The user's documentation-first request takes precedence over PRD §13.2's immediate scaffolding guidance. TripSync AI is an independent educational prototype with no Airbnb affiliation or integration.
+Status: implemented requirements baseline with evidence in TRACEABILITY_MATRIX.md, PHASE_1_EVIDENCE.md through PHASE_4_EVIDENCE.md, and SUBMISSION_READINESS.md. Performance misses and unmeasured targets remain explicit. Source: [original PRD](../Document/Project%20Document.docx), v1.0, September 2026. Section references below refer to that document. The user's documentation-first request takes precedence over PRD §13.2's immediate scaffolding guidance. TripSync AI is an independent educational prototype with no Airbnb affiliation or integration.
 
 ## Interpretation
 
@@ -78,3 +78,7 @@ The user requested an Indian project. New UI-created trips use Bengaluru, India,
 Phase 3 update (2026-11-01): TASK-014–020 are implemented and accepted as recorded in PHASE_3_EVIDENCE.md. Exact splits, conflicts/elections, recommendation/dashboard, analytics and Admin ingestion now have database/browser evidence. Final project gates remain Phase 4; no performance/capacity claim follows from feature acceptance.
 
 Phase 4 update (2026-11-02): hardening, security consolidation, measured multi-room/model/browser behavior, restore and submission evidence are implemented in PHASE_4_EVIDENCE.md. Final backend run: 116 passed with no skips; frontend 8 passed and build/Chrome flows succeeded. REQ-030 is measured with **missed strict maximum sync** and unestablished full rendered-AI P95/50-user capacity; warm HTTP-model P95 is not substituted for browser-rendered P95. Cold and warm fallback counts remain explicit. No required product epic is removed, and provisional domain defaults remain provisional.
+
+## Side quests
+
+SQ-001 extends REQ-004 with active-dataset destination choice, defaulting to Bengaluru. SQ-002 uses separate room creation to plan a different destination. SQ-003 extends REQ-005 with personal activities alongside manual catalog pins. REQ-011 grounding rules apply to all Concierge sources. See ADR-022.

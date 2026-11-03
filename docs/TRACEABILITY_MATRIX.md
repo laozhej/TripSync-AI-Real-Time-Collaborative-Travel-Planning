@@ -108,3 +108,13 @@ TASK-021–025 accepted for delivered hardening/evidence artifacts: final 116 ba
 ## Reload follow-up — 2026-11-02
 
 REQ-002/022/029 → frontend/src/main.jsx startup refresh/shared in-flight refresh helper → backend/tests/browser_session_restore.py real Chrome red/green regression (reload/no login flash/single rotation, 401 retry, logout/revoked sessions) → FRONTEND_UI_EVIDENCE.md. This corrects authentication restoration without browser-stored access tokens or backend policy changes; current frontend unit/build checks pass.
+
+## Side quest coverage
+
+- SQ-001 / REQ-004 / PRD §§5.1, 6.3, 14.1 — authenticated active destination catalog, selected currency and fictional Goa dataset. Regression: `backend/tests/test_side_quests.py`.
+- SQ-002 / REQ-004 / PRD §§5.1, 6.1 — room shortcut to the separate trip creation flow.
+- SQ-003 / REQ-005 / PRD §§5.2, 6.1–6.2 — personal activity pins share the existing board and budget rules. Regression: `backend/tests/test_side_quests.py` checks a Viewer rejection, two-client broadcast and the durable database row.
+
+## PRD §12.1 submission follow-up
+
+REQ-032 maps to the eight artifacts in SUBMISSION_READINESS.md. Current schema and OpenAPI exports reflect migration 0012. The REST operation inventory matches the generated contract. Socket command examples validate against the implementation models. SQ-001–003 additionally have Chrome evidence in backend/tests/browser_side_quests.py and evidence/tests/submission-followup-browser.txt.

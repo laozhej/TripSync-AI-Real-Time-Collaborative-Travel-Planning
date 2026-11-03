@@ -1,10 +1,10 @@
 # Architecture
 
-Track A design and partial implementation; PRD §§7.1,9.3–9.4,10. The implemented first-slice boundaries and limitations are noted below. [Decisions](DECISIONS.md) distinguishes selected boundaries from provisional policies.
+Track A implementation, PRD §§7.1,9.3–9.4,10. Current boundaries and measured limitations are recorded below. [Decisions](DECISIONS.md) distinguishes selected boundaries from provisional policies.
 
 ## Components
 
-One FastAPI process with one Uvicorn worker owns API routes and native WebSocket connections. Room actors are keyed by trip ID, so no single-room assumption exists. PostgreSQL is the durable store; disk holds imported files, local assets, backups and versioned recommendation artifacts. A hosted API or local open-source model may supply inference, as permitted by PRD §8.1. The user selected local open-source inference; the current adapter calls Qwen2.5 1.5B through loopback Ollama HTTP. It does not create a second application backend. All matching, retrieval, prompt construction and validation live in Python modules.
+One FastAPI process with one Uvicorn worker owns API routes and native WebSocket connections. Room actors are keyed by trip ID, so no single-room assumption exists. PostgreSQL is the durable store; disk holds imported files, local assets and private backups. Versioned recommendation artifacts live in PostgreSQL JSONB. A hosted API or local open-source model may supply inference, as permitted by PRD §8.1. The user selected local open-source inference; the current adapter calls Qwen2.5 1.5B through loopback Ollama HTTP. It does not create a second application backend. All matching, retrieval, prompt construction and validation live in Python modules.
 
 ```mermaid
 flowchart LR
@@ -30,14 +30,14 @@ flowchart LR
   LOG --> DB
 ```
 
-## Module boundaries and planned files
+## Implemented module boundaries
 
-| Module | Owns | Does not own | Proposed path |
+| Module | Owns | Does not own | Path |
 |---|---|---|---|
 | API | Pydantic request/response, HTTP errors, dependency injection | Business decisions | `backend/app/api/` |
 | Auth/policy | JWT, sessions, membership capability evaluation | Board mutation | `backend/app/auth/` |
 | Gateway | Socket auth, input limits, subscriptions, envelopes | Money or lifecycle rules | `backend/app/realtime/` |
-| Room | Ordered commands, versions, in-memory aggregate and fan-out | Model calls | `backend/app/rooms/` |
+| Room | Ordered commands, versions, in-memory aggregate and fan-out | Model calls | `backend/app/realtime/rooms.py` |
 | Board | Pure lifecycle transition/position validation | Socket I/O | `backend/app/board/` |
 | Budget | Exact splits, ledger and ceiling evaluations | Model arithmetic | `backend/app/budget/` |
 | Voting | Eligibility, deadlines, ballot/resolution and winner application | Permission bypass | `backend/app/voting/` |
@@ -46,9 +46,9 @@ flowchart LR
 | Recommendations | Interaction features, content/CF training and serving | Hard Concierge filtering | `backend/app/recommendations/` |
 | Analytics | Event definitions, idempotent projections and reconciliation | Client-reported truth | `backend/app/analytics/` |
 | Ingestion | Admin staging, atomic activation, immutable dataset versions | Executing uploaded text | `backend/app/datasets/` |
-| Persistence | SQLAlchemy repositories, migrations, unit of work | Alternate room authority | `backend/app/persistence/` |
+| Persistence | SQLAlchemy Core transactions and migrations | Alternate room authority | Room/domain services and `backend/alembic/` |
 
-These paths are plans, not files claimed as implemented. Both HTTP and socket commands invoke the same policy/domain functions. No Redis, message broker or vector database is necessary for one private process.
+Both HTTP and socket commands invoke the same policy/domain functions. No Redis, message broker or vector database is necessary for one private process.
 
 ## Concurrency and state flow
 
@@ -69,7 +69,7 @@ sequenceDiagram
   R-->>A: persistence.committed through roomSeq=31
 ```
 
-One actor processes commands serially in memory, including while a significant commit is pending. This is not a database row lock. A batch can coalesce item v4→v7 into a conditional update from durable v4 to v7 while retaining accepted command ledger entries. A failed CAS indicates unexpected writer or state corruption: freeze that room, reload durable aggregate and force resync. Never overwrite a mismatched durable base. Continuous drag positions remain client previews; send final drop commands, not every pixel.
+One actor processes commands serially in memory, including while a significant commit is pending. This is not a database row lock. The batch persists accepted commands and their event ledger entries in a transaction, checking each expected durable version. A failed durable version check freezes the room. Recovery reloads the durable aggregate and clients resynchronize under a new epoch. Never overwrite a mismatched durable base. Continuous drag positions remain client previews; send final drop commands, not every pixel.
 
 Each accepted mutation advances `roomSeq`; item mutation advances `positionVersion`, including lifecycle and attendee/cost edits. A new `roomEpoch` on process recovery distinguishes a restored sequence from a previously observed volatile future. Unique `(tripId, commandId)` records enable deduplication of committed commands; volatile commands may disappear in a crash and must not be silently replayed after a new epoch.
 
@@ -79,33 +79,25 @@ Default batch 100 ms is provisional. Memory acknowledgement is explicitly `appli
 
 On DB outage: mark readiness false, freeze mutations for affected rooms, announce persistence degradation, and retain bounded pending data. Read-only memory snapshots identify volatility. On uncertain transaction outcome, query by command ID before retrying. If recovery cannot prove state, reload committed snapshot/event ledger, advance epoch and notify clients of rollback. The nominal crash window is one flush interval plus DB delay, not a guaranteed 100 ms bound. Never acknowledge volatile events as durable.
 
-On startup hydrate snapshots/rows and persisted active votes before readiness; resolve expired votes once by unique resolution key. Store deadline in UTC; a restart cannot extend the election. Reconstruct chat and aggregates from durable records. On clean shutdown stop accepting writes, drain/flush, close sockets with reconnect advice; enforce timeout and log uncommitted watermark. See [operations](DEPLOYMENT_AND_OPERATIONS.md).
+On startup recover rooms with open votes and resolve overdue rounds before readiness. Other rooms hydrate their committed rows lazily on access. Each new actor epoch distinguishes the restored state. Lifespan shutdown cancels managed maintenance and typing tasks and flushes pending room writes.
 
 ## Background work and deployment
 
-Managed lifespan tasks own flush scheduling, vote deadlines, presence expiry and conflict evaluation. Avoid untracked request background tasks for critical recovery work. Overlap/budget checks run after each accepted change; bounded per-room queue plus version checks discard obsolete results. Small pure checks run inline; costly model I/O uses an async HTTP client; CPU-bound training/index rebuild uses an executor and atomic artifact swap. Never share an AsyncSession across concurrent tasks.
+The managed 100-ms loop flushes room actors and checks vote deadlines. Conflict detection runs with persisted transitions. Subscribers have bounded queues and slow consumers disconnect for snapshot recovery. Model I/O runs outside the room lock and validates the captured room context before saving an answer. CPU training runs through asyncio.to_thread. One pooled SQLAlchemy engine supplies independent AsyncConnections to concurrent operations.
 
-One private host serves bundled React assets, API and gateway; PostgreSQL binds loopback/private network. A local model, if selected, also binds privately; a hosted provider uses its authenticated API. Use TLS/WSS when testing across machines. Gateway health measures actor loop freshness and queue status; readiness additionally checks DB/schema. Metrics: command queue depth, rejected stale versions, mutation latency, flush lag, socket lag/disconnects, model latency/fallback and constraint violations. Correlation IDs appear in safe structured logs. Capacity is configurable up to the 50-planner design target; actual performance remains unmeasured (§§10.2,14.1).
-
-## Implementation status — 2026-10-30
-
-The first slice uses a single pooled async engine, room actors, native WebSockets and basic liveness, schema readiness and gateway probes. Later architecture on this page remains planned. See [evidence](PHASE_1_EVIDENCE.md).
-
-The first-slice room actor is wired to membership authorization, batched persistence and WebSocket snapshots; later lifecycle and recovery drills remain pending. See [evidence](PHASE_1_EVIDENCE.md).
-
-The first pin/snapshot actor now maintains in-memory authoritative items and batches pending pins to PostgreSQL, with volatile applied acknowledgements, committed watermark, freeze on batch failure and a new epoch on reload. Membership joining and Leader invite changes persist pending pins and the significant change in the same transaction under the room actor lock; full recovery drills and later-feature snapshot state remain outstanding. See [evidence](PHASE_1_EVIDENCE.md).
+The documented local setup uses a React/Vite server proxying to one FastAPI worker, PostgreSQL, and local Ollama inference. Built assets are included in the frontend build. Gateway probes check the maintenance task and frozen rooms. Readiness also checks the database migration and startup recovery. Structured logs contain event/room/session/sequence identifiers and safe timestamps. Performance distributions are measured by the harnesses under backend/tests and recorded in PHASE_4_EVIDENCE.md.
 
 ## Phase 2 implementation boundaries — 2026-10-31
 
-Implemented code uses `app/realtime/rooms.py` for aggregate ownership, batching/unit-of-work and snapshots; `app/rooms/moderation.py` for durable moderation; `app/board/lifecycle.py` for pure item/vote lifecycle rules; and `app/concierge/{constraints,preferences,rag,service}.py` for authorized rule resolution, retrieval and generation. API transport lives in `app/api/concierge.py` and the native gateway; both invoke the same domain services. Planned persistence/voting package paths in the table are not claimed as existing services.
+Implemented code uses `app/realtime/rooms.py` for aggregate ownership, batching/unit-of-work and snapshots; `app/rooms/moderation.py` for durable moderation; `app/board/lifecycle.py` for pure item/vote lifecycle rules; and `app/concierge/{constraints,preferences,rag,service}.py` for authorized rule resolution, retrieval and generation. API transport lives in `app/api/concierge.py` and the native gateway; both invoke the same domain services.
 
 One pooled SQLAlchemy async engine supplies a separate connection/transaction to each concurrent operation. The current implementation uses SQLAlchemy Core AsyncConnection rather than sharing ORM AsyncSessions. Two bounded model calls per worker are permitted; when occupied, another eligible request uses a labeled grounded fallback. Model I/O runs outside the room lock. Context is captured under the room lock and revalidated before a durable answer is saved. In-flight identical questions share a ref-counted per-room lock; completed locks are removed. No user token, model free text or question is emitted to operational logs.
 
-JSON logs whitelist event, trip/session IDs, roomEpoch, roomSeq, committedSeq, correlationId and UTC timestamp. Failed/uncertain commits freeze the room. Crash recovery reloads committed relational state and changes roomEpoch. The test-only recovery factory/file gate is not part of the production entry point. See [Phase 2 evidence](PHASE_2_EVIDENCE.md) for real process-kill, PostgreSQL-outage and lost-ack tests. Full backup restore, overdue elections and performance distributions remain later checks.
+JSON logs whitelist event, trip/session IDs, roomEpoch, roomSeq, committedSeq, correlationId and UTC timestamp. Failed/uncertain commits freeze the room. Crash recovery reloads committed relational state and changes roomEpoch. The test-only recovery factory/file gate is not part of the production entry point. See [Phase 2 evidence](PHASE_2_EVIDENCE.md) for real process-kill, PostgreSQL-outage and lost-ack tests. Backup restore, overdue elections and performance distributions were subsequently exercised in Phase 4.
 
 ### Indian locale implementation
 
-New UI trips select Bengaluru/INR/Asia-Kolkata. The display/input helper converts IST to offset-aware UTC instants and retains the destination-local dayIndex, including midnight crossing to the previous UTC day. Server validation continues to use IANA Asia/Kolkata. Actor budget events derive currency from the loaded trip; Concierge eligible choices carry the authorized trip currency to factual rendering. The schema accepts INR and legacy EUR, with trip creation requiring a matching dataset currency. No migration rewrites existing monetary values.
+New UI trips default to Bengaluru/INR/Asia-Kolkata and can select another active destination. The selected dataset supplies currency and timezone. The display/input helper converts IST to offset-aware UTC instants and retains the destination-local dayIndex, including midnight crossing to the previous UTC day. Server validation continues to use IANA Asia/Kolkata. Actor budget events derive currency from the loaded trip; Concierge eligible choices carry the authorized trip currency to factual rendering. The schema accepts INR and legacy EUR, with trip creation requiring a matching dataset currency. No migration rewrites existing monetary values.
 
 ## Phase 3 boundaries (2026-11-01)
 
@@ -119,4 +111,8 @@ Small versioned model artifacts live as checksummed JSONB in PostgreSQL, rather 
 
 `app/transport.py` bounds HTTP input before parsing. Binary socket frames close explicitly; bounded subscriber queues disconnect slow readers without blocking healthy peers. No new application worker, backend service or schema migration is introduced. The model adapter now generates only one allowlisted source ID; complete filters and factual rendering stay in Python. See AI_TRAVEL_CONCIERGE.md for the internal prompt reduction and unchanged public contract.
 
-Actual restore checks compare every public table's logical digest before application hydration, then verify new epochs and idempotent overdue-election recovery. Generated schema/index metadata and OpenAPI are in `evidence/contracts/`. The reference diagrams above explain the domain; these extracted contracts and Alembic revision 0011_phase3 are authoritative for the implemented physical fields. Load/client/model/browser measurements and scope limits are in PHASE_4_EVIDENCE.md.
+Actual restore checks compare every public table's logical digest before application hydration, then verify new epochs and idempotent overdue-election recovery. Generated schema/index metadata and OpenAPI are in `evidence/contracts/`. The reference diagrams above explain the domain; these extracted contracts and the current Alembic head are authoritative for the implemented physical fields. Load/client/model/browser measurements and scope limits are in PHASE_4_EVIDENCE.md.
+
+## Personal activities and destination choice
+
+The authenticated catalog lists active destinations. Creation pins the selected dataset and copies its currency/timezone. The room shortcut opens separate trip creation. Personal activity input shares the pin command and room actor, carries a user-entered name/cost, and uses the same time validation, permissions, versions, persistence, budget splits and overlap detection. A nullable venue reference distinguishes it from catalog data. Venue elections and Concierge location anchors accept catalog entries. See ADR-022 and the current schema.

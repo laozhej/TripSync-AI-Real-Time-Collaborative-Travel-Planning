@@ -1,0 +1,4 @@
+Command: BROWSER_API_PORT=8017 BROWSER_WEB_PORT=5187 .venv/Scripts/python.exe -u backend/tests/browser_clean_setup.py backend/tests/browser_side_quests.py
+PASS: Bengaluru default, Goa creation/catalog, personal activity sync/move, separate-room isolation and reload/rejoin
+Chrome 156.0.8078.79
+Disposable browser database removed

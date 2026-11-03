@@ -1,0 +1,29 @@
+✔ Indian slots convert IST midnight to previous UTC day without changing trip day (34.9994ms)
+✔ Lisbon summer UTC drop uses the destination-local day index (0.6235ms)
+✔ positive offset includes the previous UTC display date (2.1644ms)
+✔ winter Lisbon has no extra display day (0.2854ms)
+✔ negative offset includes the next UTC date (0.688ms)
+✔ quarter-hour offset does not require a guessed numeric offset (0.4486ms)
+✔ invalid or out-of-trip slots reject before any command is sent (0.3687ms)
+✔ drop preserves duration and half-open end may equal trip midnight (0.2729ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 174.3433
+
+> tripsync-client@0.1.0 build
+> vite build
+
+vite v7.3.7 building client environment for production...
+transforming...
+✓ 34 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.36 kB │ gzip:  0.27 kB
+dist/assets/index-BtFOxuk1.css   24.90 kB │ gzip:  5.83 kB
+dist/assets/index-CqMBIvM_.js   295.16 kB │ gzip: 89.52 kB
+✓ built in 1.53s

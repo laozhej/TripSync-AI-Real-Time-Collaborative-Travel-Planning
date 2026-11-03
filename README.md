@@ -6,7 +6,7 @@ Independent educational prototype, broader project title “Airbnb Real-Time AI 
 
 **Selected track: Track A (full-stack). Selected stack: Python — FastAPI native WebSockets, PostgreSQL, SQLAlchemy async/asyncpg, Pytest; React JavaScript client.** Exactly one application backend; Concierge/recommendations are local Python modules. The PRD permits hosted or local inference. The user selected local open-source inference: Qwen2.5 1.5B through a portable Ollama runtime; this is an implementation choice, not a PRD mandate. Concierge business logic belongs to the single Python application backend. Alternatives and trade-offs are in [decisions](docs/DECISIONS.md).
 
-New trips follow the Indian baseline: **Bengaluru, INR (₹) and IST**. Prices and destination metadata are fictional project-authored samples. Existing trips retain their original currency. See [India localization evidence](docs/INDIA_LOCALIZATION_EVIDENCE.md).
+New trips default to **Bengaluru, INR (₹) and IST** and can select another destination with an active dataset. Goa is an additional fictional INR/IST sample. Prices and destination metadata are fictional project-authored samples. Existing trips retain their original currency. See [India localization evidence](docs/INDIA_LOCALIZATION_EVIDENCE.md).
 
 ## Intended scope
 
@@ -18,8 +18,8 @@ Private/local use by one operator, one engineer, four-week baseline. No booking,
 
 1. Read [requirements](docs/PROJECT_REQUIREMENTS.md) and [provisional decisions](docs/DECISIONS.md).
 2. Follow the [four-week plan](docs/IMPLEMENTATION_PLAN.md) and [25-task backlog](docs/TASKS.md).
-3. First implementation slice: **authentication → create Trip Room → second participant joins → basic server-authoritative board synchronization**. Prerequisites: stack setup/locks, identity/membership/item migrations, one destination and shared socket/HTTP policy.
-4. Follow the [setup/run/test commands](docs/ENVIRONMENT_SETUP.md), including local-model startup and migrations through `0011_phase3`. Actual exercised versions/results are in [Phase 2 evidence](docs/PHASE_2_EVIDENCE.md); final clean-setup/submission results are in Phase 4 evidence.
+3. The core demo follows **authentication → create Trip Room → second participant joins → shared board synchronization**. Add a catalog venue or a personal activity, then exercise votes, constraints and budgets.
+4. Follow the [setup/run/test commands](docs/ENVIRONMENT_SETUP.md), including local-model startup and migrations through `0012_personal_activities`. Actual exercised versions/results are in [Phase 2 evidence](docs/PHASE_2_EVIDENCE.md); final clean-setup/submission results are in Phase 4 evidence.
 5. During implementation use Pytest/HTTP/socket/browser tests from feature creation, then collect actual evidence using the [demo/submission path](docs/DEMO_AND_SUBMISSION.md). See the recorded checks and limitations in the implementation evidence.
 
 Weeks: 1 foundation + thin slice; 2 board and Concierge; 3 voting/personalization/analytics/Admin; 4 hardening/measurements/demo. High risks are Week 3 breadth, local model P95 <3 s, synchronization timing, batched durability and synthetic recommendation evaluation. Reduce dataset/model complexity before correctness, security, tests or documentation. See the decision log for voting eligibility/ties, room locking, Leader absence, money/time defaults and crash-loss limits needing review.
@@ -40,7 +40,7 @@ Weeks: 1 foundation + thin slice; 2 board and Concierge; 3 voting/personalizatio
 | [Dataset guide](docs/DATASET_GUIDE.md) | Authored JSON/YAML, provenance, validation/coverage |
 | [Testing](docs/TESTING_STRATEGY.md) | Planned assertions and measurement methodology |
 | [Security](docs/SECURITY.md) | JWT/refresh, HTTP/socket RBAC, inputs/secrets/logs |
-| [Environment](docs/ENVIRONMENT_SETUP.md) | Official references, prerequisites, provisional commands |
+| [Environment](docs/ENVIRONMENT_SETUP.md) | Prerequisites and exercised setup commands |
 | [Deployment/operations](docs/DEPLOYMENT_AND_OPERATIONS.md) | Local topology, health, backup/recovery |
 | [Tasks](docs/TASKS.md) | Ordered solo backlog with evidence-backed completion |
 | [Phase 2 evidence](docs/PHASE_2_EVIDENCE.md) | Implemented Week 2 checkpoint, checks and limitations |
@@ -50,15 +50,15 @@ Weeks: 1 foundation + thin slice; 2 board and Concierge; 3 voting/personalizatio
 
 [CONTRIBUTING](CONTRIBUTING.md) defines incremental workflow; [AGENTS](AGENTS.md) guides later coding agents. Targets and actual outcomes are recorded in Phase 4 evidence: sync <100 ms, non-AI P95 <200 ms, AI P95 <3 s, fan-out <500 ms, snapshot within 2 s, conflict within 1 s in ≥95%, exact budgets/analytics, valid suggestions over ≥20 tests and Precision@5≥0.6. Design for 50 planners and multiple rooms; transparently reported 5–10-client tests are acceptable (§14.1).
 
-## Run the current slice
+## Run the application
 
 Follow [environment setup](docs/ENVIRONMENT_SETUP.md) to install dependencies, configure a private `.env`, migrate a disposable PostgreSQL database and start the API and React client. The documented first-slice scenario covers two accounts, room creation and joining, a shared pin, and its committed watermark. [Implementation evidence](docs/PHASE_1_EVIDENCE.md) records the actual tests, limitations and remaining acceptance work.
 
-The app is intended for local development. The historical first-slice evidence describes an earlier subset; use the Phase 3 evidence for the current feature boundary. Final security, performance, restore and submission results are recorded in Phase 4 evidence.
+The app is intended for local development. The historical first-slice evidence describes an earlier subset; use the Phase 3 and side quest evidence for feature coverage. Final security, performance, restore and submission results are recorded in Phase 4 evidence.
 
 ### Phase 3 implemented
 
-Exact weighted budgets, durable conflicts/timed elections, dashboard/group recommendations, session analytics and Admin dataset staging/activation are available. [Phase 3 evidence](docs/PHASE_3_EVIDENCE.md) records actual database, browser, real-model and evaluation results. Current migration head: `0011_phase3`; retain one application worker. Use the Admin room button or `python -m app.cli train-recommendations --destination "Bengaluru, India"` to refresh a model after collecting likes/pins. Phase 4 hardening/evidence is complete, with measured misses and limitations recorded.
+Exact weighted budgets, durable conflicts/timed elections, dashboard/group recommendations, session analytics and Admin dataset staging/activation are available. [Phase 3 evidence](docs/PHASE_3_EVIDENCE.md) records actual database, browser, real-model and evaluation results. Current migration head: `0012_personal_activities`; retain one application worker. Use the Admin room button or `python -m app.cli train-recommendations --destination "Bengaluru, India"` to refresh a model after collecting likes/pins. Phase 4 hardening/evidence is complete, with measured misses and limitations recorded.
 
 ### Frontend workspace
 
@@ -73,3 +73,8 @@ Transport/security hardening, ten-socket/two-room measurements, actual PostgreSQ
 Measured limitations remain: maximum socket sync 144 ms and one rendered move 133 ms exceed the strict 100-ms target. Warm real-model HTTP P95 is 1.60 s with 99/100 grounded responses; cold inference falls back. A single rendered AI observation was 3.20 s including automation overhead; rendered AI P95 and fifty-distinct-planner capacity are unestablished. These outcomes are recorded, not silently passed. Raw samples, generated contracts, test output and the local HTTP collection are under `evidence/` and `http/`.
 
 Use ENVIRONMENT_SETUP.md's Phase 4 commands to reproduce checks. `python scripts/scan-submission.py` scans current/reachable-history signatures with explicit limits; `python scripts/package-submission.py` creates an ignored `.local/tripsync-phase4-submission.zip` and an evidence manifest. No credentials, dumps, dependency directories or model runtime are included.
+
+
+### Side quests and submission
+
+Destination selection, a separate-trip shortcut and personal activities are implemented. Apply migration 0012 and import the fictional Goa sample to expose that destination. Personal activities carry a user-entered per-person cost and participate in schedule/budget checks. Venue ballots and Concierge anchors use catalog entries. Current checks and §12.1 readiness are recorded in [submission follow-up](docs/SUBMISSION_READINESS.md).

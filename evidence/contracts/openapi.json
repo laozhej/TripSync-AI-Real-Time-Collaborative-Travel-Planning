@@ -144,6 +144,53 @@
         }
       }
     },
+    "/api/v1/destinations": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Destinations",
+        "operationId": "destinations_api_v1_destinations_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/destinations/{destination}/venues": {
       "get": {
         "tags": [
@@ -2555,6 +2602,30 @@
         ],
         "title": "OpenVote"
       },
+      "PersonalActivity": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Name"
+          },
+          "pricePerPersonMinor": {
+            "type": "integer",
+            "maximum": 1000000000000.0,
+            "minimum": 0.0,
+            "title": "Priceperpersonminor"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "pricePerPersonMinor"
+        ],
+        "title": "PersonalActivity"
+      },
       "Pin": {
         "properties": {
           "commandId": {
@@ -2568,9 +2639,26 @@
             "title": "Correlationid"
           },
           "venueId": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Venueid"
+          },
+          "personalActivity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonalActivity"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "dayIndex": {
             "type": "integer",
@@ -2625,7 +2713,6 @@
         "required": [
           "commandId",
           "correlationId",
-          "venueId",
           "dayIndex",
           "startTime",
           "endTime"

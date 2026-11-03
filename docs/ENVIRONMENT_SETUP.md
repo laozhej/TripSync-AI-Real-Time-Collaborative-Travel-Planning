@@ -26,6 +26,7 @@ $env:PYTHONPATH=(Join-Path (Get-Location) 'backend')
 .\.venv\Scripts\python.exe -m app.cli init-local-key
 .\.venv\Scripts\python.exe -m alembic -c backend\alembic.ini upgrade head
 .\.venv\Scripts\python.exe -m app.cli import-dataset data\destinations\bengaluru.json
+.\.venv\Scripts\python.exe -m app.cli import-dataset data\destinations\goa.json
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000 --workers 1
 ```
 
@@ -56,7 +57,7 @@ Database integration tests are skipped unless `TEST_DATABASE_URL` is set to a di
 
 Secrets belong only in environment variables or the ignored `.env`. `COOKIE_SECURE=false` is for local loopback HTTP; use HTTPS/WSS and secure cookies for private network testing. The JWT key also encrypts retained idempotent results: rotation invalidates access tokens and makes old encrypted responses unreadable. No public hosting is configured. Timed voting, recommendations, dashboard, analytics and Admin ingestion are implemented; evidence distinguishes functional checks from performance gates.
 
-Chat uses Alembic revision `0009_chat`; apply `upgrade head` when updating an existing local database. For an isolated browser smoke run, `\.venv\Scripts\python.exe backend\tests\browser_clean_setup.py` creates and drops a disposable database and starts temporary local servers; it requires PostgreSQL CREATEDB permission, available ports 8000/5173, Node and Windows Chrome. It does not migrate the configured database. See [evidence](PHASE_1_EVIDENCE.md) for actual results and limitations.
+Chat uses Alembic revision `0009_chat`; apply `upgrade head` when updating an existing local database. For an isolated browser smoke run, `.\.venv\Scripts\python.exe backend\tests\browser_clean_setup.py` creates and drops a disposable database and starts temporary local servers; it requires PostgreSQL CREATEDB permission, available ports 8000/5173, Node and Windows Chrome. It does not migrate the configured database. See [evidence](PHASE_1_EVIDENCE.md) for actual results and limitations.
 
 ## Phase 2 local model and run path
 
@@ -101,7 +102,7 @@ The clean setup and recovery/browser wrappers create and remove their own random
 
 ## Phase 3 update
 
-Apply `python -m alembic -c backend/alembic.ini upgrade head` with PYTHONPATH=backend; current head is 0011_phase3. Keep one worker. No new dependency is required. Train the current destination model with `python -m app.cli train-recommendations --destination "Bengaluru, India"`. Training without interactions creates a disclosed cold-start artifact; use likes/pins from distinct test participants to provide actual CF evidence.
+Apply `python -m alembic -c backend/alembic.ini upgrade head` with PYTHONPATH=backend; current head is 0012_personal_activities. Keep one worker. No new dependency is required. Train the current destination model with `python -m app.cli train-recommendations --destination "Bengaluru, India"`. Training without interactions creates a disclosed cold-start artifact; use likes/pins from distinct test participants to provide actual CF evidence.
 
 Verification commands: `.venv/Scripts/python backend/tests/clean_setup.py` (disposable PostgreSQL, both sample datasets, complete backend suite); `npm --prefix frontend run test:unit`; `npm --prefix frontend run build`; `.venv/Scripts/python backend/tests/browser_clean_setup.py backend/tests/browser_phase3.py`; and the evaluation command in RECOMMENDATION_ENGINE.md. The Phase 3 browser run does not require inference; the default existing browser script still verifies real Concierge separately after local-model preload. Test database and process cleanup is scoped to generated disposable resources. Sanitized failed-run diagnostics stay ignored in .local.
 
@@ -130,3 +131,18 @@ $env:BROWSER_TEST_TIMEOUT='600'
 ```
 
 The measurement script records 1,000 moves and 1,000 HTTP reads across ten sockets/five identities/two rooms, 20 same-version races and 20 conflicts, then one explicitly unloaded cold request and 100 requests after a disclosed completed preload. It produces raw samples and nearest-rank summaries under evidence/performance. Browser render probes are separate. Results describe the exercised host/profile, not a 50-distinct-planner/LAN capacity certification. The package ZIP is ignored under `.local/tripsync-phase4-submission.zip`; its manifest contains only Git-visible source/evidence, excluding secrets and database dumps.
+
+Import the fictional Goa dataset using the same authenticated Admin upload, stage and activation workflow as other destinations, or run `python -m app.cli import-dataset data/destinations/goa.json` with the configured Python environment and `PYTHONPATH=backend`. The disposable verification script imports Goa automatically.
+
+
+## Side quest browser verification
+
+Run from the repository root with free local test ports. The script creates a disposable database, imports Bengaluru and Goa, starts temporary servers and opens headless Chrome.
+
+```powershell
+$env:BROWSER_API_PORT='8017'
+$env:BROWSER_WEB_PORT='5187'
+.\.venv\Scripts\python.exe backend/tests/browser_clean_setup.py backend/tests/browser_side_quests.py
+```
+
+The configured development database needs its own `alembic upgrade head` before running the updated app. Disposable verification does not upgrade that database.

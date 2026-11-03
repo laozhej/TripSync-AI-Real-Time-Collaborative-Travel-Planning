@@ -57,3 +57,7 @@ The written retrospective is [RETROSPECTIVE.md](RETROSPECTIVE.md). Evaluation ru
 Follow ENVIRONMENT_SETUP.md's Phase 4 block. Default browser verification demonstrates real Concierge/chat/reconnect/moderation; browser_frontend_ui.py demonstrates Viewer restrictions, stale reconciliation and overlap/budget resolution; browser_phase3.py demonstrates ballots/winner, weighted budget, dashboard/Admin/analytics. Their stdout is the executable walkthrough record; no continuous human-narrated video is claimed. The load harness independently demonstrates 20 concurrent-edit races and multi-room equality.
 
 Run `python scripts/scan-submission.py` before `python scripts/package-submission.py`. The ZIP is `.local/tripsync-phase4-submission.zip`, intentionally ignored; `evidence/submission-manifest.json` records source/artifact checksums. The Git repository retains incremental history, while the ZIP excludes Git internals, credentials, ignored model/runtime files, DB archives and dependency/build directories. The manual HTTP collection requires private client variables and does not store working access/invite tokens.
+
+## Current §12.1 verification
+
+[Submission readiness](SUBMISSION_READINESS.md) maps all eight required deliverables to current artifacts. It records the side quest browser flow and the final 117-test backend run with actual local inference. The existing package filename is retained for continuity. Regenerate the scan and manifest after any subsequent source or documentation edits.

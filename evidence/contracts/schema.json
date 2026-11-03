@@ -430,7 +430,7 @@
       "table_name": "itinerary_items",
       "column_name": "venue_id",
       "data_type": "uuid",
-      "is_nullable": "NO"
+      "is_nullable": "YES"
     },
     {
       "table_name": "itinerary_items",
@@ -491,6 +491,12 @@
       "column_name": "split_mode",
       "data_type": "character varying",
       "is_nullable": "NO"
+    },
+    {
+      "table_name": "itinerary_items",
+      "column_name": "personal_name",
+      "data_type": "character varying",
+      "is_nullable": "YES"
     },
     {
       "table_name": "memberships",

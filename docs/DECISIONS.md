@@ -1,6 +1,6 @@
 # Decisions and unresolved rules
 
-Status: design baseline established 2026-10-29; partial implementation exists. See PHASE_1_EVIDENCE.md for actual results. Source [PRD](../Document/Project%20Document.docx) §§4,6–10,13–15. Selected track/stack decisions are finalized for this documentation; domain defaults below remain provisional pending implementation review.
+Status: design baseline established 2026-10-29, with implementation evidence through Phase 4 and the side quest follow-up. Historical notes below retain the decisions available at their recorded dates. Source [PRD](../Document/Project%20Document.docx) §§4,6–10,13–15. Selected track/stack decisions are finalized for this documentation; domain defaults below remain provisional pending implementation review.
 
 | ID | Decision, alternatives and consequence | Status/source |
 |---|---|---|
@@ -26,7 +26,7 @@ Status: design baseline established 2026-10-29; partial implementation exists. S
 | ADR-020 | Minimum dataset size recommendation 12 venues/lodgings, 4 transit edges, 3 dated weather entries; only coverage, not these counts, required. Reduce counts/complexity before correctness/testing/docs. | Recommendation; §14.1 |
 | ADR-021 | Documentation first overrides scaffold-now wording; application code begins only on subsequent user request. | Required user instruction; §13.2 deviation |
 
-## Decisions to revisit before coding affected modules
+## Provisional domain policies
 
 Review ADR-007–016 with stakeholder before behavior is treated as final; safe defaults permit planning but do not assert PRD specificity. The selected local model tag/digest and smoke-test results are recorded in PHASE_2_EVIDENCE.md; the 3 s P95 target is especially risky. Review whether crash loss of volatile moves is acceptable; durable-every-move logging is an alternative with measurable latency cost. Any stronger guarantee must change protocol, persistence and tests together.
 
@@ -38,7 +38,7 @@ Preliminary create/join idempotency responses are encrypted at rest using a doma
 
 ## PRD alignment revision — 2026-10-31
 
-Per the user's instruction to build around the original project document, ADR-017 no longer mandates Ollama. PRD §§4.2/8.1 allow a hosted API or local open-source model. Provider selection is pending; the application must still implement deterministic filtering, grounded generation, citation validation and a real-model demonstration. See [alignment review](PRD_ALIGNMENT_REVIEW.md) for remaining scope and explicit user overrides. No acceptance checkbox changes result from this revision.
+Per the user's instruction to build around the original project document, ADR-017 no longer mandates Ollama. PRD §§4.2/8.1 allow a hosted API or local open-source model. At that review checkpoint, provider selection was pending; the application must still implement deterministic filtering, grounded generation, citation validation and a real-model demonstration. See [alignment review](PRD_ALIGNMENT_REVIEW.md) for remaining scope and explicit user overrides. No acceptance checkbox changes result from this revision.
 
 ## Phase 2 decision follow-up — 2026-10-31
 
@@ -65,3 +65,9 @@ All HTTP bodies now share the existing dataset's 2-MiB transport ceiling before 
 Cold generation keeps the application deadline; it does not silently extend it to load the model. The measurement procedure records an explicitly unloaded cold request, then completes a disclosed preload before measuring warm requests. The first failed-bootstrap/unpreloaded profile is preserved separately; fallbacks never count as actual model answers. This is an evidence correction, not a relaxation of hard constraints or the latency target.
 
 The pre-optimization warm profile still returned 100 fallbacks. A separate synthetic direct-model diagnostic completed a 53-token selection/reason object in 10.19 s. The internal model schema is therefore reduced to one allowlisted `sourceId`; redundant candidate/status/reason fields and duplicated schema prose are removed. The source context omits repetitive hours already verified by Python and caps descriptions at 300 characters. A diagnostic produced the same grounded selection in 2.05 s with 10 generated tokens. Public API/event fields, deterministic factual rendering, filters and the 2.5-second application deadline are unchanged. Invalid/extra-field/source-injection tests are retained with the compact schema; measured application results remain the acceptance evidence.
+
+## ADR-022 — Destination choice and personal activities (2026-11-03)
+
+Bengaluru is preselected when available. The creation form lists destinations backed by active validated datasets and submits the selected dataset currency. New rooms pin the active dataset at creation. The room action opens the new trip form so users can plan another destination in a separate room. The new room gets its own dates, budget, invitations and board.
+
+Personal activities use the same pin permissions, selected time slot, attendee rules, lifecycle and exact cost allocation as venue pins. Planners enter a name and a per-person cost in the room currency. The UI starts the cost at zero. Personal activities participate in overlap and budget checks. The venue-ID voting protocol, recommendations and Concierge location anchors remain catalog-backed. Source context: PRD §§5.1–5.3, 6.1–6.3, 14.1.

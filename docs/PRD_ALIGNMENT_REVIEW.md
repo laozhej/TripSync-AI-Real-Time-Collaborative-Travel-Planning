@@ -33,3 +33,17 @@ Phase 2 remains TASK-008–013. The next implementation priorities are presence/
 ## Subsequent Phase 2 implementation
 
 The user chose local open-source inference. Qwen2.5 1.5B through portable Ollama is the selected implementation, without turning Ollama into an original PRD requirement. The board/presence/moderation/chat/recovery and grounded Q&A paths are now implemented and verified against the Week 2 checkpoint in PRD §11.1. Actual results and limits are in PHASE_2_EVIDENCE.md. Week 3 explicitly owns live contested voting, exact budgets, conflicts, personalization/dashboard and Admin work; those required features have not been removed or claimed as finished.
+
+## Current submission review — 2026-11-03
+
+PRD §§12 and 15 require reproducible evidence and actual performance measurements against the targets in §10.2. TASK-001–025 are accepted for delivered features and artifacts. The Phase 4 record includes the final 116 backend and 8 frontend passing tests, a browser walkthrough, database restore verification and submission packaging. See [traceability](TRACEABILITY_MATRIX.md) and [Phase 4 evidence](PHASE_4_EVIDENCE.md).
+
+| PRD criterion | Recorded result and boundary |
+|---|---|
+| §§1.3,10.2 itinerary sync | Inter-client socket apply spread peaked at 12.35 ms. The separate, stricter dispatch-to-all-apply metric peaked at 144.23 ms, exceeding 100 ms in one of 1,000 moves. Both metrics exclude browser paint. |
+| §10.2 non-AI latency | Pooled HTTP P95 was 63.59 ms, below 200 ms for the sampled routes. |
+| §10.2 AI latency | Warm HTTP P95 was 1.60 s, with 99 grounded answers in 100 attempts. The cold request returned a labeled fallback. One browser-rendered sample took 3.197 s. Browser-rendered P95 is unverified. |
+| §10.2 fan-out | Dispatch-to-last-apply peaked at 144.23 ms for this profile. That interval includes the fan-out path. Exact receipt-to-delivery timing and performance at design capacity are unverified. |
+| §§1.3,10.2,14.1 scale | Trip creation supports a participant limit of 50. The test used ten sockets across five identities and two rooms. Section 14.1 explicitly permits a smaller reported load test for submission. Performance with 50 distinct planners remains unverified. |
+
+The existing measurements satisfy the reporting requirement. Full attainment of the latency targets remains unproven. The original results and raw artifacts are retained in the Phase 4 record.

@@ -1,0 +1,6 @@
+migration succeeded
+dataset import succeeded
+Indian dataset import succeeded
+Goa dataset import succeeded
+tests: 117 passed, 1 warning in 104.46s (0:01:44)
+Disposable verification database removed

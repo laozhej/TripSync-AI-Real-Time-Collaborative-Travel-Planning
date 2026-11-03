@@ -2,7 +2,7 @@
 
 Recorded: 2026-11-02.
 
-Status: ideas captured for later discussion only. This file does not authorize implementation, change project policy, or mark any feature complete. No application changes are part of this request.
+Current status: implemented after subsequent user authorization. ADR-022 records the selected scope and SUBMISSION_READINESS.md records verification. The original idea notes below document the questions considered before implementation.
 
 ## SQ-001 — Choose a trip destination
 
@@ -38,4 +38,8 @@ User idea: create a personally chosen itinerary rather than relying only on AI s
 
 ## Implementation boundary
 
-All ideas above are deferred. No phase acceptance, task checkbox, API contract, schema or application behavior changes are claimed by this note. Review the relevant requirements, decisions and traceability before implementing an idea in a later authorized task.
+The original 2026-11-02 note deferred implementation. The subsequent authorization and selected behavior are recorded below.
+
+## Implementation follow-up — 2026-11-03
+
+The initial notes above record the ideas before approval. ADR-022 records the selected behavior for the implemented side quests. The second fictional dataset is Goa. The user selected separate room creation for another destination and both dataset venues and personal activities for manual planning.

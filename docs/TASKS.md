@@ -46,7 +46,7 @@ User-authorized after Phase 2: default destination Bengaluru/India, INR/paise an
 
 ## Phase 3 acceptance — 2026-11-01
 
-TASK-014–020 are accepted with real PostgreSQL and two-context Chrome evidence in PHASE_3_EVIDENCE.md. Final full backend run: 110 passed including real Qwen inference, no skips; frontend tests 8 passed and production build succeeded. Exact recovered weighted allocations, fixed synthetic held-out evaluation, ledger reconciliation, model refresh and Admin immutable activation are verified. The evaluation's simple synthetic cohorts and unknown historical session boundaries are explicit limitations. Phase 4 TASK-021–025 and all final performance/security/restore/submission gates remain unchecked.
+TASK-014–020 are accepted with real PostgreSQL and two-context Chrome evidence in PHASE_3_EVIDENCE.md. Final full backend run: 110 passed including real Qwen inference, no skips; frontend tests 8 passed and production build succeeded. Exact recovered weighted allocations, fixed synthetic held-out evaluation, ledger reconciliation, model refresh and Admin immutable activation are verified. The evaluation's simple synthetic cohorts and unknown historical session boundaries are explicit limitations. The subsequent Phase 4 acceptance is recorded above and in PHASE_4_EVIDENCE.md.
 
 ## Phase 3 frontend presentation follow-up
 
@@ -54,3 +54,18 @@ User-requested presentation work is recorded in FRONTEND_UI_EVIDENCE.md with act
 ## Reload follow-up — 2026-11-02
 
 Accepted bug fix under AUTH-01/E2E-01, REQ-002/022/029: valid refresh-cookie sessions restore at page startup instead of returning to sign-in. Real Chrome reproduction failed before the change, then passed anonymous startup, repeated reload/no-flash/single-rotation, normal 401 retry, logout and revoked-session checks. Frontend unit tests 8 passed and build succeeded. Evidence: FRONTEND_UI_EVIDENCE.md; implementation: frontend/src/main.jsx; regression: backend/tests/browser_session_restore.py. Phase completion/KPI statuses above are unchanged.
+
+## Side quests follow-up — 2026-11-03
+
+ADR-022 records destination selection, the separate-trip shortcut and personal activity scope. The targeted clean PostgreSQL command `python backend/tests/clean_setup.py backend/tests/test_side_quests.py backend/tests/test_command_inputs.py backend/tests/test_board_lifecycle.py backend/tests/test_dataset.py` passed 23 tests on Python 3.13.1. It applied migration 0012 and imported the three fictional destination datasets. On Node v24.13.0, `node --test` passed 8 tests and `npm run build` succeeded in `frontend`. These are local correctness checks. Browser interaction and performance were outside this run.
+`python backend/tests/clean_setup.py` passed 116 tests with 1 opt-in live-model skip and 1 warning in 103.49 seconds after updating readiness to expect migration 0012. The first full run found a 503 caused by the previous revision check.
+
+## Final submission follow-up — 2026-11-03
+
+- [x] SQ-001 active destination choice and fictional Goa sample.
+- [x] SQ-002 separate-room creation from the existing-room shortcut.
+- [x] SQ-003 custom personal activities with exact cost entry and shared board synchronization.
+- [x] PRD §12.1 documentation reconciled with current implementation and examples.
+- [x] Full backend verification with real model, frontend tests/build and side quest Chrome walkthrough.
+
+Acceptance evidence and limits are recorded in SUBMISSION_READINESS.md. The final full run passed 117 tests with no skips. The historical phase records keep their original results.

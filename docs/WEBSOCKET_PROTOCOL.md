@@ -1,107 +1,209 @@
-# WebSocket protocol
+# Implemented WebSocket protocol
 
-Proposed native WebSockets, PRD §§6.1,7.3.4,9.3–9.4,10.1. Socket.IO is not used. URL `/ws/v1/trips/{tripId}`; one authenticated logical connection per room per browser tab. User/session identity comes from JWT, never socket payload user IDs. Browser handshake sends same access JWT through a short-lived HttpOnly cookie scoped `/ws`; scripted clients may send Authorization Bearer. Validate origin, token, session revocation and current membership before accepting. Reject expired credentials; refresh through HTTP then reconnect. Sensitive commands re-read current capability. Token expiry closes socket 1008; no URL token logging.
+Native WebSocket endpoint `/ws/v1/trips/{tripId}`, PRD §§6.1, 7.3.4, 9.3–9.4 and 10.1. Browser authentication uses the short-lived HttpOnly access cookie scoped to /ws. Scripted clients may supply Authorization Bearer. Both require an allowed Origin, valid token/session and active trip membership. The server revalidates on each command and every five seconds of idle receive time.
 
-## Envelope and ordering
+## Envelopes and durability
 
-Keep required fields unchanged:
+Client frames contain exactly `event` and `payload`. Server frames contain `event`, `tripId`, `payload` and integer Unix-millisecond `ts`.
 
 ```json
-{"event":"trip.board.update","tripId":"tr_1","payload":{"itemId":"it_1","dayIndex":0,"startTime":"2026-11-10T18:00:00Z","endTime":"2026-11-10T19:00:00Z","lifecycleStage":"drafting","positionVersion":5,"commandId":"<uuid>","roomSeq":31,"roomEpoch":"<uuid>","durable":false,"correlationId":"<uuid>"},"ts":1793253600000}
+{"event":"trip.persistence.committed","tripId":"11111111-1111-4111-8111-111111111111","payload":{"roomEpoch":"22222222-2222-4222-8222-222222222222","committedSeq":4},"ts":1794290400000}
 ```
 
-`ts` is server Unix milliseconds; `startTime/endTime` map to DB `starts_at/ends_at`. `dayIndex` zero-based destination-local date; mismatch with timestamps rejected. All durable aggregate events include eventId, roomSeq, roomEpoch and correlationId inside payload, proposed additions. Ephemeral presence/type/ping events have no aggregate sequence; never trigger a false sequence gap. `positionVersion` is per item, `stateVersion` for settings/membership, `roomSeq` orders accepted mutations and `committedSeq` marks persistence. TCP ordering applies only within a connection; reconnect/cross-client order is server sequence. Ignore duplicate eventId/roomSeq within epoch; gap or epoch change requests a full snapshot.
+Command IDs and correlation IDs are UUIDs. Pin, move and remove can receive applied acknowledgements before durability. A later committed watermark covers those changes. Lock, unlock, split, votes, chat, moderation and constraints commit before final success. Reusing a command ID with a different body rejects. A committed duplicate returns the stored command result.
 
-## Required server events
+Item positionVersion rejects stale intent. stateVersion guards settings changes. roomSeq orders accepted mutations and committedSeq marks persistence. A new roomEpoch discards the old volatile future. Clients obtain a full snapshot after reconnect, epoch changes or sequence gaps. Presence, typing, ping and recommendation invalidations are ephemeral and do not advance roomSeq. Conflict notifications report the committed boundary without allocating a new one.
 
-| Event | Payload (baseline fields retained; extensions explicit) |
+## Commands and examples
+
+Examples below use illustrative UUIDs. Replace resource IDs with returned IDs and use a fresh commandId/correlationId for each distinct mutation. Times carry offsets. dayIndex is relative to the trip's destination-local start date. Unknown model fields reject.
+
+### trip.board.pin
+
+Planner with canPin or Leader.
+
+```json
+{"event": "trip.board.pin", "payload": {"commandId": "11111111-1111-4111-8111-111111111111", "correlationId": "33333333-3333-4333-8333-333333333333", "dayIndex": 0, "startTime": "2026-11-10T12:00:00+05:30", "endTime": "2026-11-10T13:00:00+05:30", "venueId": "22222222-2222-4222-8222-222222222222", "attendeeIds": [], "splitMode": "even"}}
+```
+
+### trip.board.move
+
+Drafting item, Planner with canPin or Leader.
+
+```json
+{"event": "trip.board.move", "payload": {"commandId": "11111111-1111-4111-8111-111111111111", "correlationId": "33333333-3333-4333-8333-333333333333", "itemId": "22222222-2222-4222-8222-222222222222", "expectedPositionVersion": 1, "dayIndex": 0, "startTime": "2026-11-10T12:00:00+05:30", "endTime": "2026-11-10T13:00:00+05:30"}}
+```
+
+### trip.board.remove
+
+Drafting item, Planner with canPin or Leader.
+
+```json
+{"event": "trip.board.remove", "payload": {"commandId": "11111111-1111-4111-8111-111111111111", "correlationId": "33333333-3333-4333-8333-333333333333", "itemId": "22222222-2222-4222-8222-222222222222", "expectedPositionVersion": 1}}
+```
+
+### trip.board.lock
+
+Connected Leader.
+
+```json
+{"event": "trip.board.lock", "payload": {"commandId": "11111111-1111-4111-8111-111111111111", "correlationId": "33333333-3333-4333-8333-333333333333", "itemId": "22222222-2222-4222-8222-222222222222", "expectedPositionVersion": 1}}
+```
+
+### trip.board.unlock
+
+Connected Leader.
+
+```json
+{"event": "trip.board.unlock", "payload": {"commandId": "11111111-1111-4111-8111-111111111111", "correlationId": "33333333-3333-4333-8333-333333333333", "itemId": "22222222-2222-4222-8222-222222222222", "expectedPositionVersion": 1, "reason": "Revise the plan"}}
+```
+
+### trip.board.split
+
+Drafting item, Planner with canPin or Leader.
+
+```json
+{"event": "trip.board.split", "payload": {"commandId": "11111111-1111-4111-8111-111111111111", "correlationId": "33333333-3333-4333-8333-333333333333", "itemId": "22222222-2222-4222-8222-222222222222", "expectedPositionVersion": 1, "attendeeIds": ["11111111-1111-4111-8111-111111111111", "33333333-3333-4333-8333-333333333333"], "splitMode": "weighted", "weights": {"11111111-1111-4111-8111-111111111111": 1, "33333333-3333-4333-8333-333333333333": 2}}}
+```
+
+### trip.vote.start
+
+Connected Leader.
+
+```json
+{"event": "trip.vote.start", "payload": {"commandId": "11111111-1111-4111-8111-111111111111", "correlationId": "33333333-3333-4333-8333-333333333333", "expectedVersions": {"22222222-2222-4222-8222-222222222222": 1, "33333333-3333-4333-8333-333333333333": 1}, "durationSeconds": 60}}
+```
+
+### trip.vote.open
+
+Alias of trip.vote.start.
+
+```json
+{"event": "trip.vote.open", "payload": {"commandId": "11111111-1111-4111-8111-111111111111", "correlationId": "33333333-3333-4333-8333-333333333333", "expectedVersions": {"22222222-2222-4222-8222-222222222222": 1, "33333333-3333-4333-8333-333333333333": 1}, "durationSeconds": 60}}
+```
+
+### trip.vote.submit
+
+Eligible Planner or Leader.
+
+```json
+{"event": "trip.vote.submit", "payload": {"commandId": "11111111-1111-4111-8111-111111111111", "correlationId": "33333333-3333-4333-8333-333333333333", "voteId": "11111111-1111-4111-8111-111111111111", "choiceVenueId": "22222222-2222-4222-8222-222222222222", "expectedBallotVersion": 0}}
+```
+
+### trip.vote.cast
+
+Alias of trip.vote.submit.
+
+```json
+{"event": "trip.vote.cast", "payload": {"commandId": "11111111-1111-4111-8111-111111111111", "correlationId": "33333333-3333-4333-8333-333333333333", "voteId": "11111111-1111-4111-8111-111111111111", "choiceVenueId": "22222222-2222-4222-8222-222222222222", "expectedBallotVersion": 0}}
+```
+
+### trip.chat.send
+
+Unmuted member.
+
+```json
+{"event": "trip.chat.send", "payload": {"commandId": "11111111-1111-4111-8111-111111111111", "correlationId": "33333333-3333-4333-8333-333333333333", "body": "Meet at noon."}}
+```
+
+### trip.chat.typing
+
+Unmuted member.
+
+```json
+{"event": "trip.chat.typing", "payload": {"isTyping": true}}
+```
+
+### trip.chat.react
+
+Unmuted member.
+
+```json
+{"event": "trip.chat.react", "payload": {"commandId": "11111111-1111-4111-8111-111111111111", "correlationId": "33333333-3333-4333-8333-333333333333", "messageId": "22222222-2222-4222-8222-222222222222", "emoji": "👍", "active": true}}
+```
+
+### trip.moderation.command
+
+Connected Leader.
+
+```json
+{"event": "trip.moderation.command", "payload": {"commandId": "11111111-1111-4111-8111-111111111111", "correlationId": "33333333-3333-4333-8333-333333333333", "expectedStateVersion": 0, "action": "lockRoom"}}
+```
+
+### trip.constraints.update
+
+Connected Leader for group defaults, self for personal preferences.
+
+```json
+{"event": "trip.constraints.update", "payload": {"commandId": "11111111-1111-4111-8111-111111111111", "correlationId": "33333333-3333-4333-8333-333333333333", "expectedStateVersion": 0, "categoryCeilingsMinor": {"food": 50000}}}
+```
+
+### trip.sync.ping
+
+Member.
+
+```json
+{"event": "trip.sync.ping", "payload": {"clientSentAt": 1794290400000, "nonce": "11111111-1111-4111-8111-111111111111"}}
+```
+
+### trip.snapshot.request
+
+Member.
+
+```json
+{"event": "trip.snapshot.request", "payload": {}}
+```
+
+## Personal activity pins
+
+Supply either venueId or `personalActivity`, whose shape is `{"name":"Visit a friend","pricePerPersonMinor":0}`. Both source fields together reject. Names trim whitespace and accept 1–120 characters. Cost is a nonnegative integer in the room currency's minor units, bounded by the existing item/room total limits. The same slot, attendee and split fields apply. Empty attendees freeze all currently active members at pin time.
+
+Personal activities have `venueId: null` in updates and snapshots. They share move/remove/lock, budget and overlap behavior. Catalog venues remain eligible for venue ballots and Concierge anchors. Unlock requires a reason. All provisional voting, room-lock and Leader-disconnect policies are in BUDGET_AND_VOTING.md.
+
+Moderation actions are mute, unmute, remove, lockRoom, unlockRoom and transfer. Participant actions require targetUserId. Constraints accept either group categoryCeilingsMinor or targetUserId plus self constraints. Emoji choices are 👍, ❤️, 😂 and 🎉.
+
+## Server events and payload examples
+
+These are illustrative payload excerpts showing the fields specific to each event. The envelope above wraps every event. Board and durable domain events also carry applicable eventId, commandId, correlationId, roomEpoch, roomSeq and durable fields. System-generated events may omit command IDs. Complete aggregate objects use the shapes described below.
+
+| Event | Payload example |
 |---|---|
-| `trip.board.update` | itemId,dayIndex,startTime,endTime,lifecycleStage,positionVersion; add operation pin/move/remove/lock/unlock, full item or tombstone, budgetSummary and sequence metadata |
-| `trip.board.conflict` | conflictType overlap/budgetBreach,itemIds,details; add conflictId,status open/resolved, detectedAt, basedOnSeq |
-| `trip.presence.update` | participantId,action joined/left,participantCount; add connectedUsers,connectedPlanners,leaderConnected,quality. Leader-status refresh uses proposed action `updated` |
-| `trip.chat.message` | messageId,userId,body,tsSeconds; add reactions,roomSeq,eventId. tsSeconds=floor(ts/1000) for compatibility |
-| `trip.vote.open` | itemId,candidateVenueIds,closesAt; add voteId,optionItemIds,eligibleCount and eligibleUserIds restricted to members |
-| `trip.vote.cast` | itemId,userId,choiceVenueId; add voteId,ballotVersion,counts. Actor ID assigned server-side |
-| `trip.vote.resolved` | itemId,winningVenueId; add voteId,outcome resolved/cancelled,reason,winningItemId, affectedItems,budgetSummary. Null winner for zero-vote cancellation |
-| `trip.ai.suggestion` | questionId,userId,answer,suggestedVenueId,sourceEvents; add status,datasetVersion,basedOnSeq; null venue on fallback/no match |
-| `trip.sync.ping` / `trip.sync.pong` | clientSentAt,serverReceivedAt; pong adds serverSentAt,nonce. Client initiates ping with serverReceivedAt=null; server sets receive time |
+| `trip.snapshot` | `{"roomEpoch":"11111111-1111-4111-8111-111111111111","roomSeq":0,"committedSeq":0,"items":[],"votes":[],"conflicts":[]}` |
+| `trip.board.update` | `{"operation":"pin","itemId":"22222222-2222-4222-8222-222222222222","item":{"itemId":"22222222-2222-4222-8222-222222222222","venueId":null,"name":"Visit a friend","dayIndex":0,"startTime":"2026-11-10T12:00:00+05:30","endTime":"2026-11-10T13:00:00+05:30","lifecycleStage":"drafting","positionVersion":1,"pricePerPersonMinor":0,"attendeeIds":["11111111-1111-4111-8111-111111111111"],"splitMode":"even","weights":{"11111111-1111-4111-8111-111111111111":1}}}` |
+| `trip.board.edit.conflict` | `{"commandId":"11111111-1111-4111-8111-111111111111","itemId":"22222222-2222-4222-8222-222222222222","expectedPositionVersion":1,"currentPositionVersion":2,"currentItem":{"itemId":"22222222-2222-4222-8222-222222222222","positionVersion":2},"roomSeq":2}` |
+| `trip.board.conflict` | `{"fingerprint":"example-hash","conflictType":"overlap","itemIds":["11111111-1111-4111-8111-111111111111","22222222-2222-4222-8222-222222222222"],"details":{},"status":"open","roomSeq":2,"roomEpoch":"11111111-1111-4111-8111-111111111111","durable":true}` |
+| `trip.presence.update` | `{"participantId":"11111111-1111-4111-8111-111111111111","action":"joined","participantCount":2,"connectedUsers":["11111111-1111-4111-8111-111111111111","22222222-2222-4222-8222-222222222222"],"connectedPlanners":2,"leaderConnected":true,"stateVersion":1,"members":[]}` |
+| `trip.chat.message` | `{"messageId":"22222222-2222-4222-8222-222222222222","userId":"11111111-1111-4111-8111-111111111111","body":"Meet at noon.","tsSeconds":1794290400,"reactions":[]}` |
+| `trip.chat.typing.update` | `{"userId":"11111111-1111-4111-8111-111111111111","isTyping":true,"expiresAt":"2026-11-10T06:00:03Z"}` |
+| `trip.chat.reaction.update` | `{"messageId":"22222222-2222-4222-8222-222222222222","reactions":[{"emoji":"👍","userIds":["11111111-1111-4111-8111-111111111111"]}]}` |
+| `trip.vote.open` | `{"itemId":"22222222-2222-4222-8222-222222222222","candidateVenueIds":["11111111-1111-4111-8111-111111111111","22222222-2222-4222-8222-222222222222"],"closesAt":"2026-11-10T06:01:00Z","voteId":"11111111-1111-4111-8111-111111111111","vote":{"status":"open"},"affectedItems":[]}` |
+| `trip.vote.cast` | `{"itemId":"22222222-2222-4222-8222-222222222222","userId":"11111111-1111-4111-8111-111111111111","choiceVenueId":"22222222-2222-4222-8222-222222222222","voteId":"11111111-1111-4111-8111-111111111111","ballotVersion":1,"vote":{"status":"open"}}` |
+| `trip.vote.resolved` | `{"itemId":"22222222-2222-4222-8222-222222222222","winningVenueId":null,"voteId":"11111111-1111-4111-8111-111111111111","vote":{"status":"cancelled"},"affectedItems":[],"activeItems":[],"archivedItems":[]}` |
+| `trip.ai.suggestion` | `{"questionId":"11111111-1111-4111-8111-111111111111","userId":"11111111-1111-4111-8111-111111111111","answer":"No authored venue satisfies the constraints.","suggestedVenueId":null,"sourceEvents":[],"status":"no_valid_candidate","datasetVersion":1,"basedOnSeq":2}` |
+| `trip.sync.pong` | `{"clientSentAt":1794290400000,"nonce":"11111111-1111-4111-8111-111111111111","serverReceivedAt":1794290400001,"serverSentAt":1794290400001}` |
+| `trip.command.ack` | `{"commandId":"11111111-1111-4111-8111-111111111111","status":"applied","roomSeq":1,"positionVersion":1,"durable":false,"committedSeq":0}` |
+| `trip.command.error` | `{"code":"FORBIDDEN","commandId":"11111111-1111-4111-8111-111111111111"}` |
+| `trip.persistence.committed` | `{"committedSeq":1,"roomEpoch":"11111111-1111-4111-8111-111111111111"}` |
+| `trip.persistence.degraded` | `{"committedSeq":0,"reason":"commit failed; reconnect after recovery"}` |
+| `trip.moderation.update` | `{"action":"lockRoom","stateVersion":2}` |
+| `trip.constraints.update` | `{"stateVersion":2}` |
+| `trip.recommendations.updated` | `{}` |
+| `session.ended` | `{"stateVersion":2,"finalBudget":{"currency":"INR","proposedMinor":0,"lockedMinor":0}}` |
 
-## Proposed client commands and replies
+The gateway sends vote/split service result payloads directly inside trip.command.ack. Other commands return the compact status acknowledgement shown above. Duplicate status and optional version fields depend on the command.
 
-Every mutating command includes UUID commandId and correlationId. At most 64 KiB JSON/frame; 20 commands/s/socket burst 40 (provisional); chat ≤2000 chars, question ≤4000, typing ≤1/s, emoji from documented allowlist. Bad payload → `trip.command.error`; repeated abuse close 1008, oversized close 1009. Slow client send queue >100 aggregate events → close 1013 with snapshot-on-rejoin, never silently drop board updates.
+Board updates include operation and item. Pin/move/remove/lock/unlock additionally expose item fields at the payload top level. Split sends its item under item. budgetSummary contains currency, proposedMinor, lockedMinor, perPerson, itemAllocations, reservationMethod and reservations. Open votes reserve each attendee's maximum candidate allocation. Finalized sessions have equal proposed/locked totals.
 
-| Command | Fields beyond common IDs | Authorization/result |
-|---|---|---|
-| `trip.board.pin` | venueId,dayIndex,startTime,endTime,attendeeIds,splitMode,weights? | Planner canPin/Leader; new Drafting item |
-| `trip.board.move` | itemId,expectedPositionVersion,dayIndex,startTime,endTime | Drafting, canPin/Leader |
-| `trip.board.split` | itemId,expectedPositionVersion,attendeeIds,splitMode,weights | Drafting, canPin/Leader |
-| `trip.board.remove` | itemId,expectedPositionVersion | Drafting, canPin/Leader |
-| `trip.board.lock` / `trip.board.unlock` | itemId,expectedPositionVersion,reason for unlock | Leader; explicit override unlock |
-| `trip.vote.start` | expectedVersions,durationSeconds? | Leader; uses HTTP vote service |
-| `trip.vote.submit` | voteId,choiceVenueId,expectedBallotVersion | Eligible Planner/Leader; no request userId |
-| `trip.chat.send` | body | Unmuted member |
-| `trip.chat.typing` | isTyping bool | Unmuted member; expires after 3 s |
-| `trip.chat.react` | messageId,emoji,active bool | Unmuted member; upsert/remove idempotent |
-| `trip.moderation.command` | action mute/remove/lockRoom/unlockRoom/transfer, targetUserId?,expectedStateVersion | Leader; transfer requires active Planner |
-| `trip.snapshot.request` | lastSeenSeq,lastEpoch | Member; full snapshot baseline |
-| `trip.sync.ping` | clientSentAt,nonce | Member; pong |
+Vote objects include voteId, optionIds, options (itemId, venueId, name), eligibleUserIds, status, closesAt and ballots (userId, choiceItemId, version), with result fields after resolution. Opening/resolution also carries affected items and budgetSummary. Clients refresh their snapshot after multi-item vote transitions.
 
-`trip.command.ack` (proposed): `{commandId,status:applied|committed|duplicate,roomSeq,positionVersion?,durable,committedSeq}`. Final durability notification `trip.persistence.committed` advances committedSeq, covering earlier volatile ack. Significant commands send committed ack after transaction. Dedup same command/body returns original result; different body with same ID is COMMAND_ID_REUSE. `trip.command.error` contains code,fields,current?,commandId. No state mutation on rejection.
+Snapshots additionally contain connectedUsers, leaderConnected, stateVersion, sessionId, trip (status, roomLocked, categoryCeilingsMinor, timezone), preferences, lastSuggestion, budgets, chat and members. Chat contains up to 100 latest messages and a before cursor for older REST history. A member includes userId, displayName, role, canPin and muted.
 
-`trip.board.edit.conflict` (proposed) is separate from schedule/budget `trip.board.conflict`: `{commandId,itemId,expectedPositionVersion,currentPositionVersion,currentItem,roomSeq}`. Two moves from version 4: first accepted becomes 5; second explicitly rejected. Client replaces preview with currentItem, shows a conflict notice and lets user submit a fresh deliberate command. Do not auto-increment version or retry stale intent.
+## Reconnect, errors and limits
 
-Other proposed events: `trip.chat.typing.update` `{userId,isTyping,expiresAt}`; `trip.chat.reaction.update` `{messageId,reactions}`; `trip.moderation.update` `{action,targetUserId?,stateVersion}`; `trip.persistence.degraded` `{committedSeq,reason}`; `trip.recommendations.updated` `{modelVersion,asOf}`. They are additions, not PRD-listed core events.
+Subscription and snapshot are enqueued under the room lock before subsequent events. First/last sockets affect distinct-user presence. The last Leader socket disconnect immediately freezes connected-Leader actions. Membership and stable planning-session identity persist across reconnects. The browser refreshes HTTP credentials and reconnects with backoff.
 
-## Join, reconnect and snapshot
+A stale position emits trip.board.edit.conflict with the authoritative currentItem. The client displays reconciliation controls and requires a new deliberate edit. Other domain failures emit trip.command.error. Malformed payloads use INVALID_COMMAND.
 
-HTTP join redeems invite once; reconnect does not redeem again. Authenticate same user/session and validate active membership. Attach connection to existing identity; only first socket joins presence and last socket leaves. A 15 s provisional disconnect grace preserves session ID/chat context; Leader disconnected state is immediate when last socket drops. Membership count does not fluctuate with sockets; peak concurrency counts distinct connected Planner/Leader identities.
+Text frames are bounded to 65,536 UTF-8 bytes. Binary frames close 1003, oversized frames close 1009, and more than 40 frames in a rolling second closes 1008. Failed authorization also closes 1008. A subscriber queue is bounded to 100 entries and slow consumers disconnect for snapshot recovery. Typing true updates are limited to one per second and expire after three seconds. The client measures ping RTT for connection quality.
 
-Snapshot event `trip.snapshot` (proposed) payload:
-
-```json
-{"roomEpoch":"<uuid>","roomSeq":31,"committedSeq":30,"stateVersion":3,"sessionId":"<uuid>","trip":{"status":"live","roomLocked":false},"items":[],"budgets":{"currency":"EUR","proposedMinor":0,"lockedMinor":0,"perPerson":[]},"votes":[],"conflicts":[],"members":[],"leaderConnected":true,"chat":{"items":[],"nextCursor":null},"serverTime":"2026-10-29T06:00:00Z"}
-```
-
-Actor captures snapshot and subscription at one sequence boundary: enqueue later events only after snapshot; client atomically replaces local aggregate then applies subsequent sequences. Older chat comes from paginated REST. No replay buffer required for baseline: every reconnect gets full snapshot within 2 s target (§6.1). Backoff 0.5/1/2/4/8 s plus jitter; reconnect automatically only with valid session. New epoch discards optimistic/uncommitted commands and announces potential rollback; user decides whether to reapply. Removed members are closed immediately and denied snapshot. Ping every 10 s; disconnect after 30 s without response, quality derived from RTT and missed pongs, never a claimed one-way measurement.
-
-## Implemented first-slice subset — 2026-10-30
-
-The gateway now supports authenticated snapshot subscription and `trip.board.pin`, broadcasting `trip.board.update`, `trip.command.ack`, `trip.persistence.committed`, and persistence degradation. The first-slice snapshot contains items, even-split budgets, members, trip status, stable planning-session ID, epoch and sequences. Chat, votes, conflicts and other later-feature fields are not yet implemented. The browser reconnects with backoff and refreshes on HTTP 401; the full browser expiry/failure matrix remains pending. Logout and refresh-token reuse close tracked session sockets; idle expiry/membership revalidation is polled at up to five-second intervals. Command rate limiting currently caps 40 frames in a rolling second, rather than the proposed sustained/burst token bucket. Full protocol and security acceptance remain pending. See [evidence](PHASE_1_EVIDENCE.md).
-
-The client now reconnects a dropped socket with backoff and requests an initial snapshot on the new connection; a forced-close browser test recovered the saved pin. HTTP requests attempt refresh after 401; browser expiry/refresh failure paths and full reconnect semantics are not yet verified. See [evidence](PHASE_1_EVIDENCE.md).
-
-## Implemented board commands — 2026-10-31
-
-The live socket gateway accepts `trip.board.move`, `trip.board.remove`, `trip.board.lock`, and `trip.board.unlock` using the command fields above. Moves/removals are volatile until the existing batch watermark advances; version-conditional database updates freeze the room if the durable base does not match. Lock/unlock flush prior pending changes and commit the transition before broadcasting success; unlock requires a reason. A stale position produces `trip.board.edit.conflict` with the authoritative item. The client reconciles board updates and presents basic move/remove/lock controls. The day/time selector is UTC and is not yet a full day/time grid. These commands do not implement voting, presence, moderation, or the entire TASK-008 acceptance.
-
-## Chat implementation — 2026-10-31
-
-Authenticated room members can send durable text chat using `trip.chat.send`; `trip.chat.message` advances the room sequence only after the message and event commit. A reconnect snapshot includes the latest 100 messages and their reactions, with a cursor when older history exists. `GET /api/v1/trips/{tripId}/chat?before=<roomSeq>` retrieves up to 50 earlier committed messages. `POST /api/v1/trips/{tripId}/chat` accepts `{body}` and an optional UUID `Idempotency-Key`; it uses the same room authorization and persistence path. The currently implemented cursor is a sequence number, not the opaque cursor proposed above. Muted members and finalized trips cannot send or react. Messages are rendered as text by React.
-
-`trip.chat.typing` accepts `{isTyping:boolean}` and emits ephemeral `trip.chat.typing.update`; true indicators expire after three seconds, and the server throttles true updates to one per second per user. `trip.chat.react` accepts common command IDs plus `messageId`, `emoji`, and `active`; the current allowlist is 👍, ❤️, 😂 and 🎉. Reactions are durable and unique per message/user/emoji. The client shows an optimistic reaction pending the committed update. This is a partial TASK-010 implementation; complete role/isolation and failure coverage remains to be demonstrated.
-
-## Presence and connection measurement — 2026-10-31
-
-The room tracks sockets by authenticated user and publishes ephemeral `trip.presence.update` notifications with active member summaries, distinct-user counts, connected Planners and Leader connection status. Additional tabs use `updated`; first/last identity connection uses joined/left. Snapshots include connectedUsers and leaderConnected. The browser updates its member list and online indicators. Disconnect cleanup is shielded from cancellation while completing the database-backed presence update. Ping/pong echoes the nonce and client timestamp and adds server timestamps; the browser sends a ping every 10 seconds, displays round-trip time and reconnects when no pong is received for 30 seconds. These are connection indicators, not performance acceptance evidence. Leader moderation/transfer remain pending.
-
-## Phase 2 sequenced events and snapshots — 2026-10-31
-
-`trip.moderation.command` is implemented for mute/unmute/remove/lockRoom/unlockRoom/transfer with common IDs, expectedStateVersion and optional targetUserId. The committed `trip.moderation.update` includes stateVersion, roomSeq/epoch, eventId/correlationId, durable=true, roomLocked, leaderUserId, leaderConnected, connectedUsers and current active members (including muted). Transfer swaps both membership roles and trips.leader_user_id in one transaction. Removed members are closed with 1008 and cannot replay an old invite join. No automatic promotion occurs on Leader disconnect.
-
-Proposed addition `trip.constraints.update` is both the client command and its committed server event. The command includes common IDs, expectedStateVersion, and group categoryCeilingsMinor **or** self targetUserId/constraints. The event carries versions/identifiers and group ceilings, without broadcasting another user's private ceiling values. Clients request a fresh actor-authorized snapshot after this event. Group settings require a connected Leader; self dietary/category declarations do not confer a role.
-
-`trip.ai.suggestion` is now a committed sequenced event. It contains the HTTP answer fields described in API_SPECIFICATION. Clients advance their aggregate sequence on AI/constraints/moderation events as well as board/chat/reactions. Ephemeral presence/typing/pong events do not advance roomSeq. Presence includes current stateVersion, including updates after an HTTP join, so the next deliberate settings action uses the latest observed version. A stale settings action still rejects explicitly and requests reconciliation.
-
-Snapshots now include active member mute/role flags, own `preferences`, trip `categoryCeilingsMinor`, connectedUsers/leaderConnected, current chat/reactions/cursor and the latest committed suggestion, alongside lifecycle/budgets/watermarks. A snapshot or new epoch replaces the client's aggregate; it does not silently replay uncommitted commands. Timed election/ballot and conflict fields remain Phase 3 additions, not fabricated empty working services. Browser token expiry/revocation, multi-tab disconnect and actual crash tests are recorded in [Phase 2 evidence](PHASE_2_EVIDENCE.md).
-
-## Phase 3 live additions
-
-`trip.vote.start`/`trip.vote.open` commands accept expectedVersions keyed by item UUID and durationSeconds 10..300 (default 60). `trip.vote.submit`/`trip.vote.cast` accept voteId,choiceVenueId,expectedBallotVersion. Both invoke the same election services as REST. Common commandId/correlationId remain required. `trip.board.split` performs versioned attendee/even-or-weighted edits through the same service as HTTP.
-
-Core `trip.vote.open`, `trip.vote.cast` and `trip.vote.resolved` retain their PRD fields and additionally carry a complete bounded vote object. Open/resolved carry budgetSummary and affectedItems; resolution also carries activeItems/archivedItems. The client requests a full snapshot to reconcile these multi-item transitions. Cast includes authenticated userId and incremented ballotVersion. No winner is published before commit.
-
-`trip.board.conflict` is now emitted after its transaction commits: `{fingerprint,conflictType,itemIds,details,status,roomSeq,roomEpoch,durable:true}`. Open and resolved incidents carry the resulting committed boundary without consuming a new sequence; clients refetch the snapshot. Snapshots include persisted open/resolved history and current ballots. `session.ended` triggers a finalized snapshot. `trip.recommendations.updated` is an invalidation signal; it does not advance roomSeq. The browser separately increments its recommendation refresh token so a same-sequence model/interaction update still refetches the rail. The server-assigned envelope and all original core event names remain unchanged.
-## Phase 4 transport rejection
-
-Binary frames close with 1003; text frames over 65,536 UTF-8 bytes close with 1009. Malformed JSON or an invalid event/payload envelope emits `trip.command.error` / `INVALID_COMMAND`. The existing per-socket 40-command/second limit closes 1008. These checks do not change the core event names or server-authoritative version rules.
-
+The two-second snapshot and sub-100-ms synchronization values are targets. Actual measurements and misses are in PHASE_4_EVIDENCE.md.

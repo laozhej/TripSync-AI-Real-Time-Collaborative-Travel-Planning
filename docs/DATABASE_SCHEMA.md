@@ -1,101 +1,94 @@
-# Database schema
+# Implemented database schema
 
-PostgreSQL reference schema and partial implementation, PRD §§7.2,9.3–9.4. Initial migrations have been applied to the local development database. Names are snake_case in SQL and camelCase over HTTP/socket. IDs are UUIDs serialized as strings; illustrative prefixed IDs in examples are aliases, not the production ID validator. All timestamps `timestamptz`; money `bigint` minor units; versions/sequences `bigint CHECK >=0`. FKs are required unless marked nullable. JSONB fields have Pydantic validation and bounded sizes.
+Current Alembic head is `0012_personal_activities`. This describes the PostgreSQL implementation for PRD §§7.2 and 9.3–9.4. Migrations define constraints and foreign keys. [Extracted schema and indexes](../evidence/contracts/schema.json) records the database exercised by the restore test. UUIDs travel as strings, timestamps use UTC instants, and money uses integer minor units in the trip currency.
 
-## Entities
+## Physical tables
 
-| Table | Fields and constraints |
+Each entry lists the actual column name and PostgreSQL type. A question mark marks a nullable column.
+
+| Table | Columns |
 |---|---|
-| users | id PK, normalized_email text UNIQUE, password_hash text, display_name varchar(80), is_admin bool default false, preferences jsonb (dietaryTags/category ceilings/categories), created_at |
-| auth_sessions | id PK, user_id FK, refresh_hash UNIQUE, family_id UUID, expires_at, revoked_at nullable; never raw refresh token |
-| datasets | id PK, destination text, version int, timezone text, status staging/active/retired, provenance jsonb, checksum text, created_by FK users, created_at; UNIQUE(destination,version), one active version/destination |
-| venue_metadata | id UUID, dataset_id FK, source_id text, name text, category enum, price_per_person_minor bigint CHECK >0, currency char(3), latitude numeric CHECK [-90,90], longitude numeric CHECK [-180,180], rating numeric CHECK [0,5], description text, hours jsonb, search_vector tsvector; PK(id,dataset_id), UNIQUE(dataset_id,source_id) |
-| venue_dietary_tags | venue_id + dataset_id composite FK, tag text from vocabulary; composite PK(venue_id,dataset_id,tag) |
-| transit_metadata | id PK, dataset_id FK, from_source_id/to_source_id text referencing imported venues, mode text, duration_minutes int CHECK >0, valid_from/to timestamptz, synthetic bool, provenance jsonb |
-| weather_metadata | id PK, dataset_id FK, local_date date, summary text, temperature_c numeric, synthetic bool, provenance jsonb; UNIQUE(dataset_id,local_date) |
-| trips | id PK, leader_user_id FK users, dataset_id FK, destination text, timezone text, start_date/end_date date CHECK end>=start, currency, total_budget_minor CHECK >0, category_ceilings jsonb, status drafting/live/finalized, room_locked bool, settings jsonb (maxParticipants 2..50, bufferMinutes, radiusKm, voteSeconds), room_seq, committed_seq, room_epoch UUID, state_version bigint, created_at |
-| memberships | trip_id FK, user_id FK, role viewer/planner/leader, status active/left/removed, can_pin bool, muted bool, dietary_tags text[], category_ceilings jsonb, total_ceiling_minor nullable, joined_at; PK(trip_id,user_id) |
-| invites | id PK, trip_id FK, code_hash UNIQUE, assigned_role viewer/planner, expires_at, max_uses int, uses int, revoked_at nullable; redeem under room actor |
-| itinerary_items | id PK, trip_id FK, venue_id/dataset_id composite FK, day_index int CHECK >=0, starts_at/ends_at CHECK end>start, lifecycle_stage drafting/voting/locked, pinned_by_user_id FK, position_version, removed_at nullable, price_snapshot_minor CHECK >0, split_mode even/weighted |
-| item_attendees | item_id FK, user_id FK users, weight int CHECK >=0; PK(item_id,user_id); application verifies trip membership and positive sum |
-| votes | id PK, trip_id FK, slot jsonb, item_id FK (stable slot representative), status open/resolved/cancelled, closes_at, eligible_user_ids UUID[], winning_venue_id nullable, resolution_reason text nullable, created_at; at most one open vote per slot key |
-| vote_options | vote_id FK, item_id FK, venue_id/dataset_id composite FK, order_key text; PK(vote_id,item_id) |
-| ballots | vote_id FK, user_id FK, choice_item_id FK, cast_at, version bigint; PK(vote_id,user_id); option must belong to vote |
-| chat_messages | id PK, trip_id FK, user_id FK nullable for system/AI, msg_type chat/ai_answer/system/conflict, body text, created_at, room_seq |
-| reactions | message_id FK, user_id FK, emoji varchar(16); PK(message_id,user_id,emoji) |
-| interactions | id PK, user_id FK, trip_id FK, venue_id nullable, destination/category text, kind view/pin/like/lock/co_travel, liked bool nullable, created_at, event_id UNIQUE; training derives co-travel from membership history |
-| room_events | trip_id FK, room_seq bigint, event_id UUID UNIQUE, command_id UUID nullable, session_id UUID, actor_id nullable, type text, payload jsonb, occurred_at; PK(trip_id,room_seq), UNIQUE(trip_id,command_id) when command_id nonnull |
-| room_snapshots | trip_id PK/FK, committed_seq, schema_version int, state jsonb, updated_at; rebuild accelerant, not independent authority |
-| conflicts | id PK, trip_id FK, fingerprint text, type overlap/budgetBreach, item_ids UUID[], status open/resolved, details jsonb, opened_seq, resolved_seq nullable; one open fingerprint/trip |
-| model_artifacts | id PK, kind content_cf, trained_through timestamptz, dataset_hash text, relative_path text, metrics jsonb, active bool, created_at |
+| `ai_questions` | `id` uuid, `trip_id` uuid, `user_id` uuid, `request_key` uuid, `command_hash` character varying, `response` jsonb, `created_at` timestamp with time zone |
+| `auth_sessions` | `id` uuid, `user_id` uuid, `refresh_hash` character varying, `family_id` uuid, `expires_at` timestamp with time zone, `revoked_at` timestamp with time zone? |
+| `ballots` | `vote_id` uuid, `user_id` uuid, `choice_item_id` uuid, `version` bigint, `cast_at` timestamp with time zone |
+| `chat_messages` | `id` uuid, `trip_id` uuid, `user_id` uuid, `body` text, `created_at` timestamp with time zone, `room_seq` bigint |
+| `conflict_changes` | `trip_id` uuid, `room_seq` bigint, `fingerprint` text, `status` text |
+| `conflicts` | `trip_id` uuid, `fingerprint` text, `status` text, `data` jsonb, `opened_seq` bigint, `resolved_seq` bigint? |
+| `datasets` | `id` uuid, `destination` character varying, `version` integer, `timezone` character varying, `currency` character varying, `status` character varying, `provenance` jsonb, `checksum` character varying, `created_at` timestamp with time zone |
+| `http_idempotency` | `user_id` uuid, `key` uuid, `route` character varying, `body_hash` character varying, `response` jsonb, `created_at` timestamp with time zone |
+| `interactions` | `id` uuid, `user_id` uuid, `trip_id` uuid, `venue_id` uuid, `dataset_id` uuid, `kind` text, `event_id` uuid, `created_at` timestamp with time zone |
+| `invites` | `id` uuid, `trip_id` uuid, `code_hash` character varying, `assigned_role` character varying, `expires_at` timestamp with time zone, `max_uses` integer, `uses` integer, `revoked_at` timestamp with time zone? |
+| `item_attendees` | `item_id` uuid, `user_id` uuid, `weight` integer |
+| `itinerary_items` | `id` uuid, `trip_id` uuid, `venue_id` uuid?, `dataset_id` uuid, `day_index` integer, `starts_at` timestamp with time zone, `ends_at` timestamp with time zone, `lifecycle_stage` character varying, `pinned_by_user_id` uuid, `position_version` bigint, `removed_at` timestamp with time zone?, `price_snapshot_minor` bigint, `split_mode` character varying, `personal_name` character varying? |
+| `memberships` | `trip_id` uuid, `user_id` uuid, `role` character varying, `status` character varying, `can_pin` boolean, `muted` boolean, `joined_at` timestamp with time zone, `constraints` jsonb |
+| `model_artifacts` | `id` uuid, `dataset_id` uuid, `artifact` jsonb, `checksum` text, `trained_through` timestamp with time zone, `active` boolean, `created_at` timestamp with time zone |
+| `presence_ledger` | `id` uuid, `trip_id` uuid, `session_id` uuid, `connected_planners` integer, `occurred_at` timestamp with time zone |
+| `reactions` | `message_id` uuid, `user_id` uuid, `emoji` character varying |
+| `refresh_tokens` | `token_hash` character varying, `session_id` uuid, `used_at` timestamp with time zone?, `expires_at` timestamp with time zone |
+| `room_events` | `trip_id` uuid, `room_seq` bigint, `event_id` uuid, `command_id` uuid?, `session_id` uuid, `actor_id` uuid?, `type` character varying, `payload` jsonb, `occurred_at` timestamp with time zone, `legacy_auth_session_id` uuid? |
+| `room_snapshots` | `trip_id` uuid, `committed_seq` bigint, `schema_version` integer, `state` jsonb, `updated_at` timestamp with time zone |
+| `session_boundaries` | `trip_id` uuid, `session_id` uuid, `started_at` timestamp with time zone, `ended_at` timestamp with time zone? |
+| `transit_metadata` | `id` uuid, `dataset_id` uuid, `source_id` character varying, `data` jsonb |
+| `trips` | `id` uuid, `leader_user_id` uuid, `dataset_id` uuid, `destination` character varying, `timezone` character varying, `start_date` date, `end_date` date, `currency` character varying, `total_budget_minor` bigint, `status` character varying, `room_locked` boolean, `max_participants` integer, `room_seq` bigint, `committed_seq` bigint, `room_epoch` uuid, `state_version` bigint, `created_at` timestamp with time zone, `planning_session_id` uuid, `category_ceilings` jsonb |
+| `users` | `id` uuid, `normalized_email` character varying, `password_hash` text, `display_name` character varying, `is_admin` boolean, `preferences` jsonb, `created_at` timestamp with time zone |
+| `venue_dietary_tags` | `venue_id` uuid, `dataset_id` uuid, `tag` character varying |
+| `venue_metadata` | `id` uuid, `dataset_id` uuid, `source_id` character varying, `name` character varying, `category` character varying, `price_per_person_minor` bigint, `currency` character varying, `latitude` numeric, `longitude` numeric, `rating` numeric?, `description` text, `hours` jsonb, `search_vector` tsvector? |
+| `votes` | `id` uuid, `trip_id` uuid, `slot_key` text, `status` text, `closes_at` timestamp with time zone, `data` jsonb, `created_at` timestamp with time zone |
+| `weather_metadata` | `id` uuid, `dataset_id` uuid, `source_id` character varying, `local_date` date, `data` jsonb |
 
-`room_events` with type session.started/session.ended tracks planning sessions. Every persisted event carries stable session ID; chat and analytics can span reconnects. Budgets are derived from items/attendees at a committed sequence; an optional cached projection must carry that sequence. Room settings and role transfer transactions assert exactly one Leader and consistency with `trips.leader_user_id`. A partial unique membership index on trip where active role=leader prevents duplicate leaders; application transaction guarantees at least one. Finalization requires no open votes/conflicts (provisional).
+## Relationships
 
-## ER view
+The diagram shows principal foreign-key relationships. Dataset and venue references use composite keys where a venue must belong to a pinned version.
 
 ```mermaid
 erDiagram
+  USERS ||--o{ AUTH_SESSIONS : authenticates
+  AUTH_SESSIONS ||--o{ REFRESH_TOKENS : rotates
   USERS ||--o{ MEMBERSHIPS : joins
   TRIPS ||--o{ MEMBERSHIPS : includes
-  USERS ||--o{ AUTH_SESSIONS : authenticates
   TRIPS ||--o{ INVITES : issues
   DATASETS ||--o{ VENUE_METADATA : versions
+  VENUE_METADATA ||--o{ VENUE_DIETARY_TAGS : carries
   DATASETS ||--o{ TRANSIT_METADATA : grounds
   DATASETS ||--o{ WEATHER_METADATA : grounds
   DATASETS ||--o{ TRIPS : pins
   TRIPS ||--o{ ITINERARY_ITEMS : schedules
-  VENUE_METADATA ||--o{ ITINERARY_ITEMS : describes
-  ITINERARY_ITEMS ||--o{ ITEM_ATTENDEES : costs
+  VENUE_METADATA |o--o{ ITINERARY_ITEMS : describes
+  ITINERARY_ITEMS ||--o{ ITEM_ATTENDEES : allocates
   TRIPS ||--o{ VOTES : contests
-  VOTES ||--o{ VOTE_OPTIONS : offers
   VOTES ||--o{ BALLOTS : receives
+  ITINERARY_ITEMS ||--o{ BALLOTS : selects
   TRIPS ||--o{ CHAT_MESSAGES : retains
   CHAT_MESSAGES ||--o{ REACTIONS : collects
-  TRIPS ||--o{ ROOM_EVENTS : audits
+  TRIPS ||--o{ ROOM_EVENTS : records
+  TRIPS ||--o| ROOM_SNAPSHOTS : reserves
   TRIPS ||--o{ CONFLICTS : detects
+  TRIPS ||--o{ CONFLICT_CHANGES : records
+  TRIPS ||--o| SESSION_BOUNDARIES : measures
+  TRIPS ||--o{ PRESENCE_LEDGER : observes
+  TRIPS ||--o{ AI_QUESTIONS : grounds
   USERS ||--o{ INTERACTIONS : generates
+  DATASETS ||--o{ MODEL_ARTIFACTS : trains
 ```
 
-## Indexes and update mechanics
+Vote options, eligibility and results live in `votes.data` JSONB. Transit/weather authored metadata and model artifacts also use JSONB. Member constraints live in `memberships.constraints`. The schema reserves `room_snapshots`, while actor recovery hydrates committed relational rows and votes.
 
-Indexes: items `(trip_id,day_index,starts_at)` and `(trip_id,position_version)`; chat `(trip_id,created_at,id)`; events `(trip_id,room_seq)` and `(session_id,occurred_at)`; memberships `(user_id,status)`; votes partial `(closes_at) WHERE status='open'`; interactions `(user_id,created_at)` and `(venue_id,created_at)`; venues `(dataset_id,latitude,longitude)` for bounding box plus exact Haversine application check; GIN on search_vector and dietary tags if needed. A compound lat/lng index alone is not a spherical distance calculation. One small destination needs no PostGIS extension.
+## Source and money invariants
 
-Batch update condition: `WHERE id=:id AND position_version=:durableBaseVersion`; set final position/version and require affected row count=1. Coalesced updates retain all accepted event log entries. Significant transitions and earlier pending changes share one transaction, followed by committed watermark advancement. No explicit row-lock statements serialize moves. See [architecture](ARCHITECTURE.md) for unexpected-writer failure behavior.
+Catalog itinerary entries reference `venue_id,dataset_id`. Personal activities have a null venue ID and a bounded `personal_name`. The source check requires exactly one of venue ID and personal name. Their dataset ID remains the room's pinned version. The per-person snapshot allows zero for free activities. Dataset venue validation requires positive prices. Personal activities participate in budgets and overlaps and are excluded from venue interactions, recommendations and location anchors.
 
-## Migration sequence
+Attendees and nonnegative integer weights are stored per item. The application checks active trip membership and a positive weight sum. Exact allocations and remainder order are computed by the budget engine. INR uses paise and legacy EUR uses cents. Existing values retain their currency.
 
-Reference-model adaptation: PRD §7.2's `item_votes` becomes `votes` + `vote_options` + `ballots` so one contested slot can hold several candidate items, one ballot per eligible user and a durable deadline/result. PRD `users.role` becomes account `is_admin` plus trip membership role (ADR-003). `participantIds` is represented by memberships rather than duplicated mutable arrays. No reference entity is dropped: users, trips, itinerary items, venue metadata, chat and interactions remain explicit.
+## Indexes and transactional rules
 
-M001 users/sessions; M002 datasets/venues/tags/transit/weather; M003 trips/memberships/invites/items/attendees; M004 room events/snapshots/chat/reactions; M005 votes/ballots/conflicts; M006 interactions/artifacts and analytics indexes. Alembic revisions are planned. Seed a local Admin through an explicit CLI, never registration-body role. Use expand/backfill/contract for changed fields; backup before destructive migration and restore backup if downgrade would lose data. Dataset activation is atomic and cannot rewrite versions used by existing trips.
+The extracted schema lists every actual index definition. Key indexes include unique destination/version and active destination selection, unique active Leader per trip, unique open vote per slot, unique active model artifact per dataset, venue full-text GIN, event session/time, chat room sequence, and interaction user/time and venue/time.
 
-## Relational/document comparison (PRD §3 learning outcome)
+Board writes use conditional `position_version` predicates and expected committed room sequence. A failed durable-base check freezes mutations for that room. Batched pin/move/remove writes and significant durable transitions follow the [architecture](ARCHITECTURE.md). Significant transitions flush prior pending changes within the same transaction.
 
-PostgreSQL uses explicit join tables for membership, dietary tags, attendees and ballots; FK/unique/check constraints support budget/vote correctness. MongoDB alternative would use users/trips/items/venue_metadata/chat_messages/interactions collections, embed bounded preferences/hours, keep unbounded chats/events separate, and use unique membership/ballot indexes plus transactions for cross-document vote resolution. Both use version predicates. A trip document containing all chat/items risks unbounded growth and hot-document contention. Only PostgreSQL is selected and implemented later; the alternative mapping is conceptual, not a second required application.
+Migration 0012 upgrades existing catalog rows with nullable personal names. A downgrade requires removal of personal activities and zero-cost rows before the older constraints can be restored. Back up the database before operational schema changes.
 
-The initial identity revision is `backend/alembic/versions/0001_identity.py`; it has only been rendered to offline SQL, not applied. Its users and auth_sessions tables implement the first part of M001; all other entities remain planned. See [evidence](PHASE_1_EVIDENCE.md).
+## Verification and design history
 
-The second revision adds initial dataset and venue tables plus JSONB transit/weather records. It is not yet applied or verified against PostgreSQL, and its JSONB transit/weather representation is an initial implementation detail that still needs reconciliation with the planned schema above. See [evidence](PHASE_1_EVIDENCE.md).
+The disposable verification applies every migration and imports Lisbon, Bengaluru and Goa. The restore test compares logical table digests before actor hydration and then exercises recovery. Historical phase evidence records the schema available at each checkpoint. The current migrations and extracted schema define the submission.
 
-The third migration adds initial trip, membership, invitation, itinerary and room-event tables. It has only been rendered to offline SQL and has not been applied. Further fields and DB-backed behavior remain unimplemented.
-
-Revisions 0001–0005 were applied to the local disposable database and the initial dataset imported on 2026-10-30. The trip schema and idempotency/refresh history are preliminary; remaining planned tables and invariants are not complete. See [evidence](PHASE_1_EVIDENCE.md).
-
-The initial implementation now has revisions through `0008_venue_search`, including a stable planning-session ID, preservation of legacy auth-session references for old board events, and a generated tsvector with a GIN index. The clean verification applied these revisions and imported the synthetic dataset. The remaining reference tables and fields above are still planned. See [evidence](PHASE_1_EVIDENCE.md).
-
-## Chat migration — 2026-10-31
-
-Revision `0009_chat` creates `chat_messages` (trip, author, body, timestamp, sequence) and the unique message/user/emoji `reactions` table. Chat message and reaction mutations are recorded in `room_events` and committed with the trip watermark. The current chat table stores user-authored text only; other planned message types remain unimplemented. Its history index is `(trip_id, room_seq)`.
-
-## Phase 2 schema — 2026-10-31
-
-Revision `0010_concierge` adds trips.category_ceilings JSONB, memberships.constraints JSONB, and ai_questions with id, trip_id, user_id, request_key, command_hash, response and created_at. Unique `(trip_id,user_id,request_key)` enforces persisted question idempotency. Its trip/created_at index supports recent results. Preferences are validated at the service boundary; money remains integer cents. No real credentials belong in these fields. The original raw question is not saved in ai_questions; the accepted response and its source/version metadata are saved.
-
-Chat, moderation, constraint changes and AI results share the room_events ledger and planning-session ID. Significant changes flush prior volatile board edits within the same transaction. Conditional durable-base versions detect unexpected writers without explicit row locks. The configured local database was upgraded through `0010_concierge` with existing user/trip/item/dataset counts preserved; see [evidence](PHASE_2_EVIDENCE.md).
-
-## Phase 3 schema — revision 0011_phase3
-
-Adds `votes` (immutable slot key, deadline, status, JSONB options/eligibility/result), `ballots` (vote/user primary key, item choice, version), `conflicts` (trip/fingerprint primary key, open/resolved data and boundaries), `conflict_changes` (durable incident ledger), `interactions` (user/trip/pinned-dataset venue/kind/unique event), and `model_artifacts` (dataset, checksummed JSONB features/neighbors, training watermark, active version). Partial unique indexes permit one open vote per trip/slot and one active artifact per dataset; deadline/user-time/venue-time/session-event indexes support access patterns. Options/eligibility are bounded JSONB in the aggregate, rather than separate vote_options rows.
-
-`session_boundaries` stores the planning-session start at the second distinct member join and optional explicit finalization end. `presence_ledger` stores distinct connected Planner/Leader counts at observed connection transitions; tabs count once. This supporting ledger avoids allocating board versions for presence. Events, presence, conflict changes and boundaries collectively form the analytics ledger. Historical trips without observed session starts report `durationKnown=false`; no historical duration is invented. Trip deletion cascades these supporting ledgers. Monetary values and legacy dataset rows are unchanged.
-
-Phase 4 extracts actual columns and PostgreSQL indexes from a clean 0011_phase3 database into `evidence/contracts/schema.json`. That artifact and migrations define implemented physical fields where the earlier conceptual/reference model differs. No Phase 4 migration was needed. Real pg_dump/pg_restore compares all public tables' logical row counts/digests before hydration; the restore result and exact INR weighted recovery are in `evidence/operations/restore.json`.
+The PRD also discusses a document-database model as a learning exercise. This application implements PostgreSQL. A conceptual document mapping would embed bounded hours/preferences while retaining separate collections for unbounded messages/events and version-checked item edits.
