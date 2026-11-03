@@ -1,5 +1,7 @@
 # Traceability matrix
 
+README [roles at a glance](../README.md#roles-at-a-glance) provides the newcomer glossary for REQ-003 (PRD §§3,10.1), linked to the canonical role matrix; this documentation follow-up belongs to TASK-024 / REQ-032 and does not change permissions.
+
 Requirements trace with partial implementation and verification; current evidence and remaining gaps are documented below. Source [PRD](../Document/Project%20Document.docx); each requirement is defined in [requirements](PROJECT_REQUIREMENTS.md). Modules resolve to planned paths in [architecture](ARCHITECTURE.md); test IDs in [testing strategy](TESTING_STRATEGY.md); evidence IDs in [submission](DEMO_AND_SUBMISSION.md).
 
 | Requirement | PRD sections | Module | Tasks | Planned tests | Submission evidence |

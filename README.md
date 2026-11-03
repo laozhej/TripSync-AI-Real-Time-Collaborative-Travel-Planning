@@ -16,6 +16,16 @@ Private/local use by one operator, one engineer, four-week baseline. No booking,
 
 ## Start here
 
+### Roles at a glance
+
+- **Leader:** the trip's lead member, who manages invitations and room settings, moderates participants, and controls votes and finalization.
+- **Member:** a participant in a trip, with a Viewer role for reading/chat/Concierge or a Planner role that also permits editing drafting items and voting, subject to Leader restrictions.
+- **Admin:** an account with dataset-management privileges, which still needs trip membership and the appropriate trip role for room actions.
+
+See [roles and journeys](docs/PROJECT_REQUIREMENTS.md#roles-and-journeys) for the permission matrix and ADR-003 in the [decision log](docs/DECISIONS.md) for the account-versus-trip-role decision.
+
+### Setup and project guides
+
 1. Read [requirements](docs/PROJECT_REQUIREMENTS.md) and [provisional decisions](docs/DECISIONS.md).
 2. Follow the [four-week plan](docs/IMPLEMENTATION_PLAN.md) and [25-task backlog](docs/TASKS.md).
 3. First implementation slice: **authentication → create Trip Room → second participant joins → basic server-authoritative board synchronization**. Prerequisites: stack setup/locks, identity/membership/item migrations, one destination and shared socket/HTTP policy.
